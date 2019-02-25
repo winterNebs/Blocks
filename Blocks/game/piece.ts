@@ -9,6 +9,7 @@
                 throw new Error("Invalid Field Size");
             }
             Piece._fieldWidth = width;
+            //
         }
         private _name: string;
         private _shape: number[] = [];
