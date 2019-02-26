@@ -1,6 +1,4 @@
 ﻿namespace ASC {
-    export const MAX_FIELD_WIDTH: number = 20;
-    export const MIN_FIELD_WIDTH: number = 5;
     export class Piece {
         private static _fieldWidth:number;
 
@@ -20,8 +18,8 @@
         private _x: number = 0;
         private _y: number = 0;
         private _width: number;
-        private _height: number;
         private _blockCount: number;
+        
 
         public constructor(name: string, shape: number[], offset: number = 0, initOrient: number = 0) {
             this._name = name;
@@ -54,5 +52,9 @@
             this._orientations.push(ccw);
         }
 
+        public rotate(dir: Rotations):void {
+            this._currentOrientation = (this._currentOrientation + dir) % 4
+            // kicks
+        }
     }
 }

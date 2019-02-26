@@ -1774,8 +1774,6 @@ var TSE;
 })(TSE || (TSE = {}));
 var ASC;
 (function (ASC) {
-    ASC.MAX_FIELD_WIDTH = 20;
-    ASC.MIN_FIELD_WIDTH = 5;
     var Piece = /** @class */ (function () {
         function Piece(name, shape, offset, initOrient) {
             if (offset === void 0) { offset = 0; }
@@ -1794,6 +1792,7 @@ var ASC;
                 throw new Error("Invalid Field Size");
             }
             Piece._fieldWidth = width;
+            //
         };
         Piece.prototype.setShape = function (shape) {
             if (shape.length > 25 || shape.length < 1) {
@@ -1820,8 +1819,38 @@ var ASC;
             this._orientations.push(cwcw);
             this._orientations.push(ccw);
         };
+        Piece.prototype.rotate = function (dir) {
+            this._currentOrientation = (this._currentOrientation + dir) % 4;
+            // kicks
+        };
         return Piece;
     }());
     ASC.Piece = Piece;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var Rotations;
+    (function (Rotations) {
+        Rotations[Rotations["CW"] = 0] = "CW";
+        Rotations[Rotations["CWCW"] = 1] = "CWCW";
+        Rotations[Rotations["CCW"] = 2] = "CCW";
+    })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    ASC.MAX_FIELD_WIDTH = 20;
+    ASC.MIN_FIELD_WIDTH = 5;
+    ASC.FIELD_HEIGHT = 25;
+    var Block = /** @class */ (function () {
+        function Block() {
+        }
+        return Block;
+    }());
+    var Field = /** @class */ (function () {
+        function Field() {
+        }
+        return Field;
+    }());
+    ASC.Field = Field;
 })(ASC || (ASC = {}));
 //# sourceMappingURL=main.js.map

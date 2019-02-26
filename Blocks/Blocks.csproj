@@ -135,6 +135,8 @@
     <TypeScriptCompile Include="core\screen\TestZone.ts" />
     <TypeScriptCompile Include="core\screen\zone.ts" />
     <TypeScriptCompile Include="core\screen\zoneManager.ts" />
+    <TypeScriptCompile Include="game\enums.ts" />
+    <TypeScriptCompile Include="game\field.ts" />
     <TypeScriptCompile Include="game\piece.ts" />
   </ItemGroup>
   <ItemGroup>
