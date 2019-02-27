@@ -19,13 +19,15 @@
         private _y: number = 0;
         private _width: number;
         private _blockCount: number;
+        private _color: TSE.Color;
         
 
-        public constructor(name: string, shape: number[], offset: number = 0, initOrient: number = 0) {
+        public constructor(name: string, shape: number[], offset: number = 0, initOrient: number = 0, color: TSE.Color = TSE.Color.red()) {
             this._name = name;
             this.setShape(shape);
             this._offset = offset;
             this._initialOrientation = initOrient;
+            this._color = color;
         }
 
         private setShape(shape: number[]): void {

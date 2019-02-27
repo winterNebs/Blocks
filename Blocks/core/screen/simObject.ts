@@ -73,6 +73,16 @@
             this._components.push(component);
             component.setOwner(this);
         }
+        public removeComponent(index: number): void {
+            this.getComponent(index).setOwner(undefined);
+            this._components.splice(index, 1);
+        }
+        public swapComponent(index: number, component: BaseComponent): void {
+            this._components[index].setOwner(undefined);
+            component.setOwner(this);
+            component.load();
+            this._components[index] = component;          
+        }
 
         public load(): void {
             this._isLoaded = true;

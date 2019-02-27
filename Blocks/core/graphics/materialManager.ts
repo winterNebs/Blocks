@@ -5,7 +5,7 @@
         public referenceCount: number = 1;
 
         public constructor(material: Material) {
-            this.material =material
+            this.material = material
         }
     }
 
@@ -21,7 +21,7 @@
             if (MaterialManager._materials[material.name] === undefined) {
                 MaterialManager._materials[material.name] = new MaterialReferenceNode(material);
             }
-                 }
+        }
 
         public static getMaterial(materialName: string): Material {
             if (MaterialManager._materials[materialName] === undefined) {
@@ -44,6 +44,11 @@
                     MaterialManager._materials[materialName].material = undefined;
                     delete MaterialManager._materials[materialName];
                 }
+            }
+        }
+        public static registerColors(materialName: string, colors: Color[]): void {
+            for (let i = 0; i < colors.length; ++i) {
+                MaterialManager.registerMaterial(new Material(i.toString(), materialName, colors[i]));
             }
         }
     }

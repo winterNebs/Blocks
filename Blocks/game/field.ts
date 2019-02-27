@@ -3,13 +3,41 @@
     export const MIN_FIELD_WIDTH: number = 5;
     export const FIELD_HEIGHT: number = 25;
 
-    class Block {
-
+    export class Block {
+        private _color: TSE.Color;
+        private _solid: boolean;
+        private _clearable: boolean;
+        public constructor(color: TSE.Color = TSE.Color.black(), solid: boolean = false, clearable: boolean = false) {
+            this._color = color;
+            this._solid = solid;
+            this._clearable = clearable;
+        }
     }
 
     export class Field {
-        private _width;
+        private _width: number;
+        private _array: Block[] = [];
 
+        public constructor(width: number) {
+            Piece.initialize(width);
+            this._width = width;
+        }
 
+        private initialize(): void {
+            for (let i = 0; i < this._width * FIELD_HEIGHT; ++i) {
+                this._array.push(new Block());
+            }
+        }
+
+        private shift(lines: number): void { // take garbage or something;
+            this._array.splice(0, lines * this._width);
+            for (let i = 0; i < lines * this._width; ++i) {
+                this._array.push(new Block());
+            }
+        }
+
+        public getArray(): Block[] {
+            return this._array;
+        }
     }
 }

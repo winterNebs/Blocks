@@ -24,6 +24,7 @@
         public get tint(): Color {
             return this._tint;
         }
+
         public get diffuseTexture(): Texture {
             return this._diffuseTexture;
         }

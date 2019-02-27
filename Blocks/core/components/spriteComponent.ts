@@ -2,7 +2,7 @@
 
     export class SpriteComponent extends BaseComponent{
 
-        protected _sprite: Sprite; 
+        private _sprite: Sprite; 
 
         public constructor(name: string, materialName:string, width:number = 10, height:number = 10) {
             super(name);

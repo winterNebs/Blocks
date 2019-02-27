@@ -172,9 +172,9 @@ var TSE;
             this._basicShader = new TSE.BasicShader();
             this._basicShader.use();
             //Load Materials 
-            TSE.MaterialManager.registerMaterial(new TSE.Material("r", "assets/textures/b.jpg", TSE.Color.red()));
-            TSE.MaterialManager.registerMaterial(new TSE.Material("g", "assets/textures/b.jpg", TSE.Color.green()));
-            TSE.MaterialManager.registerMaterial(new TSE.Material("b", "assets/textures/b.jpg", TSE.Color.blue()));
+            TSE.MaterialManager.registerMaterial(new TSE.Material("-1", "assets/textures/b.jpg", TSE.Color.red()));
+            // MaterialManager.registerMaterial(new Material("g", "assets/textures/b.jpg", Color.green()));
+            // MaterialManager.registerMaterial(new Material("b", "assets/textures/b.jpg", Color.blue()));
             var zoneID = TSE.ZoneManager.createFieldZone();
             //Load
             this._projection = TSE.Matrix4x4.orthographic(0, this._canvas.width, this._canvas.height, 0, -100.0, 100.0);
@@ -694,6 +694,11 @@ var TSE;
                     MaterialManager._materials[materialName].material = undefined;
                     delete MaterialManager._materials[materialName];
                 }
+            }
+        };
+        MaterialManager.registerColors = function (materialName, colors) {
+            for (var i = 0; i < colors.length; ++i) {
+                MaterialManager.registerMaterial(new TSE.Material(i.toString(), materialName, colors[i]));
             }
         };
         MaterialManager._materials = {};
@@ -1440,34 +1445,13 @@ var TSE;
 /// <reference path="zone.ts" />
 var TSE;
 (function (TSE) {
-    var ColorNum;
-    (function (ColorNum) {
-        ColorNum[ColorNum["RED"] = 0] = "RED";
-        ColorNum[ColorNum["BLUE"] = 1] = "BLUE";
-        ColorNum[ColorNum["GREEN"] = 2] = "GREEN";
-    })(ColorNum = TSE.ColorNum || (TSE.ColorNum = {}));
     var BlockComponent = /** @class */ (function (_super) {
         __extends(BlockComponent, _super);
         function BlockComponent(name, color, size) {
-            if (color === void 0) { color = ColorNum.RED; }
+            if (color === void 0) { color = -1; }
             if (size === void 0) { size = 16; }
-            var _this = _super.call(this, name, "r", size, size) || this;
-            _this.setColor(color);
-            return _this;
+            return _super.call(this, name, color.toString(), size, size) || this;
         }
-        BlockComponent.prototype.setColor = function (color) {
-            switch (color) {
-                case ColorNum.RED:
-                    this._sprite.setMaterial("r");
-                    break;
-                case ColorNum.BLUE:
-                    this._sprite.setMaterial("b");
-                    break;
-                case ColorNum.GREEN:
-                    this._sprite.setMaterial("g");
-                    break;
-            }
-        };
         return BlockComponent;
     }(TSE.SpriteComponent));
     var FieldZone = /** @class */ (function (_super) {
@@ -1485,19 +1469,10 @@ var TSE;
         FieldZone.prototype.initializeArray = function () {
             for (var i = 0; i < this._height * this._width; ++i) {
                 var b = new TSE.SimObject(i + 2, "Block " + i.toString());
-                //if (i % 2 == 0) {
-                b.addComponent(new BlockComponent(i.toString(), ColorNum.RED, this._resolution));
-                //}
-                //else {
-                //    b.addComponent(new BlockComponent(i.toString(), ColorNum.BLUE, this._resolution));
-                //}
+                b.addComponent(new BlockComponent(i.toString(), -1, this._resolution));
                 b.transform.position.x = (i % this._width) * this._resolution;
                 b.transform.position.y = (i / this._width >> 0) * this._resolution;
-                //console.log(b.transform.position.x + "," + b.transform.position.y);
                 this._array.push(b);
-                // let b = new BlockComponent(i.toString(), ColorNum.RED);
-                //this._fieldObject.addComponent(b);
-                //this._array.push(b);
             }
         };
         FieldZone.prototype.load = function () {
@@ -1511,7 +1486,6 @@ var TSE;
             _super.prototype.load.call(this);
         };
         FieldZone.prototype.update = function (time) {
-            this.updateField([[0, 2, 2]]);
             _super.prototype.update.call(this, time);
         };
         /**
@@ -1521,8 +1495,9 @@ var TSE;
         FieldZone.prototype.updateField = function (Message) {
             for (var _i = 0, Message_1 = Message; _i < Message_1.length; _i++) {
                 var tuple = Message_1[_i];
-                var temp = (this._array[this._width * tuple[0] + tuple[1]].getComponent(0));
-                temp.setColor(tuple[2]);
+                var index = this._width * tuple[0] + tuple[1];
+                console.log("Changed color at: " + index.toString());
+                this._array[index].swapComponent(0, new BlockComponent(index.toString(), tuple[2], this._resolution));
             }
         };
         return FieldZone;
@@ -1641,6 +1616,16 @@ var TSE;
         SimObject.prototype.addComponent = function (component) {
             this._components.push(component);
             component.setOwner(this);
+        };
+        SimObject.prototype.removeComponent = function (index) {
+            this.getComponent(index).setOwner(undefined);
+            this._components.splice(index, 1);
+        };
+        SimObject.prototype.swapComponent = function (index, component) {
+            this._components[index].setOwner(undefined);
+            component.setOwner(this);
+            component.load();
+            this._components[index] = component;
         };
         SimObject.prototype.load = function () {
             this._isLoaded = true;
@@ -1774,10 +1759,81 @@ var TSE;
 })(TSE || (TSE = {}));
 var ASC;
 (function (ASC) {
+    var Rotations;
+    (function (Rotations) {
+        Rotations[Rotations["CW"] = 0] = "CW";
+        Rotations[Rotations["CWCW"] = 1] = "CWCW";
+        Rotations[Rotations["CCW"] = 2] = "CCW";
+    })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    ASC.MAX_FIELD_WIDTH = 20;
+    ASC.MIN_FIELD_WIDTH = 5;
+    ASC.FIELD_HEIGHT = 25;
+    var Block = /** @class */ (function () {
+        function Block(color, solid, clearable) {
+            if (color === void 0) { color = TSE.Color.black(); }
+            if (solid === void 0) { solid = false; }
+            if (clearable === void 0) { clearable = false; }
+            this._color = color;
+            this._solid = solid;
+            this._clearable = clearable;
+        }
+        return Block;
+    }());
+    ASC.Block = Block;
+    var Field = /** @class */ (function () {
+        function Field(width) {
+            this._array = [];
+            ASC.Piece.initialize(width);
+            this._width = width;
+        }
+        Field.prototype.initialize = function () {
+            for (var i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
+                this._array.push(new Block());
+            }
+        };
+        Field.prototype.shift = function (lines) {
+            this._array.splice(0, lines * this._width);
+            for (var i = 0; i < lines * this._width; ++i) {
+                this._array.push(new Block());
+            }
+        };
+        Field.prototype.getArray = function () {
+            return this._array;
+        };
+        return Field;
+    }());
+    ASC.Field = Field;
+})(ASC || (ASC = {}));
+//find difference and interface with gui
+var ASC;
+(function (ASC) {
+    var FieldManager = /** @class */ (function () {
+        function FieldManager() {
+            this._colors = []; // get colors from bag system
+            this._lastArray = [];
+        }
+        FieldManager.prototype.initialize = function () {
+            this._field = new ASC.Field(12);
+            this._lastArray = this._field.getArray();
+            //hardcode color for now:
+            //LIST OF COLOR? OR SET EACH BLOCK COLOR INDIVIDUALLY?
+            this._colors.push(TSE.Color.black(), TSE.Color.red(), TSE.Color.green(), TSE.Color.blue());
+            TSE.MaterialManager.registerColors("assets/textures/b.jpg", this._colors);
+        };
+        return FieldManager;
+    }());
+    ASC.FieldManager = FieldManager;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
     var Piece = /** @class */ (function () {
-        function Piece(name, shape, offset, initOrient) {
+        function Piece(name, shape, offset, initOrient, color) {
             if (offset === void 0) { offset = 0; }
             if (initOrient === void 0) { initOrient = 0; }
+            if (color === void 0) { color = TSE.Color.red(); }
             this._shape = [];
             this._currentOrientation = 0;
             this._x = 0;
@@ -1786,6 +1842,7 @@ var ASC;
             this.setShape(shape);
             this._offset = offset;
             this._initialOrientation = initOrient;
+            this._color = color;
         }
         Piece.initialize = function (width) {
             if (width < ASC.MIN_FIELD_WIDTH || width > ASC.MAX_FIELD_WIDTH) {
@@ -1826,31 +1883,5 @@ var ASC;
         return Piece;
     }());
     ASC.Piece = Piece;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    var Rotations;
-    (function (Rotations) {
-        Rotations[Rotations["CW"] = 0] = "CW";
-        Rotations[Rotations["CWCW"] = 1] = "CWCW";
-        Rotations[Rotations["CCW"] = 2] = "CCW";
-    })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    ASC.MAX_FIELD_WIDTH = 20;
-    ASC.MIN_FIELD_WIDTH = 5;
-    ASC.FIELD_HEIGHT = 25;
-    var Block = /** @class */ (function () {
-        function Block() {
-        }
-        return Block;
-    }());
-    var Field = /** @class */ (function () {
-        function Field() {
-        }
-        return Field;
-    }());
-    ASC.Field = Field;
 })(ASC || (ASC = {}));
 //# sourceMappingURL=main.js.map

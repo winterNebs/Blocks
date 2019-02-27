@@ -23,9 +23,9 @@
 
 
             //Load Materials 
-            MaterialManager.registerMaterial(new Material("r", "assets/textures/b.jpg", Color.red()));
-            MaterialManager.registerMaterial(new Material("g", "assets/textures/b.jpg", Color.green()));
-            MaterialManager.registerMaterial(new Material("b", "assets/textures/b.jpg", Color.blue()));
+            MaterialManager.registerMaterial(new Material("-1", "assets/textures/b.jpg", Color.red()));
+           // MaterialManager.registerMaterial(new Material("g", "assets/textures/b.jpg", Color.green()));
+           // MaterialManager.registerMaterial(new Material("b", "assets/textures/b.jpg", Color.blue()));
 
 
             let zoneID = ZoneManager.createFieldZone();
