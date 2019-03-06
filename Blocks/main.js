@@ -179,6 +179,7 @@ var TSE;
             //Load
             this._projection = TSE.Matrix4x4.orthographic(0, this._canvas.width, this._canvas.height, 0, -100.0, 100.0);
             TSE.ZoneManager.changeZone(zoneID);
+            var field = new ASC.FieldManager(TSE.ZoneManager.getActive());
             this.resize();
             this.loop();
         };
@@ -939,6 +940,7 @@ var TSE;
             InputManager._keys[event.keyCode] = true;
             event.preventDefault();
             event.stopPropagation();
+            InputManager.NotifyObservers();
             return false;
         };
         InputManager.onKeyUp = function (event) {
@@ -947,10 +949,10 @@ var TSE;
             event.stopPropagation();
             return false;
         };
-        InputManager.prototype.RegisterObserver = function (Observer) {
+        InputManager.RegisterObserver = function (Observer) {
             InputManager._observers.push(Observer);
         };
-        InputManager.prototype.UnregisterObserver = function (Observer) {
+        InputManager.UnregisterObserver = function (Observer) {
             var index = InputManager._observers.indexOf(Observer);
             if (index !== -1) {
                 InputManager._observers.splice(index, 1);
@@ -959,7 +961,7 @@ var TSE;
                 console.warn("Cannot unregister observer.");
             }
         };
-        InputManager.prototype.NotifyObservers = function () {
+        InputManager.NotifyObservers = function () {
             for (var _i = 0, _a = InputManager._observers; _i < _a.length; _i++) {
                 var o = _a[_i];
                 o.RecieveNotification("Keypresed");
@@ -1490,14 +1492,12 @@ var TSE;
         };
         /**
          * Takes an array tuples to change [number, color]
-         * @param Message array of [x,y, color]//color num for now
+         * @param Message array of [i, color]//color num for now
          */
         FieldZone.prototype.updateField = function (Message) {
             for (var _i = 0, Message_1 = Message; _i < Message_1.length; _i++) {
                 var tuple = Message_1[_i];
-                var index = this._width * tuple[0] + tuple[1];
-                console.log("Changed color at: " + index.toString());
-                this._array[index].swapComponent(0, new BlockComponent(index.toString(), tuple[2], this._resolution));
+                this._array[tuple[0]].swapComponent(0, new BlockComponent(tuple[0].toString(), tuple[1], this._resolution));
             }
         };
         return FieldZone;
@@ -1751,6 +1751,9 @@ var TSE;
                 ZoneManager._activeZone.render(shader);
             }
         };
+        ZoneManager.getActive = function () {
+            return ZoneManager._activeZone;
+        };
         ZoneManager._globalZoneID = -1;
         ZoneManager._zones = {};
         return ZoneManager;
@@ -1765,6 +1768,13 @@ var ASC;
         Rotations[Rotations["CWCW"] = 1] = "CWCW";
         Rotations[Rotations["CCW"] = 2] = "CCW";
     })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
+    var Directions;
+    (function (Directions) {
+        Directions[Directions["UP"] = 0] = "UP";
+        Directions[Directions["RIGHT"] = 1] = "RIGHT";
+        Directions[Directions["DOWN"] = 2] = "DOWN";
+        Directions[Directions["LEFT"] = 3] = "LEFT";
+    })(Directions = ASC.Directions || (ASC.Directions = {}));
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -1811,21 +1821,45 @@ var ASC;
 var ASC;
 (function (ASC) {
     var FieldManager = /** @class */ (function () {
-        function FieldManager() {
+        function FieldManager(fz) {
             this._colors = []; // get colors from bag system
             this._lastArray = [];
+            this._fieldZone = fz;
+            this.initialize();
         }
         FieldManager.prototype.initialize = function () {
-            this._field = new ASC.Field(12);
-            this._lastArray = this._field.getArray();
             //hardcode color for now:
             //LIST OF COLOR? OR SET EACH BLOCK COLOR INDIVIDUALLY?
             this._colors.push(TSE.Color.black(), TSE.Color.red(), TSE.Color.green(), TSE.Color.blue());
             TSE.MaterialManager.registerColors("assets/textures/b.jpg", this._colors);
         };
+        FieldManager.prototype.voidInitArray = function (newArr) {
+            this._lastArray = newArr;
+        };
+        FieldManager.prototype.update = function (newArr) {
+            var changes = [];
+            for (var i = 0; i < this._lastArray.length; ++i) {
+                if (this._lastArray[i] != newArr[i]) {
+                    changes.push([i, 2]); //hard code color for now
+                }
+            }
+            //Need to check field size too
+            this._lastArray = newArr;
+            this._fieldZone.updateField(changes); // Use messenger? 
+            //this._fieldZone.updateField([[this.x,1,2]])
+        };
         return FieldManager;
     }());
     ASC.FieldManager = FieldManager;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var GameState = /** @class */ (function () {
+        function GameState() {
+        }
+        return GameState;
+    }());
+    ASC.GameState = GameState;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -1834,33 +1868,38 @@ var ASC;
             if (offset === void 0) { offset = 0; }
             if (initOrient === void 0) { initOrient = 0; }
             if (color === void 0) { color = TSE.Color.red(); }
-            this._shape = [];
-            this._currentOrientation = 0;
-            this._x = 0;
-            this._y = 0;
+            this._shape = []; //The shape of piece (array of indecies to be filled)
+            this._currentOrientation = 0; //Current orientation
+            this._x = 0; //X location
+            this._y = 0; //Y location
             this._name = name;
             this.setShape(shape);
             this._offset = offset;
             this._initialOrientation = initOrient;
             this._color = color;
         }
+        /**
+         * Initalizes the piece class, (called once per player);
+         * @param width Width of player's field
+         */
         Piece.initialize = function (width) {
-            if (width < ASC.MIN_FIELD_WIDTH || width > ASC.MAX_FIELD_WIDTH) {
+            if (width < ASC.MIN_FIELD_WIDTH || width > ASC.MAX_FIELD_WIDTH) { // Cannot exceed maximum/min size
                 throw new Error("Invalid Field Size");
             }
             Piece._fieldWidth = width;
-            //
         };
         Piece.prototype.setShape = function (shape) {
             if (shape.length > 25 || shape.length < 1) {
                 throw new Error("Invalid number of blocks");
             }
+            this._blockCount = shape.length;
             for (var _i = 0, shape_1 = shape; _i < shape_1.length; _i++) {
                 var i = shape_1[_i];
                 if (i > 24 || i < 0) {
                     throw new Error("Block out of bounds");
                 }
             }
+            this._blockCount = shape.length;
             this._shape = shape;
             this._orientations.push(shape);
             var cw = [];
@@ -1880,8 +1919,105 @@ var ASC;
             this._currentOrientation = (this._currentOrientation + dir) % 4;
             // kicks
         };
+        Piece.prototype.move = function (dir) {
+            switch (dir) {
+                case ASC.Directions.UP:
+                    this._y -= 1;
+                    break;
+                case ASC.Directions.RIGHT:
+                    this._x += 1;
+                    break;
+                case ASC.Directions.DOWN:
+                    this._y += 1;
+                    break;
+                case ASC.Directions.LEFT:
+                    this._x -= 1;
+                    break;
+            }
+        };
+        Piece.prototype.getCoords = function () {
+            var c = [];
+            for (var _i = 0, _a = this._shape; _i < _a.length; _i++) {
+                var i = _a[_i];
+                c.push(i + this._x + this._y * Piece._fieldWidth);
+            }
+            return c;
+        };
         return Piece;
     }());
     ASC.Piece = Piece;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var PRNG = /** @class */ (function () {
+        function PRNG(seed) {
+            this._seed = seed % 2147483647;
+            if (this._seed <= 0) {
+                this._seed += 2147483646;
+            }
+        }
+        /**
+         * Returns a pseudo-random value between 1 and 2^32 - 2.
+         */
+        PRNG.prototype.next = function () {
+            return this._seed = this._seed * 16807 % 2147483647;
+        };
+        /**
+         * Returns a pseudo-random floating point number in range [0, 1).
+         */
+        PRNG.prototype.nextFloat = function () {
+            // We know that result of next() will be 1 to 2147483646 (inclusive).
+            return (this.next() - 1) / 2147483646;
+        };
+        PRNG.prototype.shuffleArray = function (array) {
+            var _a;
+            for (var i = array.length - 1; i > 0; i--) {
+                var j = Math.floor(this.nextFloat() * (i + 1));
+                _a = [array[j], array[i]], array[i] = _a[0], array[j] = _a[1];
+            }
+        };
+        return PRNG;
+    }());
+    ASC.PRNG = PRNG;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    ASC.NUM_PREVIEWS = 6;
+    var Queue = /** @class */ (function () {
+        function Queue(seed, size) {
+            this._rng = new ASC.PRNG(seed);
+            this._bagSize = size;
+        }
+        Queue.prototype.setPieces = function (pieces) {
+            this._bag = pieces;
+        };
+        Queue.prototype.generateQueue = function () {
+            var tempBag = this._bag.slice(0);
+            while (this._bagSize > tempBag.length) {
+                tempBag.concat(this._bag.slice(0));
+            }
+            while (this._queue.length < ASC.NUM_PREVIEWS) {
+                this._rng.shuffleArray(tempBag);
+                this._queue.concat(tempBag.slice(0, this._bagSize));
+            }
+        };
+        Queue.prototype.getBag = function () {
+            return this._queue.slice(0, ASC.NUM_PREVIEWS);
+        };
+        Queue.prototype.getNext = function () {
+            return this._queue.splice(0, 1)[0];
+        };
+        return Queue;
+    }());
+    ASC.Queue = Queue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var Game = /** @class */ (function () {
+        function Game() {
+        }
+        return Game;
+    }());
+    ASC.Game = Game;
 })(ASC || (ASC = {}));
 //# sourceMappingURL=main.js.map

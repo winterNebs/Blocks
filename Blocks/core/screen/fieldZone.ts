@@ -50,14 +50,11 @@ namespace TSE {
         }
         /**
          * Takes an array tuples to change [number, color]
-         * @param Message array of [x,y, color]//color num for now
+         * @param Message array of [i, color]//color num for now
          */
-        public updateField(Message: [number, number, number][]): void {
+        public updateField(Message: [number, number][]): void {
             for (let tuple of Message) {
-                let index = this._width * tuple[0] + tuple[1];
-                console.log("Changed color at: " + index.toString());
-                
-                this._array[index].swapComponent(0, new BlockComponent(index.toString(), tuple[2], this._resolution));
+                this._array[tuple[0]].swapComponent(0, new BlockComponent(tuple[0].toString(), tuple[1], this._resolution));
             }
         }
     }

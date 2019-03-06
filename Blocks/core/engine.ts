@@ -33,6 +33,7 @@
             this._projection = Matrix4x4.orthographic(0, this._canvas.width, this._canvas.height, 0, -100.0, 100.0);
 
             ZoneManager.changeZone(zoneID);
+            let field = new ASC.FieldManager(ZoneManager.getActive() as FieldZone);
 
             this.resize();
             this.loop();

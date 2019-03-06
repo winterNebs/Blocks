@@ -119,7 +119,6 @@
     <TypeScriptCompile Include="core\graphics\texture.ts" />
     <TypeScriptCompile Include="core\graphics\textureManager.ts" />
     <TypeScriptCompile Include="core\input\inputManager.ts" />
-    <TypeScriptCompile Include="core\observer\IObservable.ts" />
     <TypeScriptCompile Include="core\observer\IObserver.ts" />
     <TypeScriptCompile Include="core\screen\FieldZone.ts" />
     <TypeScriptCompile Include="core\screen\scene.ts" />
@@ -138,7 +137,11 @@
     <TypeScriptCompile Include="game\enums.ts" />
     <TypeScriptCompile Include="game\field.ts" />
     <TypeScriptCompile Include="game\fieldManager.ts" />
+    <TypeScriptCompile Include="game\game.ts" />
+    <TypeScriptCompile Include="game\gameState.ts" />
     <TypeScriptCompile Include="game\piece.ts" />
+    <TypeScriptCompile Include="game\prng.ts" />
+    <TypeScriptCompile Include="game\queue.ts" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />

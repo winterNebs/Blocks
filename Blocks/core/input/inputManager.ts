@@ -8,7 +8,7 @@
     }
 
 
-    export class InputManager implements IObservable{
+    export class InputManager {
         private static _keys: boolean[] = [];
         private static _observers: IObserver[] = [];
         private constructor() { }
@@ -29,6 +29,9 @@
             InputManager._keys[event.keyCode] = true;
             event.preventDefault();
             event.stopPropagation();
+
+            InputManager.NotifyObservers();
+
             return false;
         }
         private static onKeyUp(event: KeyboardEvent): boolean {
@@ -38,10 +41,10 @@
             return false;
         }
 
-        public RegisterObserver(Observer: IObserver): void {
+        public static RegisterObserver(Observer: IObserver): void {
             InputManager._observers.push(Observer);
         }
-        public UnregisterObserver(Observer: IObserver): void {
+        public static UnregisterObserver(Observer: IObserver): void {
             let index = InputManager._observers.indexOf(Observer);
             if (index !== -1) {
                 InputManager._observers.splice(index, 1)
@@ -50,7 +53,7 @@
                 console.warn("Cannot unregister observer.")
             }
         }
-        public NotifyObservers() {
+        private static NotifyObservers() {
             for (let o of InputManager._observers) {
                 o.RecieveNotification("Keypresed");
             }

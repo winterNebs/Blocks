@@ -55,5 +55,9 @@
                 ZoneManager._activeZone.render(shader);
             }
         }
+
+        public static getActive():Zone {
+            return ZoneManager._activeZone;
+        }
     }
 }
