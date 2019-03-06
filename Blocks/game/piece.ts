@@ -1,29 +1,18 @@
 ﻿namespace ASC {
     export class Piece {
-        private static _fieldWidth:number;  // Width of the user's feild
-        /**
-         * Initalizes the piece class, (called once per player);
-         * @param width Width of player's field
-         */
-        public static initialize(width: number) {   
-            if (width < MIN_FIELD_WIDTH || width > MAX_FIELD_WIDTH) {   // Cannot exceed maximum/min size
-                throw new Error("Invalid Field Size");
-            }
-            Piece._fieldWidth = width;
-        }
 
         private _name: string;                      //Name of piece (ie. X)
         private _shape: number[] = [];              //The shape of piece (array of indecies to be filled)
-        private _orientations: number[][];          //Precomputed orientations/rotations
+        private _orientations: number[][] = [];          //Precomputed orientations/rotations
         private _offset: number;                    //Spawning offset for top left corner of the peice (starting from top left going right)
         private _initialOrientation: number;        //Spawn orientation
         private _currentOrientation: number = 0;    //Current orientation
-        private _x: number = 0;                     //X location
-        private _y: number = 0;                     //Y location
-        //private _width: number;                     //Width of the piece (?)
+        private _x: number;
+        private _y: number;
+        //private _width: number;                   //Width of the piece (?)
         private _blockCount: number;                //Number of blocks the piece is made up of
         private _color: TSE.Color;                  //Color of piece
-        
+
 
         public constructor(name: string, shape: number[], offset: number = 0, initOrient: number = 0, color: TSE.Color = TSE.Color.red()) {
             this._name = name;
@@ -59,30 +48,30 @@
             this._orientations.push(ccw);
         }
 
-        public rotate(dir: Rotations):void {
+        public rotate(dir: Rotations): void {
             this._currentOrientation = (this._currentOrientation + dir) % 4
             // kicks
         }
-        public move(dir: Directions):void {
+        public move(dir: Directions, dist: number): void {
             switch (dir) {
                 case Directions.UP:
-                    this._y -= 1;
+                    this._y -= dist;
                     break;
                 case Directions.RIGHT:
-                    this._x += 1;
+                    this._x += dist;
                     break;
                 case Directions.DOWN:
-                    this._y += 1;
+                    this._y += dist;
                     break;
                 case Directions.LEFT:
-                    this._x -= 1;
+                    this._x -= dist;
                     break;
             }
         }
-        public getCoords(): number[] {
+        public getCoords(width: number): number[] {
             let c = [];
             for (let i of this._shape) {
-                c.push(i + this._x + this._y * Piece._fieldWidth);
+                c.push(i + this._x + this._y * width);
             }
             return c;
         }

@@ -14,7 +14,7 @@
 
             this._canvas = GLUtillities.initialize();
             AssetManager.initialize();
-            InputManager.initialize();
+            ASC.InputManager.initialize();
 
             gl.clearColor(0, 0, 0, 1);
 
@@ -33,8 +33,9 @@
             this._projection = Matrix4x4.orthographic(0, this._canvas.width, this._canvas.height, 0, -100.0, 100.0);
 
             ZoneManager.changeZone(zoneID);
+            let game = new ASC.Game();
             let field = new ASC.FieldManager(ZoneManager.getActive() as FieldZone);
-
+            
             this.resize();
             this.loop();
         }

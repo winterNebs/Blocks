@@ -19,7 +19,6 @@
         private _array: Block[] = [];
 
         public constructor(width: number) {
-            Piece.initialize(width);
             this._width = width;
         }
 

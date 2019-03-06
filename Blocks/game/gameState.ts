@@ -1,4 +1,6 @@
 ﻿namespace ASC {
+
+    //Don't think i need this anymore
     export class GameState {
         private _field: Field;
         private _currentPiece: Piece;

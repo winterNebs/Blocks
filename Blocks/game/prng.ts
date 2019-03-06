@@ -2,7 +2,7 @@
     export class PRNG {
         private _seed: number; //Seed must be integer;
         public constructor(seed: number) {
-            this._seed = seed % 2147483647;
+            this._seed = Math.round(seed) % 2147483647;
             if (this._seed <= 0) {
                 this._seed += 2147483646;
             }
