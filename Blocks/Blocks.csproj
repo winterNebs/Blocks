@@ -118,6 +118,7 @@
     <TypeScriptCompile Include="core\graphics\sprite.ts" />
     <TypeScriptCompile Include="core\graphics\texture.ts" />
     <TypeScriptCompile Include="core\graphics\textureManager.ts" />
+    <TypeScriptCompile Include="game\block.ts" />
     <TypeScriptCompile Include="game\inputManager.ts" />
     <TypeScriptCompile Include="game\observer\IObserver.ts" />
     <TypeScriptCompile Include="core\screen\FieldZone.ts" />

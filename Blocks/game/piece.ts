@@ -7,8 +7,8 @@
         private _offset: number;                    //Spawning offset for top left corner of the peice (starting from top left going right)
         private _initialOrientation: number;        //Spawn orientation
         private _currentOrientation: number = 0;    //Current orientation
-        private _x: number;
-        private _y: number;
+        private _x: number = 0;
+        private _y: number = 0;
         //private _width: number;                   //Width of the piece (?)
         private _blockCount: number;                //Number of blocks the piece is made up of
         private _color: TSE.Color;                  //Color of piece
@@ -20,6 +20,7 @@
             this._offset = offset;
             this._initialOrientation = initOrient;
             this._color = color;
+            this._x += this._offset;
         }
 
         private setShape(shape: number[]): void {

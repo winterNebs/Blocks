@@ -26,11 +26,13 @@ namespace ASC {
             this._lastArray = newArr;
         }
 
-        private update(newArr: Block[]): void {
+        public update(newArr: Block[]): void {
             let changes: [number, number][] = [];
             for (let i = 0; i < this._lastArray.length; ++i) {
-                if (this._lastArray[i] != newArr[i]) {
-                    changes.push([i, 2]); //hard code color for now
+                console.log(JSON.stringify(this._lastArray[i].getColor()) + "," + JSON.stringify(newArr[i].getColor()));
+                if (JSON.stringify(this._lastArray[i].getColor()) == JSON.stringify(newArr[i].getColor())) {
+                    console.log(i);
+                    changes.push([i, 1]); //hard code color for now
                 }
             }
             //Need to check field size too

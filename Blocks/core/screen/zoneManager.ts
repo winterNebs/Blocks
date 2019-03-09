@@ -23,9 +23,9 @@
 
             return ZoneManager._globalZoneID;
         }
-        public static createFieldZone(): number {
+        public static createFieldZone(width:number): number {
             ZoneManager._globalZoneID++;
-            let testZone = new FieldZone(ZoneManager._globalZoneID, 10, 32);
+            let testZone = new FieldZone(ZoneManager._globalZoneID, width, 32);
             ZoneManager._zones[ZoneManager._globalZoneID] = testZone;
 
             return ZoneManager._globalZoneID;

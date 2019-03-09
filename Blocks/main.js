@@ -175,12 +175,13 @@ var TSE;
             TSE.MaterialManager.registerMaterial(new TSE.Material("-1", "assets/textures/b.jpg", TSE.Color.red()));
             // MaterialManager.registerMaterial(new Material("g", "assets/textures/b.jpg", Color.green()));
             // MaterialManager.registerMaterial(new Material("b", "assets/textures/b.jpg", Color.blue()));
-            var zoneID = TSE.ZoneManager.createFieldZone();
+            var width = 12;
+            var zoneID = TSE.ZoneManager.createFieldZone(width);
             //Load
             this._projection = TSE.Matrix4x4.orthographic(0, this._canvas.width, this._canvas.height, 0, -100.0, 100.0);
             TSE.ZoneManager.changeZone(zoneID);
-            var game = new ASC.Game();
             var field = new ASC.FieldManager(TSE.ZoneManager.getActive());
+            var game = new ASC.Game(12, field);
             this.resize();
             this.loop();
         };
@@ -1666,9 +1667,9 @@ var TSE;
             ZoneManager._zones[ZoneManager._globalZoneID] = testZone;
             return ZoneManager._globalZoneID;
         };
-        ZoneManager.createFieldZone = function () {
+        ZoneManager.createFieldZone = function (width) {
             ZoneManager._globalZoneID++;
-            var testZone = new TSE.FieldZone(ZoneManager._globalZoneID, 10, 32);
+            var testZone = new TSE.FieldZone(ZoneManager._globalZoneID, width, 32);
             ZoneManager._zones[ZoneManager._globalZoneID] = testZone;
             return ZoneManager._globalZoneID;
         };
@@ -1723,32 +1724,21 @@ var ASC;
     ASC.MAX_FIELD_WIDTH = 20;
     ASC.MIN_FIELD_WIDTH = 5;
     ASC.FIELD_HEIGHT = 25;
-    var Block = /** @class */ (function () {
-        function Block(color, solid, clearable) {
-            if (color === void 0) { color = TSE.Color.black(); }
-            if (solid === void 0) { solid = false; }
-            if (clearable === void 0) { clearable = false; }
-            this._color = color;
-            this._solid = solid;
-            this._clearable = clearable;
-        }
-        return Block;
-    }());
-    ASC.Block = Block;
     var Field = /** @class */ (function () {
         function Field(width) {
             this._array = [];
             this._width = width;
+            this.initialize();
         }
         Field.prototype.initialize = function () {
             for (var i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
-                this._array.push(new Block());
+                this._array.push(new ASC.Block());
             }
         };
         Field.prototype.shift = function (lines) {
             this._array.splice(0, lines * this._width);
             for (var i = 0; i < lines * this._width; ++i) {
-                this._array.push(new Block());
+                this._array.push(new ASC.Block());
             }
         };
         Field.prototype.getArray = function () {
@@ -1780,8 +1770,10 @@ var ASC;
         FieldManager.prototype.update = function (newArr) {
             var changes = [];
             for (var i = 0; i < this._lastArray.length; ++i) {
-                if (this._lastArray[i] != newArr[i]) {
-                    changes.push([i, 2]); //hard code color for now
+                console.log(JSON.stringify(this._lastArray[i].getColor()) + "," + JSON.stringify(newArr[i].getColor()));
+                if (JSON.stringify(this._lastArray[i].getColor()) == JSON.stringify(newArr[i].getColor())) {
+                    console.log(i);
+                    changes.push([i, 1]); //hard code color for now
                 }
             }
             //Need to check field size too
@@ -1795,6 +1787,103 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
+    var Inputs;
+    (function (Inputs) {
+        Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
+        Inputs[Inputs["SD"] = 1] = "SD";
+        Inputs[Inputs["LEFT"] = 2] = "LEFT";
+        Inputs[Inputs["CW"] = 3] = "CW";
+        Inputs[Inputs["CCW"] = 4] = "CCW";
+        Inputs[Inputs["CWCW"] = 5] = "CWCW";
+        Inputs[Inputs["HOLD"] = 6] = "HOLD";
+        Inputs[Inputs["HD"] = 7] = "HD";
+    })(Inputs || (Inputs = {}));
+    var Game = /** @class */ (function () {
+        function Game(width, manager) {
+            if (width === void 0) { width = 12; }
+            if (manager === void 0) { manager = null; }
+            this._pieces = [];
+            //Inputs for the game:
+            //                            Right, SD,    Left,  CW,    CCW,   180(CWCW),Hold,HD     
+            this._inputs = [false, false, false, false, false, false, false, false];
+            ASC.InputManager.RegisterObserver(this);
+            this._fieldManager = manager;
+            if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
+                throw new Error("Invalid width: " + width.toString());
+            }
+            this._width = width;
+            //For now:
+            this._pieces.push(new ASC.Piece("T", [11, 12, 13, 14]));
+            this._pieces.push(new ASC.Piece("L", [7, 12, 17, 18]));
+            this._pieces.push(new ASC.Piece("Z", [11, 12, 17, 18]));
+            this.resetGame();
+            this._fieldManager.voidInitArray(this._field.getArray());
+        }
+        Game.prototype.resetGame = function () {
+            this._field = new ASC.Field(this._width);
+            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces); //NO bag size for now
+            this._hold = undefined;
+            this._currentPiece = this._queue.getNext();
+        };
+        //TODO:
+        //Get inputs for active piece
+        //Collision detection on movement
+        //Apply kicks and rotation (Piece needs offset function)
+        //sad
+        //Phases?:
+        //Falling
+        //Lock
+        //Line clear function
+        //Gravity event
+        //Garbage Event
+        Game.prototype.update = function () {
+            var temp = this._field.getArray();
+            for (var _i = 0, _a = this._currentPiece.getCoords(this._width); _i < _a.length; _i++) {
+                var point = _a[_i];
+                temp[point] = new ASC.Block(new TSE.Color(1, 1, 1, 1));
+            }
+            this._fieldManager.update(temp);
+        };
+        Game.prototype.RecieveNotification = function (keyevent, down) {
+            switch (keyevent.keyCode) {
+                case ASC.Keys.UP:
+                    this._currentPiece.move(ASC.Directions.UP, 1);
+                    this._inputs[Inputs.CW] = down;
+                    break;
+                case ASC.Keys.RIGHT:
+                    this._currentPiece.move(ASC.Directions.RIGHT, 1);
+                    this._inputs[Inputs.RIGHT] = down;
+                    break;
+                case ASC.Keys.DOWN:
+                    this._currentPiece.move(ASC.Directions.DOWN, 1);
+                    this._inputs[Inputs.SD] = down;
+                    break;
+                case ASC.Keys.LEFT:
+                    this._inputs[Inputs.LEFT] = down;
+                    this._currentPiece.move(ASC.Directions.LEFT, 1);
+                    break;
+                case ASC.Keys.S:
+                    this._inputs[Inputs.CCW] = down;
+                    break;
+                case ASC.Keys.D:
+                    this._inputs[Inputs.CWCW] = down;
+                    break;
+                case ASC.Keys.SPACE:
+                    this._inputs[Inputs.HD] = down;
+                    break;
+                case ASC.Keys.SHIFT:
+                    this._inputs[Inputs.HOLD] = down;
+                    break;
+            }
+            this.update();
+            //console.log(this._inputs);
+        };
+        return Game;
+    }());
+    ASC.Game = Game;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
     //Don't think i need this anymore
     var GameState = /** @class */ (function () {
         function GameState() {
@@ -1802,6 +1891,70 @@ var ASC;
         return GameState;
     }());
     ASC.GameState = GameState;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var Keys;
+    (function (Keys) {
+        Keys[Keys["LEFT"] = 37] = "LEFT";
+        Keys[Keys["UP"] = 38] = "UP";
+        Keys[Keys["RIGHT"] = 39] = "RIGHT";
+        Keys[Keys["DOWN"] = 40] = "DOWN";
+        Keys[Keys["S"] = 83] = "S";
+        Keys[Keys["D"] = 68] = "D";
+        Keys[Keys["SPACE"] = 32] = "SPACE";
+        Keys[Keys["SHIFT"] = 16] = "SHIFT";
+    })(Keys = ASC.Keys || (ASC.Keys = {}));
+    var InputManager = /** @class */ (function () {
+        function InputManager() {
+        }
+        InputManager.initialize = function () {
+            for (var i = 0; i < 255; ++i) {
+                InputManager._keys[i] = false;
+            }
+            window.addEventListener("keydown", InputManager.onKeyDown);
+            window.addEventListener("keyup", InputManager.onKeyUp);
+        };
+        InputManager.isKeyDown = function (key) {
+            return InputManager._keys[key];
+        };
+        InputManager.onKeyDown = function (event) {
+            InputManager._keys[event.keyCode] = true;
+            event.preventDefault();
+            event.stopPropagation();
+            InputManager.NotifyObservers(event, true);
+            return false;
+        };
+        InputManager.onKeyUp = function (event) {
+            InputManager._keys[event.keyCode] = false;
+            event.preventDefault();
+            event.stopPropagation();
+            InputManager.NotifyObservers(event, false);
+            return false;
+        };
+        InputManager.RegisterObserver = function (Observer) {
+            InputManager._observers.push(Observer);
+        };
+        InputManager.UnregisterObserver = function (Observer) {
+            var index = InputManager._observers.indexOf(Observer);
+            if (index !== -1) {
+                InputManager._observers.splice(index, 1);
+            }
+            else {
+                console.warn("Cannot unregister observer.");
+            }
+        };
+        InputManager.NotifyObservers = function (keyevent, down) {
+            for (var _i = 0, _a = InputManager._observers; _i < _a.length; _i++) {
+                var o = _a[_i];
+                o.RecieveNotification(keyevent, down);
+            }
+        };
+        InputManager._keys = [];
+        InputManager._observers = [];
+        return InputManager;
+    }());
+    ASC.InputManager = InputManager;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -1813,11 +1966,14 @@ var ASC;
             this._shape = []; //The shape of piece (array of indecies to be filled)
             this._orientations = []; //Precomputed orientations/rotations
             this._currentOrientation = 0; //Current orientation
+            this._x = 0;
+            this._y = 0;
             this._name = name;
             this.setShape(shape);
             this._offset = offset;
             this._initialOrientation = initOrient;
             this._color = color;
+            this._x += this._offset;
         }
         Piece.prototype.setShape = function (shape) {
             if (shape.length > 25 || shape.length < 1) {
@@ -1948,147 +2104,20 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var Inputs;
-    (function (Inputs) {
-        Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
-        Inputs[Inputs["SD"] = 1] = "SD";
-        Inputs[Inputs["LEFT"] = 2] = "LEFT";
-        Inputs[Inputs["CW"] = 3] = "CW";
-        Inputs[Inputs["CCW"] = 4] = "CCW";
-        Inputs[Inputs["CWCW"] = 5] = "CWCW";
-        Inputs[Inputs["HOLD"] = 6] = "HOLD";
-        Inputs[Inputs["HD"] = 7] = "HD";
-    })(Inputs || (Inputs = {}));
-    var Game = /** @class */ (function () {
-        function Game(width) {
-            if (width === void 0) { width = 12; }
-            this._pieces = [];
-            //Inputs for the game:
-            //                            Right, SD,    Left,  CW,    CCW,   180(CWCW),Hold,HD     
-            this._inputs = [false, false, false, false, false, false, false, false];
-            ASC.InputManager.RegisterObserver(this);
-            if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
-                throw new Error("Invalid width: " + width.toString());
-            }
-            this._width = width;
-            //For now:
-            this._pieces.push(new ASC.Piece("T", [11, 12, 13, 14]));
-            this._pieces.push(new ASC.Piece("L", [7, 12, 17, 18]));
-            this._pieces.push(new ASC.Piece("Z", [11, 12, 17, 18]));
-            this.resetGame();
+    var Block = /** @class */ (function () {
+        function Block(color, solid, clearable) {
+            if (color === void 0) { color = TSE.Color.black(); }
+            if (solid === void 0) { solid = false; }
+            if (clearable === void 0) { clearable = false; }
+            this._color = color;
+            this._solid = solid;
+            this._clearable = clearable;
         }
-        Game.prototype.resetGame = function () {
-            this._field = new ASC.Field(this._width);
-            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces); //NO bag size for now
-            this._hold = undefined;
-            this._currentPiece = this._queue.getNext();
+        Block.prototype.getColor = function () {
+            return this._color.toArray();
         };
-        //TODO:
-        //Get inputs for active piece
-        //Collision detection on movement
-        //Apply kicks and rotation (Piece needs offset function)
-        //sad
-        //Phases?:
-        //Falling
-        //Lock
-        //Line clear function
-        //Gravity event
-        //Garbage Event
-        Game.prototype.RecieveNotification = function (keyevent, down) {
-            switch (keyevent.keyCode) {
-                case ASC.Keys.UP:
-                    this._inputs[Inputs.CW] = down;
-                    break;
-                case ASC.Keys.RIGHT:
-                    this._inputs[Inputs.RIGHT] = down;
-                    break;
-                case ASC.Keys.DOWN:
-                    this._inputs[Inputs.SD] = down;
-                    break;
-                case ASC.Keys.LEFT:
-                    this._inputs[Inputs.LEFT] = down;
-                    break;
-                case ASC.Keys.S:
-                    this._inputs[Inputs.CCW] = down;
-                    break;
-                case ASC.Keys.D:
-                    this._inputs[Inputs.CWCW] = down;
-                    break;
-                case ASC.Keys.SPACE:
-                    this._inputs[Inputs.HD] = down;
-                    break;
-                case ASC.Keys.SHIFT:
-                    this._inputs[Inputs.HOLD] = down;
-                    break;
-            }
-            console.log(this._inputs);
-        };
-        return Game;
+        return Block;
     }());
-    ASC.Game = Game;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    var Keys;
-    (function (Keys) {
-        Keys[Keys["LEFT"] = 37] = "LEFT";
-        Keys[Keys["UP"] = 38] = "UP";
-        Keys[Keys["RIGHT"] = 39] = "RIGHT";
-        Keys[Keys["DOWN"] = 40] = "DOWN";
-        Keys[Keys["S"] = 83] = "S";
-        Keys[Keys["D"] = 68] = "D";
-        Keys[Keys["SPACE"] = 32] = "SPACE";
-        Keys[Keys["SHIFT"] = 16] = "SHIFT";
-    })(Keys = ASC.Keys || (ASC.Keys = {}));
-    var InputManager = /** @class */ (function () {
-        function InputManager() {
-        }
-        InputManager.initialize = function () {
-            for (var i = 0; i < 255; ++i) {
-                InputManager._keys[i] = false;
-            }
-            window.addEventListener("keydown", InputManager.onKeyDown);
-            window.addEventListener("keyup", InputManager.onKeyUp);
-        };
-        InputManager.isKeyDown = function (key) {
-            return InputManager._keys[key];
-        };
-        InputManager.onKeyDown = function (event) {
-            InputManager._keys[event.keyCode] = true;
-            event.preventDefault();
-            event.stopPropagation();
-            InputManager.NotifyObservers(event, true);
-            return false;
-        };
-        InputManager.onKeyUp = function (event) {
-            InputManager._keys[event.keyCode] = false;
-            event.preventDefault();
-            event.stopPropagation();
-            InputManager.NotifyObservers(event, false);
-            return false;
-        };
-        InputManager.RegisterObserver = function (Observer) {
-            InputManager._observers.push(Observer);
-        };
-        InputManager.UnregisterObserver = function (Observer) {
-            var index = InputManager._observers.indexOf(Observer);
-            if (index !== -1) {
-                InputManager._observers.splice(index, 1);
-            }
-            else {
-                console.warn("Cannot unregister observer.");
-            }
-        };
-        InputManager.NotifyObservers = function (keyevent, down) {
-            for (var _i = 0, _a = InputManager._observers; _i < _a.length; _i++) {
-                var o = _a[_i];
-                o.RecieveNotification(keyevent, down);
-            }
-        };
-        InputManager._keys = [];
-        InputManager._observers = [];
-        return InputManager;
-    }());
-    ASC.InputManager = InputManager;
+    ASC.Block = Block;
 })(ASC || (ASC = {}));
 //# sourceMappingURL=main.js.map

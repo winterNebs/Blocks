@@ -28,14 +28,19 @@
            // MaterialManager.registerMaterial(new Material("b", "assets/textures/b.jpg", Color.blue()));
 
 
-            let zoneID = ZoneManager.createFieldZone();
+            let width = 12; 
+
+
+            let zoneID = ZoneManager.createFieldZone(width);
             //Load
             this._projection = Matrix4x4.orthographic(0, this._canvas.width, this._canvas.height, 0, -100.0, 100.0);
 
             ZoneManager.changeZone(zoneID);
-            let game = new ASC.Game();
             let field = new ASC.FieldManager(ZoneManager.getActive() as FieldZone);
-            
+
+            let game = new ASC.Game(12,field);
+
+
             this.resize();
             this.loop();
         }
