@@ -7,8 +7,8 @@
         public constructor(width: number) {
             super();
             this._width = width;
-            this.initalizeSprites();
             this._texture = PIXI.loader.resources["assets/textures/b.png"].texture;
+            this.initalizeSprites();
         }
         private initalizeSprites(): void {
             this._sprites = [];
@@ -28,9 +28,9 @@
             this._sprites[index].tint = color;
             //}
         }
-        public updateBoard(board: number[]): void {
-            for (let i = 0; i < board.length; ++i) {
-                this.updateColor(i, board[i]);
+        public updateField(Field: number[]): void {
+            for (let i = 0; i < Field.length; ++i) {
+                this.updateColor(i, Field[i]);
             }
         }
     }
