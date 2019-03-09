@@ -1,15 +1,15 @@
 ﻿namespace ASC {
     export class Block {
-        private _color: TSE.Color;
+        private _color: number;
         private _solid: boolean;
         private _clearable: boolean;
-        public constructor(color: TSE.Color = TSE.Color.black(), solid: boolean = false, clearable: boolean = false) {
+        public constructor(color: number = 0x000000, solid: boolean = false, clearable: boolean = false) {
             this._color = color;
             this._solid = solid;
             this._clearable = clearable;
         }
-        public getColor(): number[] {
-            return this._color.toArray();
+        public get color():number {
+            return this._color;
         }
     }
 

@@ -28,5 +28,12 @@
         public getArray(): Block[] {
             return this._array;
         }
+        public getColors(): number[] {
+            let c: number[] = [];
+            for (let i of this._array) {
+                c.push(i.color);
+            }
+            return c;
+        }
     }
 }

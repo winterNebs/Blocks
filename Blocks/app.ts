@@ -1,8 +1,13 @@
 ﻿var app = new PIXI.Application(800, 600, { backgroundColor: 0x1099bb });
 document.body.appendChild(app.view);
 
-//let game = new Game(app);
+let game: ASC.Game;
 
 // load sprites and run game when done
-PIXI.loader.add('blocks', 'assets/textures/b.png').load(//() => game.run()
-);
+PIXI.loader.add('assets/textures/b.png').load(load);
+
+
+function load() {
+    game = new ASC.Game(12);
+    ASC.InputManager.initialize();
+}

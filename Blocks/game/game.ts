@@ -14,23 +14,24 @@
         //                            Right, SD,    Left,  CW,    CCW,   180(CWCW),Hold,HD     
         private _inputs: boolean[] = [false, false, false, false, false, false, false, false];
 
-        private _fieldManager: FieldManager;
+        private _renderer: Renderer;
 
-        public constructor(width: number = 12, manager: FieldManager = null) {
+        public constructor(width: number = 12) {
             InputManager.RegisterObserver(this);
-            this._fieldManager = manager;
             if (width > MAX_FIELD_WIDTH || width < MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
             this._width = width;
+            this._renderer = new Renderer(this._width);
 
             //For now:
-            this._pieces.push(new Piece("T", [11, 12, 13, 14]))
+            this._pieces.push(new Piece("T", [11, 12, 13, 17]))
             this._pieces.push(new Piece("L", [7, 12, 17, 18]))
             this._pieces.push(new Piece("Z", [11, 12, 17, 18]))
+            this._pieces.push(new Piece("a", [0,1,8, 13,20,24]))
 
             this.resetGame();
-            this._fieldManager.voidInitArray(this._field.getArray());
+            app.stage.addChild(this._renderer);
         }
 
 
@@ -39,6 +40,7 @@
             this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces);//NO bag size for now
             this._hold = undefined;
             this._currentPiece = this._queue.getNext();
+            this.update();
         }
 
 
@@ -59,11 +61,11 @@
 
         //Garbage Event
         private update(): void {
-            let temp = this._field.getArray();
+            let temp = this._field.getColors();
             for (let point of this._currentPiece.getCoords(this._width)) {
-                temp[point] = new Block(new TSE.Color(1, 1, 1, 1));
+                temp[point] = 0xFFFFFF; /// for now
             }
-            this._fieldManager.update(temp);
+            this._renderer.updateField(temp);
         }
 
         RecieveNotification(keyevent: KeyboardEvent, down: boolean): void {

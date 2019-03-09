@@ -11,10 +11,10 @@
         private _y: number = 0;
         //private _width: number;                   //Width of the piece (?)
         private _blockCount: number;                //Number of blocks the piece is made up of
-        private _color: TSE.Color;                  //Color of piece
+        private _color: number;                     //Color of piece
 
 
-        public constructor(name: string, shape: number[], offset: number = 0, initOrient: number = 0, color: TSE.Color = TSE.Color.red()) {
+        public constructor(name: string, shape: number[], offset: number = 0, initOrient: number = 0, color: number = 0xFFFFFF) {
             this._name = name;
             this.setShape(shape);
             this._offset = offset;
@@ -72,7 +72,8 @@
         public getCoords(width: number): number[] {
             let c = [];
             for (let i of this._shape) {
-                c.push(i + this._x + this._y * width);
+                let newI = (i % 5) + ~~(i / 5) * width
+                c.push(newI + this._x + this._y * width);
             }
             return c;
         }

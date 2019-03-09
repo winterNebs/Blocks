@@ -13,24 +13,31 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var app = new PIXI.Application(800, 600, { backgroundColor: 0x1099bb });
 document.body.appendChild(app.view);
-//let game = new Game(app);
+var game;
 // load sprites and run game when done
-PIXI.loader.add('blocks', 'assets/textures/b.png').load( //() => game.run()
-);
+PIXI.loader.add('assets/textures/b.png').load(load);
+function load() {
+    game = new ASC.Game(12);
+    ASC.InputManager.initialize();
+}
 var ASC;
 (function (ASC) {
     var Block = /** @class */ (function () {
         function Block(color, solid, clearable) {
-            if (color === void 0) { color = TSE.Color.black(); }
+            if (color === void 0) { color = 0x000000; }
             if (solid === void 0) { solid = false; }
             if (clearable === void 0) { clearable = false; }
             this._color = color;
             this._solid = solid;
             this._clearable = clearable;
         }
-        Block.prototype.getColor = function () {
-            return this._color.toArray();
-        };
+        Object.defineProperty(Block.prototype, "color", {
+            get: function () {
+                return this._color;
+            },
+            enumerable: true,
+            configurable: true
+        });
         return Block;
     }());
     ASC.Block = Block;
@@ -76,6 +83,14 @@ var ASC;
         Field.prototype.getArray = function () {
             return this._array;
         };
+        Field.prototype.getColors = function () {
+            var c = [];
+            for (var _i = 0, _a = this._array; _i < _a.length; _i++) {
+                var i = _a[_i];
+                c.push(i.color);
+            }
+            return c;
+        };
         return Field;
     }());
     ASC.Field = Field;
@@ -94,31 +109,32 @@ var ASC;
         Inputs[Inputs["HD"] = 7] = "HD";
     })(Inputs || (Inputs = {}));
     var Game = /** @class */ (function () {
-        function Game(width, manager) {
+        function Game(width) {
             if (width === void 0) { width = 12; }
-            if (manager === void 0) { manager = null; }
             this._pieces = [];
             //Inputs for the game:
             //                            Right, SD,    Left,  CW,    CCW,   180(CWCW),Hold,HD     
             this._inputs = [false, false, false, false, false, false, false, false];
             ASC.InputManager.RegisterObserver(this);
-            this._fieldManager = manager;
             if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
             this._width = width;
+            this._renderer = new ASC.Renderer(this._width);
             //For now:
-            this._pieces.push(new ASC.Piece("T", [11, 12, 13, 14]));
+            this._pieces.push(new ASC.Piece("T", [11, 12, 13, 17]));
             this._pieces.push(new ASC.Piece("L", [7, 12, 17, 18]));
             this._pieces.push(new ASC.Piece("Z", [11, 12, 17, 18]));
+            this._pieces.push(new ASC.Piece("a", [0, 1, 8, 13, 20, 24]));
             this.resetGame();
-            this._fieldManager.voidInitArray(this._field.getArray());
+            app.stage.addChild(this._renderer);
         }
         Game.prototype.resetGame = function () {
             this._field = new ASC.Field(this._width);
             this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces); //NO bag size for now
             this._hold = undefined;
             this._currentPiece = this._queue.getNext();
+            this.update();
         };
         //TODO:
         //Get inputs for active piece
@@ -132,12 +148,12 @@ var ASC;
         //Gravity event
         //Garbage Event
         Game.prototype.update = function () {
-            var temp = this._field.getArray();
+            var temp = this._field.getColors();
             for (var _i = 0, _a = this._currentPiece.getCoords(this._width); _i < _a.length; _i++) {
                 var point = _a[_i];
-                temp[point] = new ASC.Block(new TSE.Color(1, 1, 1, 1));
+                temp[point] = 0xFFFFFF; /// for now
             }
-            this._fieldManager.update(temp);
+            this._renderer.updateField(temp);
         };
         Game.prototype.RecieveNotification = function (keyevent, down) {
             switch (keyevent.keyCode) {
@@ -257,7 +273,7 @@ var ASC;
         function Piece(name, shape, offset, initOrient, color) {
             if (offset === void 0) { offset = 0; }
             if (initOrient === void 0) { initOrient = 0; }
-            if (color === void 0) { color = TSE.Color.red(); }
+            if (color === void 0) { color = 0xFFFFFF; }
             this._shape = []; //The shape of piece (array of indecies to be filled)
             this._orientations = []; //Precomputed orientations/rotations
             this._currentOrientation = 0; //Current orientation
@@ -321,7 +337,8 @@ var ASC;
             var c = [];
             for (var _i = 0, _a = this._shape; _i < _a.length; _i++) {
                 var i = _a[_i];
-                c.push(i + this._x + this._y * width);
+                var newI = (i % 5) + ~~(i / 5) * width;
+                c.push(newI + this._x + this._y * width);
             }
             return c;
         };
@@ -405,8 +422,8 @@ var ASC;
             var _this = _super.call(this) || this;
             _this._size = 24;
             _this._width = width;
-            _this.initalizeSprites();
             _this._texture = PIXI.loader.resources["assets/textures/b.png"].texture;
+            _this.initalizeSprites();
             return _this;
         }
         Renderer.prototype.initalizeSprites = function () {
@@ -426,9 +443,9 @@ var ASC;
             this._sprites[index].tint = color;
             //}
         };
-        Renderer.prototype.updateBoard = function (board) {
-            for (var i = 0; i < board.length; ++i) {
-                this.updateColor(i, board[i]);
+        Renderer.prototype.updateField = function (Field) {
+            for (var i = 0; i < Field.length; ++i) {
+                this.updateColor(i, Field[i]);
             }
         };
         return Renderer;
