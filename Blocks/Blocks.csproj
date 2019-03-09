@@ -84,14 +84,18 @@
   <ItemGroup>
     <Content Include="assets\textures\b.png" />
     <Content Include="assets\textures\a.jpg" />
+    <Content Include="pixi\pixi.js" />
     <Content Include="index.html" />
+    <Content Include="pixi\pixi.min.js" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="pixi\pixi.min.js.map" />
     <None Include="packages.config" />
+    <Content Include="pixi\pixi.js.map" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -101,48 +105,16 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
-    <TypeScriptCompile Include="core\assets\assetManager.ts" />
-    <TypeScriptCompile Include="core\assets\IAsset.ts" />
-    <TypeScriptCompile Include="core\assets\IAssetLoader.ts" />
-    <TypeScriptCompile Include="core\assets\imageAssetLoader.ts" />
-    <TypeScriptCompile Include="core\components\baseComponent.ts" />
-    <TypeScriptCompile Include="core\components\spriteComponent.ts" />
-    <TypeScriptCompile Include="core\engine.ts" />
-    <TypeScriptCompile Include="core\gl\gl.ts" />
-    <TypeScriptCompile Include="core\gl\glBuffer.ts" />
-    <TypeScriptCompile Include="core\gl\shader.ts" />
-    <TypeScriptCompile Include="core\gl\shaders\basicShader.ts" />
-    <TypeScriptCompile Include="core\graphics\color.ts" />
-    <TypeScriptCompile Include="core\graphics\material.ts" />
-    <TypeScriptCompile Include="core\graphics\materialManager.ts" />
-    <TypeScriptCompile Include="core\graphics\sprite.ts" />
-    <TypeScriptCompile Include="core\graphics\texture.ts" />
-    <TypeScriptCompile Include="core\graphics\textureManager.ts" />
     <TypeScriptCompile Include="game\block.ts" />
     <TypeScriptCompile Include="game\inputManager.ts" />
-    <TypeScriptCompile Include="game\observer\IObserver.ts" />
-    <TypeScriptCompile Include="core\screen\FieldZone.ts" />
-    <TypeScriptCompile Include="core\screen\scene.ts" />
-    <TypeScriptCompile Include="core\screen\simObject.ts" />
-    <TypeScriptCompile Include="core\math\matrix4x4.ts" />
-    <TypeScriptCompile Include="core\math\transform.ts" />
-    <TypeScriptCompile Include="core\math\vector3.ts" />
-    <TypeScriptCompile Include="core\math\vector2.ts" />
-    <TypeScriptCompile Include="core\message\IMessageHandler.ts" />
-    <TypeScriptCompile Include="core\message\message.ts" />
-    <TypeScriptCompile Include="core\message\messageBus.ts" />
-    <TypeScriptCompile Include="core\message\messageSubscriptionNode.ts" />
-    <TypeScriptCompile Include="core\screen\TestZone.ts" />
-    <TypeScriptCompile Include="core\screen\zone.ts" />
-    <TypeScriptCompile Include="core\screen\zoneManager.ts" />
     <TypeScriptCompile Include="game\enums.ts" />
     <TypeScriptCompile Include="game\field.ts" />
-    <TypeScriptCompile Include="game\fieldManager.ts" />
     <TypeScriptCompile Include="game\game.ts" />
     <TypeScriptCompile Include="game\gameState.ts" />
     <TypeScriptCompile Include="game\piece.ts" />
     <TypeScriptCompile Include="game\prng.ts" />
     <TypeScriptCompile Include="game\queue.ts" />
+    <TypeScriptCompile Include="game\renderer.ts" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />
