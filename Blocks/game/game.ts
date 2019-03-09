@@ -14,8 +14,11 @@
         //                            Right, SD,    Left,  CW,    CCW,   180(CWCW),Hold,HD     
         private _inputs: boolean[] = [false, false, false, false, false, false, false, false];
 
-        public constructor(width: number = 12) {
+        private _fieldManager: FieldManager;
+
+        public constructor(width: number = 12, manager: FieldManager = null) {
             InputManager.RegisterObserver(this);
+            this._fieldManager = manager;
             if (width > MAX_FIELD_WIDTH || width < MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
@@ -27,6 +30,7 @@
             this._pieces.push(new Piece("Z", [11, 12, 17, 18]))
 
             this.resetGame();
+            this._fieldManager.voidInitArray(this._field.getArray());
         }
 
 
@@ -54,19 +58,31 @@
         //Gravity event
 
         //Garbage Event
+        private update(): void {
+            let temp = this._field.getArray();
+            for (let point of this._currentPiece.getCoords(this._width)) {
+                temp[point] = new Block(new TSE.Color(1, 1, 1, 1));
+            }
+            this._fieldManager.update(temp);
+        }
+
         RecieveNotification(keyevent: KeyboardEvent, down: boolean): void {
             switch (keyevent.keyCode) {
                 case Keys.UP:
+                    this._currentPiece.move(Directions.UP, 1);
                     this._inputs[Inputs.CW] = down;
                     break;
                 case Keys.RIGHT:
+                    this._currentPiece.move(Directions.RIGHT, 1);
                     this._inputs[Inputs.RIGHT] = down;
                     break;
                 case Keys.DOWN:
+                    this._currentPiece.move(Directions.DOWN, 1);
                     this._inputs[Inputs.SD] = down;
                     break;
                 case Keys.LEFT:
                     this._inputs[Inputs.LEFT] = down;
+                    this._currentPiece.move(Directions.LEFT, 1);
                     break;
                 case Keys.S:
                     this._inputs[Inputs.CCW] = down;
@@ -81,7 +97,8 @@
                     this._inputs[Inputs.HOLD] = down;
                     break;
             }
-            console.log(this._inputs);
+            this.update();
+            //console.log(this._inputs);
         }
     }
 }

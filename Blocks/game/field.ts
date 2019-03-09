@@ -3,23 +3,13 @@
     export const MIN_FIELD_WIDTH: number = 5;
     export const FIELD_HEIGHT: number = 25;
 
-    export class Block {
-        private _color: TSE.Color;
-        private _solid: boolean;
-        private _clearable: boolean;
-        public constructor(color: TSE.Color = TSE.Color.black(), solid: boolean = false, clearable: boolean = false) {
-            this._color = color;
-            this._solid = solid;
-            this._clearable = clearable;
-        }
-    }
-
     export class Field {
         private _width: number;
         private _array: Block[] = [];
 
         public constructor(width: number) {
             this._width = width;
+            this.initialize();
         }
 
         private initialize(): void {
