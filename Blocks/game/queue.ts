@@ -13,13 +13,14 @@
             this.generateQueue();
         }
         private generateQueue(): void {
-            let tempBag = this._bag.slice(0);
-            while (tempBag.length < this._bagSize ) {
-                tempBag.concat(this._bag.slice(0));
-            }
-            while (this._queue.length < NUM_PREVIEWS) {
-                this._rng.shuffleArray(tempBag)
-                Array.prototype.push.apply(this._queue, tempBag.slice(0, this._bagSize));
+            if (this._queue.length < this._bagSize) {
+                let tempBag = [];
+                while (tempBag.length < this._bagSize) {
+                   this._bag.forEach((i) => tempBag.push(i.getCopy()));
+                }
+                for (let i of tempBag) {
+                    this._queue.push(i);
+                }
             }
         }
         public getBag(): Piece[] {

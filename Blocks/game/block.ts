@@ -11,6 +11,12 @@
         public get color():number {
             return this._color;
         }
+        public get solid(): boolean {
+            return this._solid;
+        }
+        public get clearable(): boolean {
+            return this._clearable;
+        }
     }
 
 }

@@ -38,6 +38,20 @@ var ASC;
             enumerable: true,
             configurable: true
         });
+        Object.defineProperty(Block.prototype, "solid", {
+            get: function () {
+                return this._solid;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Block.prototype, "clearable", {
+            get: function () {
+                return this._clearable;
+            },
+            enumerable: true,
+            configurable: true
+        });
         return Block;
     }());
     ASC.Block = Block;
@@ -46,9 +60,10 @@ var ASC;
 (function (ASC) {
     var Rotations;
     (function (Rotations) {
-        Rotations[Rotations["CW"] = 0] = "CW";
-        Rotations[Rotations["CWCW"] = 1] = "CWCW";
-        Rotations[Rotations["CCW"] = 2] = "CCW";
+        Rotations[Rotations["NONE"] = 0] = "NONE";
+        Rotations[Rotations["CW"] = 1] = "CW";
+        Rotations[Rotations["CWCW"] = 2] = "CWCW";
+        Rotations[Rotations["CCW"] = 3] = "CCW"; //Stored CW,CWCW, CCW but for math start at 1
     })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
     var Directions;
     (function (Directions) {
@@ -80,8 +95,8 @@ var ASC;
                 this._array.push(new ASC.Block());
             }
         };
-        Field.prototype.getArray = function () {
-            return this._array;
+        Field.prototype.getAt = function (index) {
+            return this._array[index];
         };
         Field.prototype.getColors = function () {
             var c = [];
@@ -90,6 +105,12 @@ var ASC;
                 c.push(i.color);
             }
             return c;
+        };
+        Field.prototype.setBlocks = function (indices, block) {
+            for (var _i = 0, indices_1 = indices; _i < indices_1.length; _i++) {
+                var i = indices_1[_i];
+                this._array[i] = block;
+            }
         };
         return Field;
     }());
@@ -126,6 +147,7 @@ var ASC;
             this._pieces.push(new ASC.Piece("L", [7, 12, 17, 18]));
             this._pieces.push(new ASC.Piece("Z", [11, 12, 17, 18]));
             this._pieces.push(new ASC.Piece("a", [0, 1, 8, 13, 20, 24]));
+            this._pieces.forEach(function (i) { return (i.initRotations()); });
             this.resetGame();
             app.stage.addChild(this._renderer);
         }
@@ -133,20 +155,69 @@ var ASC;
             this._field = new ASC.Field(this._width);
             this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces); //NO bag size for now
             this._hold = undefined;
-            this._currentPiece = this._queue.getNext();
+            this.next();
             this.update();
         };
+        Game.prototype.next = function () {
+            this._currentPiece = this._queue.getNext();
+        };
         //TODO:
-        //Get inputs for active piece
-        //Collision detection on movement
-        //Apply kicks and rotation (Piece needs offset function)
-        //sad
+        //Apply kicks and rotation
         //Phases?:
         //Falling
         //Lock
         //Line clear function
         //Gravity event
         //Garbage Event
+        Game.prototype.move = function (dir) {
+            switch (dir) {
+                case ASC.Directions.LEFT:
+                    if (this.checkShift(-1, 0)) {
+                        this._currentPiece.move(dir, 1);
+                    }
+                    break;
+                case ASC.Directions.RIGHT:
+                    if (this.checkShift(1, 0)) {
+                        this._currentPiece.move(dir, 1);
+                    }
+                    break;
+                case ASC.Directions.DOWN:
+                    if (this.checkShift(0, 1)) {
+                        this._currentPiece.move(dir, 1);
+                    }
+                    break;
+            }
+        };
+        Game.prototype.checkShift = function (x, y) {
+            var coords = this._currentPiece.getCoords(this._width);
+            var yvals = this._currentPiece.getYVals();
+            for (var i = 0; i < coords.length; ++i) {
+                var block = this._field.getAt(coords[i] + x + y * this._width);
+                if (block === undefined || //Up, Down bounds
+                    yvals[i] != ~~(coords[i] / this._width) || //Left, Right wrapping bounds
+                    0 - x > coords[i] % this._width || //Left bound
+                    this._width - x <= coords[i] % this._width || //Right bound
+                    block.solid //Colliding with a block
+                ) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        Game.prototype.rotate = function (dir) {
+            this._currentPiece.rotate(dir);
+            if (this.checkShift(0, 0)) {
+                return; //Successful natural rotation
+            }
+            if (dir !== ASC.Rotations.CWCW) { //No 180 kicks
+                var xsign = dir - 2;
+            }
+            this._currentPiece.rotate(4 - dir); // Failed, unrotate.
+        };
+        Game.prototype.lock = function () {
+            this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(0xFFFFFF, true, true));
+            this.next();
+        };
         Game.prototype.update = function () {
             var temp = this._field.getColors();
             for (var _i = 0, _a = this._currentPiece.getCoords(this._width); _i < _a.length; _i++) {
@@ -158,28 +229,45 @@ var ASC;
         Game.prototype.RecieveNotification = function (keyevent, down) {
             switch (keyevent.keyCode) {
                 case ASC.Keys.UP:
-                    this._currentPiece.move(ASC.Directions.UP, 1);
+                    if (down) {
+                        this.rotate(ASC.Rotations.CW);
+                    }
                     this._inputs[Inputs.CW] = down;
                     break;
                 case ASC.Keys.RIGHT:
-                    this._currentPiece.move(ASC.Directions.RIGHT, 1);
+                    if (down) {
+                        this.move(ASC.Directions.RIGHT);
+                    }
                     this._inputs[Inputs.RIGHT] = down;
                     break;
                 case ASC.Keys.DOWN:
-                    this._currentPiece.move(ASC.Directions.DOWN, 1);
+                    if (down) {
+                        this.move(ASC.Directions.DOWN);
+                    }
                     this._inputs[Inputs.SD] = down;
                     break;
                 case ASC.Keys.LEFT:
+                    if (down) {
+                        this.move(ASC.Directions.LEFT);
+                    }
                     this._inputs[Inputs.LEFT] = down;
-                    this._currentPiece.move(ASC.Directions.LEFT, 1);
                     break;
                 case ASC.Keys.S:
+                    if (down) {
+                        this.rotate(ASC.Rotations.CCW);
+                    }
                     this._inputs[Inputs.CCW] = down;
                     break;
                 case ASC.Keys.D:
+                    if (down) {
+                        this.rotate(ASC.Rotations.CWCW);
+                    }
                     this._inputs[Inputs.CWCW] = down;
                     break;
                 case ASC.Keys.SPACE:
+                    if (down) {
+                        this.lock();
+                    }
                     this._inputs[Inputs.HD] = down;
                     break;
                 case ASC.Keys.SHIFT:
@@ -286,6 +374,27 @@ var ASC;
             this._color = color;
             this._x += this._offset;
         }
+        Piece.prototype.initRotations = function () {
+            this._orientations.push(this._shape);
+            var temp = [];
+            for (var _i = 0, _a = this._shape; _i < _a.length; _i++) {
+                var i = _a[_i];
+                temp.push(20 - 5 * (i % 5) + ~~(i / 5));
+            }
+            this._orientations.push(temp);
+            temp = [];
+            for (var _b = 0, _c = this._shape; _b < _c.length; _b++) {
+                var i = _c[_b];
+                temp.push(24 - i);
+            }
+            this._orientations.push(temp);
+            temp = [];
+            for (var _d = 0, _e = this._shape; _d < _e.length; _d++) {
+                var i = _e[_d];
+                temp.push(4 + 5 * (i % 5) - ~~(i / 5));
+            }
+            this._orientations.push(temp);
+        };
         Piece.prototype.setShape = function (shape) {
             if (shape.length > 25 || shape.length < 1) {
                 throw new Error("Invalid number of blocks");
@@ -315,6 +424,7 @@ var ASC;
         };
         Piece.prototype.rotate = function (dir) {
             this._currentOrientation = (this._currentOrientation + dir) % 4;
+            console.log(this._currentOrientation);
             // kicks
         };
         Piece.prototype.move = function (dir, dist) {
@@ -335,12 +445,26 @@ var ASC;
         };
         Piece.prototype.getCoords = function (width) {
             var c = [];
-            for (var _i = 0, _a = this._shape; _i < _a.length; _i++) {
+            for (var _i = 0, _a = this._orientations[this._currentOrientation]; _i < _a.length; _i++) {
                 var i = _a[_i];
                 var newI = (i % 5) + ~~(i / 5) * width;
                 c.push(newI + this._x + this._y * width);
             }
             return c;
+        };
+        Piece.prototype.getYVals = function () {
+            var c = [];
+            for (var _i = 0, _a = this._orientations[this._currentOrientation]; _i < _a.length; _i++) {
+                var i = _a[_i];
+                var y = ~~(i / 5) + this._y;
+                c.push(y);
+            }
+            return c;
+        };
+        Piece.prototype.getCopy = function () {
+            var copy = new Piece(this._name, this._shape, this._offset, this._initialOrientation, this._color);
+            copy._orientations = this._orientations;
+            return copy;
         };
         return Piece;
     }());
@@ -392,13 +516,15 @@ var ASC;
             this.generateQueue();
         }
         Queue.prototype.generateQueue = function () {
-            var tempBag = this._bag.slice(0);
-            while (tempBag.length < this._bagSize) {
-                tempBag.concat(this._bag.slice(0));
-            }
-            while (this._queue.length < ASC.NUM_PREVIEWS) {
-                this._rng.shuffleArray(tempBag);
-                Array.prototype.push.apply(this._queue, tempBag.slice(0, this._bagSize));
+            if (this._queue.length < this._bagSize) {
+                var tempBag_2 = [];
+                while (tempBag_2.length < this._bagSize) {
+                    this._bag.forEach(function (i) { return tempBag_2.push(i.getCopy()); });
+                }
+                for (var _i = 0, tempBag_1 = tempBag_2; _i < tempBag_1.length; _i++) {
+                    var i = tempBag_1[_i];
+                    this._queue.push(i);
+                }
             }
         };
         Queue.prototype.getBag = function () {

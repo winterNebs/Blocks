@@ -22,6 +22,24 @@
             this._color = color;
             this._x += this._offset;
         }
+        public initRotations(): void {
+            this._orientations.push(this._shape);
+            let temp: number[] = [];
+            for (let i of this._shape) {
+                temp.push(20 - 5 * (i % 5) + ~~(i / 5));
+            }
+            this._orientations.push(temp);
+            temp = [];
+            for (let i of this._shape) {
+                temp.push(24 - i);
+            }
+            this._orientations.push(temp);
+            temp = [];
+            for (let i of this._shape) {
+                temp.push(4 + 5 * (i % 5) - ~~(i / 5));
+            }
+            this._orientations.push(temp);
+        }
 
         private setShape(shape: number[]): void {
             if (shape.length > 25 || shape.length < 1) {
@@ -51,6 +69,7 @@
 
         public rotate(dir: Rotations): void {
             this._currentOrientation = (this._currentOrientation + dir) % 4
+            console.log(this._currentOrientation);
             // kicks
         }
         public move(dir: Directions, dist: number): void {
@@ -71,11 +90,24 @@
         }
         public getCoords(width: number): number[] {
             let c = [];
-            for (let i of this._shape) {
-                let newI = (i % 5) + ~~(i / 5) * width
+            for (let i of this._orientations[this._currentOrientation]) {
+                let newI = (i % 5) + ~~(i / 5) * width;
                 c.push(newI + this._x + this._y * width);
             }
             return c;
+        }
+        public getYVals(): number[] {
+            let c = [];
+            for (let i of this._orientations[this._currentOrientation]) {
+                let y = ~~(i / 5) + this._y;
+                c.push(y);
+            }
+            return c;
+        }
+        public getCopy(): Piece {
+            let copy = new Piece(this._name, this._shape, this._offset, this._initialOrientation, this._color);
+            copy._orientations = this._orientations;
+            return copy;
         }
     }
 }

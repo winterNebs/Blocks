@@ -25,15 +25,21 @@
             }
         }
 
-        public getArray(): Block[] {
-            return this._array;
+        public getAt(index: number): Block {
+            return this._array[index];
         }
+        
         public getColors(): number[] {
             let c: number[] = [];
             for (let i of this._array) {
                 c.push(i.color);
             }
             return c;
+        }
+        public setBlocks(indices: number[], block: Block) :void{
+            for (let i of indices) {
+                this._array[i] = block;
+            }
         }
     }
 }
