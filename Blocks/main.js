@@ -17,12 +17,19 @@ var game;
 // load sprites and run game when done
 PIXI.loader.add('assets/textures/b.png').load(load);
 function load() {
-    game = new ASC.Game(12);
+    game = new ASC.Game(8);
     ASC.InputManager.initialize();
 }
 var ASC;
 (function (ASC) {
+    //Representation of a block.
     var Block = /** @class */ (function () {
+        /**
+         * Creates a new block.
+         * @param color Color of the block in hex, (Default: 0x000000).
+         * @param solid Solidity of the block, (Default: false).
+         * @param clearable Clearabliltiy of the block, (Default: false).
+         */
         function Block(color, solid, clearable) {
             if (color === void 0) { color = 0x000000; }
             if (solid === void 0) { solid = false; }
@@ -75,15 +82,18 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    ASC.MAX_FIELD_WIDTH = 20;
-    ASC.MIN_FIELD_WIDTH = 5;
-    ASC.FIELD_HEIGHT = 25;
+    //Representation of a game field.
     var Field = /** @class */ (function () {
+        /**
+         * Creates a new game feild
+         * @param width Width of the gamefield.
+         */
         function Field(width) {
             this._array = [];
             this._width = width;
             this.initialize();
         }
+        //Initialzes the field with empty blocks.
         Field.prototype.initialize = function () {
             for (var i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
                 this._array.push(new ASC.Block());
@@ -95,6 +105,10 @@ var ASC;
                 this._array.push(new ASC.Block());
             }
         };
+        /**
+         * Returns the block at the 1D index.
+         * @param index Index of the block to be returned.
+         */
         Field.prototype.getAt = function (index) {
             return this._array[index];
         };
@@ -106,10 +120,25 @@ var ASC;
             }
             return c;
         };
+        /**
+         * Sets specified indices to a certain block.
+         * @param indices Indices to be replaced.
+         * @param block Type of block to replace with.
+         */
         Field.prototype.setBlocks = function (indices, block) {
             for (var _i = 0, indices_1 = indices; _i < indices_1.length; _i++) {
                 var i = indices_1[_i];
                 this._array[i] = block;
+            }
+        };
+        /**
+         * Clear the line at the specified y-value.
+         * @param yval Row to be removed.
+         */
+        Field.prototype.clearLineAt = function (yval) {
+            this._array.splice(yval * this._width, this._width);
+            for (var i = 0; i < this._width; ++i) {
+                this._array.unshift(new ASC.Block());
             }
         };
         return Field;
@@ -118,6 +147,9 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
+    ASC.MAX_FIELD_WIDTH = 20;
+    ASC.MIN_FIELD_WIDTH = 5;
+    ASC.FIELD_HEIGHT = 25;
     var Inputs;
     (function (Inputs) {
         Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
@@ -130,6 +162,10 @@ var ASC;
         Inputs[Inputs["HD"] = 7] = "HD";
     })(Inputs || (Inputs = {}));
     var Game = /** @class */ (function () {
+        /**
+         * Creates a new game
+         * @param width Width of the game feild, (5 < width < 20, Default: 12).
+         */
         function Game(width) {
             if (width === void 0) { width = 12; }
             this._pieces = [];
@@ -146,7 +182,7 @@ var ASC;
             this._pieces.push(new ASC.Piece("T", [11, 12, 13, 17]));
             this._pieces.push(new ASC.Piece("L", [7, 12, 17, 18]));
             this._pieces.push(new ASC.Piece("Z", [11, 12, 17, 18]));
-            this._pieces.push(new ASC.Piece("a", [0, 1, 8, 13, 20, 24]));
+            //this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
             this._pieces.forEach(function (i) { return (i.initRotations()); });
             this.resetGame();
             app.stage.addChild(this._renderer);
@@ -166,9 +202,16 @@ var ASC;
         //Phases?:
         //Falling
         //Lock
-        //Line clear function
         //Gravity event
         //Garbage Event
+        Game.prototype.hardDrop = function () {
+            var i = 0;
+            while (this.checkShift(0, i)) {
+                ++i;
+            }
+            this._currentPiece.move(ASC.Directions.DOWN, i - 1);
+            this.lock();
+        };
         Game.prototype.move = function (dir) {
             switch (dir) {
                 case ASC.Directions.LEFT:
@@ -210,12 +253,14 @@ var ASC;
                 return; //Successful natural rotation
             }
             if (dir !== ASC.Rotations.CWCW) { //No 180 kicks
-                var xsign = dir - 2;
+                var sign = dir - 2; // - for cw + for ccw for now.
+                //Kick table, maybe change order to generalize
             }
             this._currentPiece.rotate(4 - dir); // Failed, unrotate.
         };
         Game.prototype.lock = function () {
             this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(0xFFFFFF, true, true));
+            this.clearLines(this._currentPiece.getYVals());
             this.next();
         };
         Game.prototype.update = function () {
@@ -225,6 +270,24 @@ var ASC;
                 temp[point] = 0xFFFFFF; /// for now
             }
             this._renderer.updateField(temp);
+        };
+        Game.prototype.clearLines = function (yvals) {
+            var lines = 0;
+            yvals.sort(function (a, b) { return a - b; }); //sort and remove backwards
+            for (var _i = 0, yvals_1 = yvals; _i < yvals_1.length; _i++) { //checks only placed rows.
+                var y = yvals_1[_i];
+                for (var i = 0; i < this._width; i++) {
+                    var block = this._field.getAt(y * this._width + i);
+                    if (!block.solid || !block.clearable) {
+                        break;
+                    }
+                    if (i == this._width - 1) { // Loop ends/ also this sucks
+                        ++lines;
+                        this._field.clearLineAt(y);
+                    }
+                } //re move rows
+            }
+            return lines;
         };
         Game.prototype.RecieveNotification = function (keyevent, down) {
             switch (keyevent.keyCode) {
@@ -266,7 +329,7 @@ var ASC;
                     break;
                 case ASC.Keys.SPACE:
                     if (down) {
-                        this.lock();
+                        this.hardDrop();
                     }
                     this._inputs[Inputs.HD] = down;
                     break;
@@ -275,7 +338,6 @@ var ASC;
                     break;
             }
             this.update();
-            //console.log(this._inputs);
         };
         return Game;
     }());
@@ -424,8 +486,6 @@ var ASC;
         };
         Piece.prototype.rotate = function (dir) {
             this._currentOrientation = (this._currentOrientation + dir) % 4;
-            console.log(this._currentOrientation);
-            // kicks
         };
         Piece.prototype.move = function (dir, dist) {
             switch (dir) {

@@ -84,10 +84,11 @@
   <ItemGroup>
     <Content Include="assets\textures\b.png" />
     <Content Include="assets\textures\a.jpg" />
-    <Content Include="pixi\pixi.js" />
     <Content Include="index.html" />
     <Content Include="pixi\pixi.min.js" />
-    <Content Include="Web.config" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -95,7 +96,6 @@
   <ItemGroup>
     <Content Include="pixi\pixi.min.js.map" />
     <None Include="packages.config" />
-    <Content Include="pixi\pixi.js.map" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -111,7 +111,6 @@
     <TypeScriptCompile Include="game\enums.ts" />
     <TypeScriptCompile Include="game\field.ts" />
     <TypeScriptCompile Include="game\game.ts" />
-    <TypeScriptCompile Include="game\gameState.ts" />
     <TypeScriptCompile Include="game\piece.ts" />
     <TypeScriptCompile Include="game\prng.ts" />
     <TypeScriptCompile Include="game\queue.ts" />

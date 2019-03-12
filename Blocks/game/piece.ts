@@ -68,9 +68,7 @@
         }
 
         public rotate(dir: Rotations): void {
-            this._currentOrientation = (this._currentOrientation + dir) % 4
-            console.log(this._currentOrientation);
-            // kicks
+            this._currentOrientation = (this._currentOrientation + dir) % 4;
         }
         public move(dir: Directions, dist: number): void {
             switch (dir) {

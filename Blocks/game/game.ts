@@ -1,4 +1,7 @@
 ﻿namespace ASC {
+    export const MAX_FIELD_WIDTH: number = 20;
+    export const MIN_FIELD_WIDTH: number = 5;
+    export const FIELD_HEIGHT: number = 25;
     enum Inputs {
         RIGHT, SD, LEFT, CW, CCW, CWCW, HOLD, HD
     }
@@ -15,7 +18,10 @@
         private _inputs: boolean[] = [false, false, false, false, false, false, false, false];
 
         private _renderer: Renderer;
-
+        /**
+         * Creates a new game
+         * @param width Width of the game feild, (5 < width < 20, Default: 12).
+         */
         public constructor(width: number = 12) {
             InputManager.RegisterObserver(this);
             if (width > MAX_FIELD_WIDTH || width < MIN_FIELD_WIDTH) {
@@ -28,14 +34,13 @@
             this._pieces.push(new Piece("T", [11, 12, 13, 17]))
             this._pieces.push(new Piece("L", [7, 12, 17, 18]))
             this._pieces.push(new Piece("Z", [11, 12, 17, 18]))
-            this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
+            //this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
             this._pieces.forEach((i) => (i.initRotations()));
             this.resetGame();
             app.stage.addChild(this._renderer);
         }
-
-
-        public resetGame() {
+        
+        public resetGame():void {
             this._field = new Field(this._width);
             this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces);//NO bag size for now
             this._hold = undefined;
@@ -43,7 +48,7 @@
             this.update();
         }
 
-        private next() {
+        private next() :void{
             this._currentPiece = this._queue.getNext();
         }
 
@@ -54,11 +59,19 @@
         //Falling
         //Lock
 
-        //Line clear function
-
         //Gravity event
 
         //Garbage Event
+
+        private hardDrop(): void {
+            let i = 0;
+            while (this.checkShift(0, i)) {
+                ++i;
+            }
+            this._currentPiece.move(Directions.DOWN, i-1);
+            this.lock();
+        }
+
         private move(dir: Directions): void {
             switch (dir) {
                 case Directions.LEFT:
@@ -103,13 +116,14 @@
             }
             if (dir !== Rotations.CWCW) { //No 180 kicks
                 let sign = dir - 2; // - for cw + for ccw for now.
-
+                //Kick table, maybe change order to generalize
             }
 
            this._currentPiece.rotate(4 - dir); // Failed, unrotate.
         }
         private lock() {
             this._field.setBlocks(this._currentPiece.getCoords(this._width), new Block(0xFFFFFF, true, true));
+            this.clearLines(this._currentPiece.getYVals());
             this.next();
         }
 
@@ -119,6 +133,25 @@
                 temp[point] = 0xFFFFFF; /// for now
             }
             this._renderer.updateField(temp);
+        }
+
+        private clearLines(yvals:number[]): number { //returns number of lines cleared
+            let lines = 0;
+            yvals.sort(function (a, b) { return a - b }); //sort and remove backwards
+            for (let y of yvals) { //checks only placed rows.
+                for (let i = 0; i < this._width; i++) {
+                    let block = this._field.getAt(y * this._width + i);
+                    if (!block.solid || !block.clearable) {
+                        break;
+                    }
+                    if (i == this._width - 1) {// Loop ends/ also this sucks
+                        ++lines;
+                        this._field.clearLineAt(y);
+                    }
+                }//re move rows
+            }
+
+            return lines;
         }
 
         RecieveNotification(keyevent: KeyboardEvent, down: boolean): void {
@@ -161,7 +194,7 @@
                     break;
                 case Keys.SPACE:
                     if (down) {
-                        this.lock();
+                        this.hardDrop();
                     }
                     this._inputs[Inputs.HD] = down;
                     break;
@@ -170,7 +203,6 @@
                     break;
             }
             this.update();
-            //console.log(this._inputs);
         }
     }
 }

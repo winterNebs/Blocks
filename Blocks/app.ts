@@ -8,6 +8,6 @@ PIXI.loader.add('assets/textures/b.png').load(load);
 
 
 function load() {
-    game = new ASC.Game(12);
+    game = new ASC.Game(8);
     ASC.InputManager.initialize();
 }
