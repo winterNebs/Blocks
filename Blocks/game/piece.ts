@@ -58,8 +58,8 @@
             let ccw = [];
             let cwcw = [];
             for (let i of shape) {
-                cw.push(20 - 5 * (i % 5) + (i / 5 << 0));
-                ccw.push(4 + 5 * (i % 5) - (i / 5 << 0));
+                cw.push(4 + 5 * (i % 5) - (i / 5 << 0));
+                ccw.push(20 - 5 * (i % 5) + (i / 5 << 0));
                 cwcw.push(24 - i);
             }
             this._orientations.push(cw);
@@ -70,21 +70,9 @@
         public rotate(dir: Rotations): void {
             this._currentOrientation = (this._currentOrientation + dir) % 4;
         }
-        public move(dir: Directions, dist: number): void {
-            switch (dir) {
-                case Directions.UP:
-                    this._y -= dist;
-                    break;
-                case Directions.RIGHT:
-                    this._x += dist;
-                    break;
-                case Directions.DOWN:
-                    this._y += dist;
-                    break;
-                case Directions.LEFT:
-                    this._x -= dist;
-                    break;
-            }
+        public move(x: number, y: number): void {
+            this._x += x;
+            this._y += y;
         }
         public getCoords(width: number): number[] {
             let c = [];

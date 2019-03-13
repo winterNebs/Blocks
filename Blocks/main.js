@@ -17,7 +17,7 @@ var game;
 // load sprites and run game when done
 PIXI.loader.add('assets/textures/b.png').load(load);
 function load() {
-    game = new ASC.Game(8);
+    game = new ASC.Game(10);
     ASC.InputManager.initialize();
 }
 var ASC;
@@ -179,9 +179,12 @@ var ASC;
             this._width = width;
             this._renderer = new ASC.Renderer(this._width);
             //For now:
-            this._pieces.push(new ASC.Piece("T", [11, 12, 13, 17]));
-            this._pieces.push(new ASC.Piece("L", [7, 12, 17, 18]));
+            this._pieces.push(new ASC.Piece("T", [7, 11, 12, 13]));
+            this._pieces.push(new ASC.Piece("L", [8, 11, 12, 13]));
             this._pieces.push(new ASC.Piece("Z", [11, 12, 17, 18]));
+            this._pieces.push(new ASC.Piece("S", [12, 13, 16, 17]));
+            this._pieces.push(new ASC.Piece("I", [11, 12, 13, 14]));
+            this._pieces.push(new ASC.Piece("O", [12, 13, 17, 18]));
             //this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
             this._pieces.forEach(function (i) { return (i.initRotations()); });
             this.resetGame();
@@ -209,24 +212,24 @@ var ASC;
             while (this.checkShift(0, i)) {
                 ++i;
             }
-            this._currentPiece.move(ASC.Directions.DOWN, i - 1);
+            this._currentPiece.move(0, i - 1);
             this.lock();
         };
         Game.prototype.move = function (dir) {
             switch (dir) {
                 case ASC.Directions.LEFT:
                     if (this.checkShift(-1, 0)) {
-                        this._currentPiece.move(dir, 1);
+                        this._currentPiece.move(-1, 0);
                     }
                     break;
                 case ASC.Directions.RIGHT:
                     if (this.checkShift(1, 0)) {
-                        this._currentPiece.move(dir, 1);
+                        this._currentPiece.move(1, 0);
                     }
                     break;
                 case ASC.Directions.DOWN:
                     if (this.checkShift(0, 1)) {
-                        this._currentPiece.move(dir, 1);
+                        this._currentPiece.move(0, 1);
                     }
                     break;
             }
@@ -236,10 +239,8 @@ var ASC;
             var yvals = this._currentPiece.getYVals();
             for (var i = 0; i < coords.length; ++i) {
                 var block = this._field.getAt(coords[i] + x + y * this._width);
-                if (block === undefined || //Up, Down bounds
-                    yvals[i] != ~~(coords[i] / this._width) || //Left, Right wrapping bounds
-                    0 - x > coords[i] % this._width || //Left bound
-                    this._width - x <= coords[i] % this._width || //Right bound
+                if (block == null || //Up, Down bounds
+                    yvals[i] != ~~((coords[i] + x) / this._width) || //Left, Right wrapping bounds
                     block.solid //Colliding with a block
                 ) {
                     return false;
@@ -255,7 +256,19 @@ var ASC;
             if (dir !== ASC.Rotations.CWCW) { //No 180 kicks
                 var sign = dir - 2; // - for cw + for ccw for now.
                 //Kick table, maybe change order to generalize
+                for (var x = 0; x < 16; ++x) {
+                    var xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
+                    for (var i = 0; i < 16; ++i) { //tune this
+                        var ykicks = Math.pow(-1, i) * ~~(i / 2);
+                        if (this.checkShift(xkicks, ykicks)) {
+                            console.log(xkicks, ykicks);
+                            this._currentPiece.move(xkicks, ykicks);
+                            return; //successful kick
+                        }
+                    }
+                }
             }
+            console.log("Failed Kick");
             this._currentPiece.rotate(4 - dir); // Failed, unrotate.
         };
         Game.prototype.lock = function () {
@@ -342,16 +355,6 @@ var ASC;
         return Game;
     }());
     ASC.Game = Game;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    //Don't think i need this anymore
-    var GameState = /** @class */ (function () {
-        function GameState() {
-        }
-        return GameState;
-    }());
-    ASC.GameState = GameState;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -476,8 +479,8 @@ var ASC;
             var cwcw = [];
             for (var _a = 0, shape_2 = shape; _a < shape_2.length; _a++) {
                 var i = shape_2[_a];
-                cw.push(20 - 5 * (i % 5) + (i / 5 << 0));
-                ccw.push(4 + 5 * (i % 5) - (i / 5 << 0));
+                cw.push(4 + 5 * (i % 5) - (i / 5 << 0));
+                ccw.push(20 - 5 * (i % 5) + (i / 5 << 0));
                 cwcw.push(24 - i);
             }
             this._orientations.push(cw);
@@ -487,21 +490,9 @@ var ASC;
         Piece.prototype.rotate = function (dir) {
             this._currentOrientation = (this._currentOrientation + dir) % 4;
         };
-        Piece.prototype.move = function (dir, dist) {
-            switch (dir) {
-                case ASC.Directions.UP:
-                    this._y -= dist;
-                    break;
-                case ASC.Directions.RIGHT:
-                    this._x += dist;
-                    break;
-                case ASC.Directions.DOWN:
-                    this._y += dist;
-                    break;
-                case ASC.Directions.LEFT:
-                    this._x -= dist;
-                    break;
-            }
+        Piece.prototype.move = function (x, y) {
+            this._x += x;
+            this._y += y;
         };
         Piece.prototype.getCoords = function (width) {
             var c = [];

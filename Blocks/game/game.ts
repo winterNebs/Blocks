@@ -31,16 +31,19 @@
             this._renderer = new Renderer(this._width);
 
             //For now:
-            this._pieces.push(new Piece("T", [11, 12, 13, 17]))
-            this._pieces.push(new Piece("L", [7, 12, 17, 18]))
-            this._pieces.push(new Piece("Z", [11, 12, 17, 18]))
+            this._pieces.push(new Piece("T", [7, 11, 12, 13]));
+            this._pieces.push(new Piece("L", [8, 11, 12, 13]));
+            this._pieces.push(new Piece("Z", [11, 12, 17, 18]));
+            this._pieces.push(new Piece("S", [12, 13, 16, 17]));
+            this._pieces.push(new Piece("I", [11, 12, 13, 14]));
+            this._pieces.push(new Piece("O", [12, 13, 17, 18]));
             //this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
             this._pieces.forEach((i) => (i.initRotations()));
             this.resetGame();
             app.stage.addChild(this._renderer);
         }
-        
-        public resetGame():void {
+
+        public resetGame(): void {
             this._field = new Field(this._width);
             this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces);//NO bag size for now
             this._hold = undefined;
@@ -48,7 +51,7 @@
             this.update();
         }
 
-        private next() :void{
+        private next(): void {
             this._currentPiece = this._queue.getNext();
         }
 
@@ -68,7 +71,7 @@
             while (this.checkShift(0, i)) {
                 ++i;
             }
-            this._currentPiece.move(Directions.DOWN, i-1);
+            this._currentPiece.move(0, i - 1);
             this.lock();
         }
 
@@ -76,17 +79,17 @@
             switch (dir) {
                 case Directions.LEFT:
                     if (this.checkShift(-1, 0)) {
-                        this._currentPiece.move(dir, 1);
+                        this._currentPiece.move(-1, 0);
                     }
                     break;
                 case Directions.RIGHT:
                     if (this.checkShift(1, 0)) {
-                        this._currentPiece.move(dir, 1);
+                        this._currentPiece.move(1, 0);
                     }
                     break;
                 case Directions.DOWN:
                     if (this.checkShift(0, 1)) {
-                        this._currentPiece.move(dir, 1);
+                        this._currentPiece.move(0, 1);
                     }
                     break;
             }
@@ -96,12 +99,10 @@
             let coords = this._currentPiece.getCoords(this._width);
             let yvals = this._currentPiece.getYVals();
             for (let i = 0; i < coords.length; ++i) {
-                let block = this._field.getAt(coords[i] + x + y * this._width);
-                if (block === undefined ||                          //Up, Down bounds
-                    yvals[i] != ~~(coords[i] / this._width) ||      //Left, Right wrapping bounds
-                    0 - x > coords[i] % this._width ||              //Left bound
-                    this._width - x <= coords[i] % this._width ||   //Right bound
-                    block.solid                                     //Colliding with a block
+                let block: Block = this._field.getAt(coords[i] + x + y * this._width);
+                if (block == null ||                           //Up, Down bounds
+                    yvals[i] != ~~((coords[i] + x) / this._width) ||  //Left, Right wrapping bounds
+                    block.solid                               //Colliding with a block
                 ) {
                     return false;
                 }
@@ -117,9 +118,21 @@
             if (dir !== Rotations.CWCW) { //No 180 kicks
                 let sign = dir - 2; // - for cw + for ccw for now.
                 //Kick table, maybe change order to generalize
-            }
+                for (let x = 0; x < 16; ++x) {
+                    let xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
+                    for (let i = 0; i < 16; ++i) {//tune this
+                        let ykicks = Math.pow(-1, i) * ~~(i / 2);
+                        if (this.checkShift(xkicks, ykicks)) {
+                            console.log(xkicks, ykicks);
+                            this._currentPiece.move(xkicks, ykicks);
+                            return; //successful kick
+                        }
+                    }
+                }
 
-           this._currentPiece.rotate(4 - dir); // Failed, unrotate.
+            }
+            console.log("Failed Kick");
+            this._currentPiece.rotate(4 - dir); // Failed, unrotate.
         }
         private lock() {
             this._field.setBlocks(this._currentPiece.getCoords(this._width), new Block(0xFFFFFF, true, true));
@@ -135,7 +148,7 @@
             this._renderer.updateField(temp);
         }
 
-        private clearLines(yvals:number[]): number { //returns number of lines cleared
+        private clearLines(yvals: number[]): number { //returns number of lines cleared
             let lines = 0;
             yvals.sort(function (a, b) { return a - b }); //sort and remove backwards
             for (let y of yvals) { //checks only placed rows.
