@@ -31,7 +31,7 @@
             this._width = width;
             this._queueSize = queueSize
             this._renderer = new Renderer(this._width, this._queueSize);
-
+            this._hold = undefined;
             //For now:
             this._pieces.push(new Piece("T", [7, 11, 12, 13], 2));
             this._pieces.push(new Piece("L", [8, 11, 12, 13], 2));
@@ -48,7 +48,7 @@
 
         public resetGame(): void {
             this._field = new Field(this._width);
-            this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces,this._queueSize);//NO bag size for now
+            this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._queueSize);//NO bag size for now
             this._hold = undefined;
             this.next();
             this.update();
@@ -60,7 +60,15 @@
 
         //TODO:
         //Garbage Event
-
+        private hold(): void {
+            this._currentPiece.reset();
+            if (this._hold === undefined) {
+                this._hold = this._currentPiece;
+                this.next();
+                return;
+            }
+            [this._hold, this._currentPiece] = [this._currentPiece, this._hold];
+        }
         private hardDrop(): void {
             this.sonicDrop();
             this.lock();
@@ -139,6 +147,17 @@
         }
 
         private update(): void {
+            this.updateField();
+            this.updateQueue();
+            this.updateHold();
+        }
+        private updateHold(): void {
+            if (this._hold === undefined) {
+                return;
+            }
+            this._renderer.updateHold(this._hold.getRenderShape());
+        }
+        private updateField(): void {
             //Update field
             let temp = this._field.getColors();
             let copyCurrent = this._currentPiece.getCopy();
@@ -151,6 +170,8 @@
                 temp[point] = 0xFFFFFF; /// for now
             }
             this._renderer.updateField(temp);
+        }
+        private updateQueue(): void {
             //Update queue
             let queue: Piece[] = this._queue.getQueue();
             let q: number[][] = [];
@@ -203,9 +224,10 @@
                     this.hardDrop();
                     break;
                 case Keys.SHIFT:
+                    this.hold();
                     break;
             }
-            this.update();
+            this.update();//remove this and only update when needed
         }
 
     }

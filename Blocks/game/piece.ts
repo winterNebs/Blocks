@@ -20,7 +20,7 @@
             this._offset = offset;
             this._initialOrientation = initOrient;
             this._color = color;
-            this._x += this._offset;
+            this.reset();
         }
         public initRotations(): void {
             this._orientations.push(this._shape);
@@ -89,6 +89,11 @@
                 c.push(y);
             }
             return c;
+        }
+        public reset(): void {
+            this._currentOrientation = this._initialOrientation;
+            this._x = this._offset;
+            this._y = 0;
         }
         public getCopy(): Piece {
             let copy = new Piece(this._name, this._shape, this._offset, this._initialOrientation, this._color);

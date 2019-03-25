@@ -178,6 +178,7 @@ var ASC;
             this._width = width;
             this._queueSize = queueSize;
             this._renderer = new ASC.Renderer(this._width, this._queueSize);
+            this._hold = undefined;
             //For now:
             this._pieces.push(new ASC.Piece("T", [7, 11, 12, 13], 2));
             this._pieces.push(new ASC.Piece("L", [8, 11, 12, 13], 2));
@@ -203,6 +204,16 @@ var ASC;
         };
         //TODO:
         //Garbage Event
+        Game.prototype.hold = function () {
+            var _a;
+            this._currentPiece.reset();
+            if (this._hold === undefined) {
+                this._hold = this._currentPiece;
+                this.next();
+                return;
+            }
+            _a = [this._currentPiece, this._hold], this._hold = _a[0], this._currentPiece = _a[1];
+        };
         Game.prototype.hardDrop = function () {
             this.sonicDrop();
             this.lock();
@@ -276,6 +287,17 @@ var ASC;
             this.next();
         };
         Game.prototype.update = function () {
+            this.updateField();
+            this.updateQueue();
+            this.updateHold();
+        };
+        Game.prototype.updateHold = function () {
+            if (this._hold === undefined) {
+                return;
+            }
+            this._renderer.updateHold(this._hold.getRenderShape());
+        };
+        Game.prototype.updateField = function () {
             //Update field
             var temp = this._field.getColors();
             var copyCurrent = this._currentPiece.getCopy();
@@ -290,11 +312,13 @@ var ASC;
                 temp[point] = 0xFFFFFF; /// for now
             }
             this._renderer.updateField(temp);
+        };
+        Game.prototype.updateQueue = function () {
             //Update queue
             var queue = this._queue.getQueue();
             var q = [];
-            for (var _d = 0, queue_1 = queue; _d < queue_1.length; _d++) {
-                var p = queue_1[_d];
+            for (var _i = 0, queue_1 = queue; _i < queue_1.length; _i++) {
+                var p = queue_1[_i];
                 q.push(p.getRenderShape());
             }
             this._renderer.updateQueue(q);
@@ -341,9 +365,10 @@ var ASC;
                     this.hardDrop();
                     break;
                 case ASC.Keys.SHIFT:
+                    this.hold();
                     break;
             }
-            this.update();
+            this.update(); //remove this and only update when needed
         };
         return Game;
     }());
@@ -498,7 +523,7 @@ var ASC;
             this._offset = offset;
             this._initialOrientation = initOrient;
             this._color = color;
-            this._x += this._offset;
+            this.reset();
         }
         Piece.prototype.initRotations = function () {
             this._orientations.push(this._shape);
@@ -572,6 +597,11 @@ var ASC;
                 c.push(y);
             }
             return c;
+        };
+        Piece.prototype.reset = function () {
+            this._currentOrientation = this._initialOrientation;
+            this._x = this._offset;
+            this._y = 0;
         };
         Piece.prototype.getCopy = function () {
             var copy = new Piece(this._name, this._shape, this._offset, this._initialOrientation, this._color);
@@ -662,7 +692,6 @@ var ASC;
             }
         };
         Queue.prototype.getQueue = function () {
-            console.log(this._queue);
             return this._queue.slice(0, ASC.NUM_PREVIEWS); //need to copy 
         };
         Queue.prototype.getNext = function () {
@@ -681,12 +710,14 @@ var ASC;
         function Renderer(width, queueSize) {
             var _this = _super.call(this) || this;
             _this._queue = [];
-            _this._field = new ASC.RenderGrid(width, ASC.FIELD_HEIGHT, 24);
+            _this._field = new ASC.RenderGrid(width, ASC.FIELD_HEIGHT, 24, 10 * 5);
             _this.addChild(_this._field);
             for (var i = 0; i < queueSize; ++i) {
-                _this._queue.push(new ASC.RenderGrid(5, 5, 10, width * 24, 10 * 5 * i));
+                _this._queue.push(new ASC.RenderGrid(5, 5, 10, width * 24 + 10 * 5, 10 * 5 * i));
                 _this.addChild(_this._queue[i]);
             }
+            _this._hold = new ASC.RenderGrid(5, 5, 10);
+            _this.addChild(_this._hold);
             return _this;
         }
         Renderer.prototype.updateField = function (Field) {
@@ -697,6 +728,9 @@ var ASC;
                 console.log(q[i]);
                 this._queue[i].updateGrid(q[i]);
             }
+        };
+        Renderer.prototype.updateHold = function (p) {
+            this._hold.updateGrid(p);
         };
         return Renderer;
     }(PIXI.Container));
@@ -728,6 +762,7 @@ var ASC;
                 s.width = this._size;
                 s.x = i % this._width * this._size + this._x;
                 s.y = ~~(i / this._width) * this._size + this._y;
+                s.tint = 0x000000;
                 //tint
                 this.addChild(s);
                 this._sprites.push(s);

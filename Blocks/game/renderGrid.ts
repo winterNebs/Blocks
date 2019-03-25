@@ -25,7 +25,7 @@
                 s.width = this._size;
                 s.x = i % this._width * this._size + this._x;
                 s.y = ~~(i / this._width) * this._size + this._y;
-
+                s.tint = 0x000000;
                 //tint
                 this.addChild(s);
                 this._sprites.push(s);

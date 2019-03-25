@@ -25,7 +25,6 @@
             }
         }
         public getQueue(): Piece[] {
-            console.log(this._queue);
             return this._queue.slice(0, NUM_PREVIEWS);//need to copy 
         }
         public getNext(): Piece {
