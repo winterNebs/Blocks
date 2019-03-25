@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var app = new PIXI.Application(800, 600, { backgroundColor: 0x1099bb });
+var app = new PIXI.Application(800, 600, { backgroundColor: 0x423c3e });
 document.body.appendChild(app.view);
 var game;
 // load sprites and run game when done
@@ -147,6 +147,9 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
+    //TODO:
+    //Config files
+    //Hosting?
     ASC.MAX_FIELD_WIDTH = 20;
     ASC.MIN_FIELD_WIDTH = 5;
     ASC.FIELD_HEIGHT = 25;

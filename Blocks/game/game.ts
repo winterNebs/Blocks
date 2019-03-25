@@ -1,4 +1,7 @@
 ﻿namespace ASC {
+    //TODO:
+    //Config files
+    //Hosting?
     export const MAX_FIELD_WIDTH: number = 20;
     export const MIN_FIELD_WIDTH: number = 5;
     export const FIELD_HEIGHT: number = 25;
@@ -13,9 +16,6 @@
         private _width: number
         private _queueSize: number;
         private _pieces: Piece[] = [];
-        //Inputs for the game:
-        //                            Right, SD,    Left,  CW,    CCW,   180(CWCW),Hold,HD     
-        //private _inputs: boolean[] = [false, false, false, false, false, false, false, false];
 
         private _renderer: Renderer;
         /**
