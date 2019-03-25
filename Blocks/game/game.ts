@@ -19,6 +19,7 @@
         private _renderer: Renderer;
         private _active: boolean = false;
         private _progress: number = 0;
+        private _attack: AttackTable;
         /**
          * Creates a new game
          * @param width Width of the game feild, (5 < width < 20, Default: 12).
@@ -41,12 +42,13 @@
             }
             this._width = width;
             this._bagSize = bagSize;
-            this._renderer = new Renderer(this._width, "Lines");
+            this._renderer = new Renderer(this._width, "Attack");
             //For now:
             this._pieces = pieces;
             //this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
             this._pieces.forEach((i) => (i.initRotations()));
             this.resetGame();
+            this._attack = new AttackTable(this._width);
             app.stage.addChild(this._renderer);
         }
 
@@ -56,6 +58,7 @@
             this._hold = undefined;
             this.next();
             this._active = true;
+            this._progress = 0;
             this.update();
         }
 
@@ -169,14 +172,20 @@
         }
 
         private lock() {
-            if (this.checkImmobile()) {
-                console.log("spin");
-            }
+            let spin = this.checkImmobile();
             this._field.setBlocks(this._currentPiece.getCoords(this._width), new Block(0xFFFFFF, true, true));
             let cleared = this.clearLines(this._currentPiece.getYVals());
-            this._progress += cleared;
+
             if (cleared > 0) {
-                console.log(this.checkPC());
+                if (spin) {
+                    this._progress += this._attack.spin(cleared);
+                }
+                else {
+                    this._progress += this._attack.clear(cleared);
+                }
+                if (this.checkPC()) {
+                    this._progress += this._attack.perfectClear(cleared);
+                }
             }
             this.next();
         }

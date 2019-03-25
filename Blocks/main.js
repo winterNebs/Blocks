@@ -162,10 +162,11 @@ var ASC;
             }
             this._width = width;
             this._bagSize = bagSize;
-            this._renderer = new ASC.Renderer(this._width, "Lines");
+            this._renderer = new ASC.Renderer(this._width, "Attack");
             this._pieces = pieces;
             this._pieces.forEach(function (i) { return (i.initRotations()); });
             this.resetGame();
+            this._attack = new ASC.AttackTable(this._width);
             app.stage.addChild(this._renderer);
         }
         Game.prototype.resetGame = function () {
@@ -174,6 +175,7 @@ var ASC;
             this._hold = undefined;
             this.next();
             this._active = true;
+            this._progress = 0;
             this.update();
         };
         Game.prototype.next = function () {
@@ -275,14 +277,19 @@ var ASC;
                 this.checkShift(-1, 0));
         };
         Game.prototype.lock = function () {
-            if (this.checkImmobile()) {
-                console.log("spin");
-            }
+            var spin = this.checkImmobile();
             this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(0xFFFFFF, true, true));
             var cleared = this.clearLines(this._currentPiece.getYVals());
-            this._progress += cleared;
             if (cleared > 0) {
-                console.log(this.checkPC());
+                if (spin) {
+                    this._progress += this._attack.spin(cleared);
+                }
+                else {
+                    this._progress += this._attack.clear(cleared);
+                }
+                if (this.checkPC()) {
+                    this._progress += this._attack.perfectClear(cleared);
+                }
             }
             this.next();
         };
@@ -819,9 +826,20 @@ var ASC;
 (function (ASC) {
     var CLEAR = -1;
     var SPIN = 2;
+    var PC = 6;
     var AttackTable = (function () {
-        function AttackTable() {
+        function AttackTable(width) {
+            this._width = width;
         }
+        AttackTable.prototype.clear = function (num) {
+            return num + CLEAR;
+        };
+        AttackTable.prototype.spin = function (num) {
+            return num * SPIN;
+        };
+        AttackTable.prototype.perfectClear = function (num) {
+            return PC;
+        };
         return AttackTable;
     }());
     ASC.AttackTable = AttackTable;
