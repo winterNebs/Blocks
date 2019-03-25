@@ -11,9 +11,9 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var configText = prompt("Enter Config Data (Check out the discord for more info: https://discord.gg/GjScWEh)", "{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2],[\"L\", [8, 11, 12, 13], 2],[\"J\", [6, 11, 12, 13], 2],[\"Z\", [11, 12, 17, 18], 2],[\"S\", [12, 13, 16, 17], 2],\t[\"I\", [11, 12, 13, 14], 2],\t[\"O\", [12, 13, 17, 18], 2]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 6}");
+var configText = prompt("Enter Config Data (Check out the discord for more info: https://discord.gg/GjScWEh)", "{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2],[\"L\", [8, 11, 12, 13], 2],[\"J\", [6, 11, 12, 13], 2],[\"Z\", [11, 12, 17, 18], 2],[\"S\", [12, 13, 16, 17], 2],\t[\"I\", [11, 12, 13, 14], 2],\t[\"O\", [12, 13, 17, 18], 2]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 7}");
 if (configText == null || configText == "") {
-    configText = "{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2],[\"L\", [8, 11, 12, 13], 2],[\"J\", [6, 11, 12, 13], 2],[\"Z\", [11, 12, 17, 18], 2],[\"S\", [12, 13, 16, 17], 2],\t[\"I\", [11, 12, 13, 14], 2],\t[\"O\", [12, 13, 17, 18], 2]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 6}";
+    configText = "{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2],[\"L\", [8, 11, 12, 13], 2],[\"J\", [6, 11, 12, 13], 2],[\"Z\", [11, 12, 17, 18], 2],[\"S\", [12, 13, 16, 17], 2],\t[\"I\", [11, 12, 13, 14], 2],\t[\"O\", [12, 13, 17, 18], 2]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 7}";
 }
 var app = new PIXI.Application(800, 600, { backgroundColor: 0x423c3e });
 document.body.appendChild(app.view);
@@ -26,47 +26,11 @@ function load() {
     }
     catch (err) {
         alert("Something went wrong, using default config: " + err.message);
-        config = ASC.Config.fromText("{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2],[\"L\", [8, 11, 12, 13], 2],[\"J\", [6, 11, 12, 13], 2],[\"Z\", [11, 12, 17, 18], 2],[\"S\", [12, 13, 16, 17], 2],\t[\"I\", [11, 12, 13, 14], 2],\t[\"O\", [12, 13, 17, 18], 2]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 6}");
+        config = ASC.Config.fromText("{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2],[\"L\", [8, 11, 12, 13], 2],[\"J\", [6, 11, 12, 13], 2],[\"Z\", [11, 12, 17, 18], 2],[\"S\", [12, 13, 16, 17], 2],\t[\"I\", [11, 12, 13, 14], 2],\t[\"O\", [12, 13, 17, 18], 2]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 7}");
     }
     game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
     ASC.InputManager.initialize();
 }
-var ASC;
-(function (ASC) {
-    var Block = (function () {
-        function Block(color, solid, clearable) {
-            if (color === void 0) { color = 0x000000; }
-            if (solid === void 0) { solid = false; }
-            if (clearable === void 0) { clearable = false; }
-            this._color = color;
-            this._solid = solid;
-            this._clearable = clearable;
-        }
-        Object.defineProperty(Block.prototype, "color", {
-            get: function () {
-                return this._color;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Block.prototype, "solid", {
-            get: function () {
-                return this._solid;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Block.prototype, "clearable", {
-            get: function () {
-                return this._clearable;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return Block;
-    }());
-    ASC.Block = Block;
-})(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
     var Config = (function () {
@@ -92,6 +56,327 @@ var ASC;
         return Config;
     }());
     ASC.Config = Config;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var Rotations;
+    (function (Rotations) {
+        Rotations[Rotations["NONE"] = 0] = "NONE";
+        Rotations[Rotations["CW"] = 1] = "CW";
+        Rotations[Rotations["CWCW"] = 2] = "CWCW";
+        Rotations[Rotations["CCW"] = 3] = "CCW";
+    })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
+    var Directions;
+    (function (Directions) {
+        Directions[Directions["UP"] = 0] = "UP";
+        Directions[Directions["RIGHT"] = 1] = "RIGHT";
+        Directions[Directions["DOWN"] = 2] = "DOWN";
+        Directions[Directions["LEFT"] = 3] = "LEFT";
+    })(Directions = ASC.Directions || (ASC.Directions = {}));
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var Field = (function () {
+        function Field(width) {
+            this._array = [];
+            this._width = width;
+            this.initialize();
+        }
+        Field.prototype.initialize = function () {
+            for (var i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
+                this._array.push(new ASC.Block());
+            }
+        };
+        Field.prototype.shift = function (lines) {
+            this._array.splice(0, lines * this._width);
+            for (var i = 0; i < lines * this._width; ++i) {
+                this._array.push(new ASC.Block());
+            }
+        };
+        Field.prototype.getAt = function (index) {
+            return this._array[index];
+        };
+        Field.prototype.getColors = function () {
+            var c = [];
+            for (var _i = 0, _a = this._array; _i < _a.length; _i++) {
+                var i = _a[_i];
+                c.push(i.color);
+            }
+            return c;
+        };
+        Field.prototype.setBlocks = function (indices, block) {
+            for (var _i = 0, indices_1 = indices; _i < indices_1.length; _i++) {
+                var i = indices_1[_i];
+                this._array[i] = block;
+            }
+        };
+        Field.prototype.clearLineAt = function (yval) {
+            this._array.splice(yval * this._width, this._width);
+            for (var i = 0; i < this._width; ++i) {
+                this._array.unshift(new ASC.Block());
+            }
+        };
+        return Field;
+    }());
+    ASC.Field = Field;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    ASC.MAX_FIELD_WIDTH = 20;
+    ASC.MIN_FIELD_WIDTH = 5;
+    ASC.FIELD_HEIGHT = 25;
+    var Inputs;
+    (function (Inputs) {
+        Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
+        Inputs[Inputs["SD"] = 1] = "SD";
+        Inputs[Inputs["LEFT"] = 2] = "LEFT";
+        Inputs[Inputs["CW"] = 3] = "CW";
+        Inputs[Inputs["CCW"] = 4] = "CCW";
+        Inputs[Inputs["CWCW"] = 5] = "CWCW";
+        Inputs[Inputs["HOLD"] = 6] = "HOLD";
+        Inputs[Inputs["HD"] = 7] = "HD";
+    })(Inputs || (Inputs = {}));
+    var Game = (function () {
+        function Game(width, bagSize, pieces, controls, delay, repeat) {
+            if (width === void 0) { width = 12; }
+            if (bagSize === void 0) { bagSize = 6; }
+            if (pieces === void 0) { pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2), new ASC.Piece("L", [8, 11, 12, 13], 2), new ASC.Piece("J", [6, 11, 12, 13], 2),
+                new ASC.Piece("Z", [11, 12, 17, 18], 2), new ASC.Piece("S", [12, 13, 16, 17], 2), new ASC.Piece("I", [11, 12, 13, 14], 2), new ASC.Piece("O", [12, 13, 17, 18], 2)]; }
+            if (controls === void 0) { controls = [39, 40, 37, 38, 83, 68, 16, 32]; }
+            if (delay === void 0) { delay = 100; }
+            if (repeat === void 0) { repeat = 10; }
+            this._pieces = [];
+            this._active = false;
+            this._progress = 0;
+            if (delay < 1) {
+                throw new Error("Invalid Delay");
+            }
+            if (repeat < 1) {
+                throw new Error("Invalid Repeat");
+            }
+            ASC.InputManager.RegisterObserver(this);
+            ASC.InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
+            this._controls = controls;
+            if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
+                throw new Error("Invalid width: " + width.toString());
+            }
+            this._width = width;
+            this._bagSize = bagSize;
+            this._renderer = new ASC.Renderer(this._width, "Lines");
+            this._pieces = pieces;
+            this._pieces.forEach(function (i) { return (i.initRotations()); });
+            this.resetGame();
+            app.stage.addChild(this._renderer);
+        }
+        Game.prototype.resetGame = function () {
+            this._field = new ASC.Field(this._width);
+            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
+            this._hold = undefined;
+            this.next();
+            this._active = true;
+            this.update();
+        };
+        Game.prototype.next = function () {
+            this._currentPiece = this._queue.getNext();
+            if (!this.checkShift(0, 0)) {
+                this._active = false;
+                console.log("Game end");
+                this.resetGame();
+            }
+        };
+        Game.prototype.hold = function () {
+            var _a;
+            this._currentPiece.reset();
+            if (this._hold === undefined) {
+                this._hold = this._currentPiece;
+                this.next();
+                return;
+            }
+            _a = [this._currentPiece, this._hold], this._hold = _a[0], this._currentPiece = _a[1];
+        };
+        Game.prototype.hardDrop = function () {
+            this.sonicDrop();
+            this.lock();
+        };
+        Game.prototype.sonicDrop = function () {
+            var i = 0;
+            while (this.checkShift(0, i)) {
+                ++i;
+            }
+            this._currentPiece.move(0, i - 1);
+        };
+        Game.prototype.move = function (dir) {
+            switch (dir) {
+                case ASC.Directions.LEFT:
+                    if (this.checkShift(-1, 0)) {
+                        this._currentPiece.move(-1, 0);
+                    }
+                    break;
+                case ASC.Directions.RIGHT:
+                    if (this.checkShift(1, 0)) {
+                        this._currentPiece.move(1, 0);
+                    }
+                    break;
+                case ASC.Directions.DOWN:
+                    if (this.checkShift(0, 1)) {
+                        this._currentPiece.move(0, 1);
+                    }
+                    break;
+            }
+        };
+        Game.prototype.checkShift = function (x, y) {
+            var coords = this._currentPiece.getCoords(this._width);
+            var yvals = this._currentPiece.getYVals();
+            for (var i = 0; i < coords.length; ++i) {
+                var block = this._field.getAt(coords[i] + x + y * this._width);
+                if (block == null ||
+                    yvals[i] != ~~((coords[i] + x) / this._width) ||
+                    block.solid) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        Game.prototype.rotate = function (dir) {
+            this._currentPiece.rotate(dir);
+            if (this.checkShift(0, 0)) {
+                return;
+            }
+            if (dir !== ASC.Rotations.CWCW) {
+                var sign = -(dir - 2);
+                console.log("Trying to kick:");
+                for (var x = 0; x < 8; ++x) {
+                    var xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
+                    for (var i = 0; i < (x + 1) * 2; ++i) {
+                        var ykicks = (Math.pow(-1, i) * ~~(i / 2) + ~~(i / 4));
+                        console.log(xkicks, ykicks);
+                        if (this.checkShift(xkicks, ykicks)) {
+                            this._currentPiece.move(xkicks, ykicks);
+                            return;
+                        }
+                    }
+                }
+            }
+            console.log("Failed Kick.");
+            this._currentPiece.rotate(4 - dir);
+        };
+        Game.prototype.checkPC = function () {
+            for (var i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
+                if (this._field.getAt(i).clearable && this._field.getAt(i).solid) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        Game.prototype.checkImmobile = function () {
+            return !(this.checkShift(0, 1) ||
+                this.checkShift(0, -1) ||
+                this.checkShift(1, 0) ||
+                this.checkShift(-1, 0));
+        };
+        Game.prototype.lock = function () {
+            if (this.checkImmobile()) {
+                console.log("spin");
+            }
+            this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(0xFFFFFF, true, true));
+            var cleared = this.clearLines(this._currentPiece.getYVals());
+            this._progress += cleared;
+            if (cleared > 0) {
+                console.log(this.checkPC());
+            }
+            this.next();
+        };
+        Game.prototype.update = function () {
+            this.updateField();
+            this.updateQueue();
+            this.updateHold();
+            this.updateProgress();
+        };
+        Game.prototype.updateHold = function () {
+            if (this._hold === undefined) {
+                return;
+            }
+            this._renderer.updateHold(this._hold.getRenderShape());
+        };
+        Game.prototype.updateField = function () {
+            var temp = this._field.getColors();
+            var copyCurrent = this._currentPiece.getCopy();
+            this.sonicDrop();
+            for (var _i = 0, _a = this._currentPiece.getCoords(this._width); _i < _a.length; _i++) {
+                var point = _a[_i];
+                temp[point] = 0x888888;
+            }
+            this._currentPiece = copyCurrent;
+            for (var _b = 0, _c = this._currentPiece.getCoords(this._width); _b < _c.length; _b++) {
+                var point = _c[_b];
+                temp[point] = 0xFFFFFF;
+            }
+            this._renderer.updateField(temp);
+        };
+        Game.prototype.updateQueue = function () {
+            var queue = this._queue.getQueue();
+            var q = [];
+            for (var _i = 0, queue_1 = queue; _i < queue_1.length; _i++) {
+                var p = queue_1[_i];
+                q.push(p.getRenderShape());
+            }
+            this._renderer.updateQueue(q);
+        };
+        Game.prototype.updateProgress = function () {
+            this._renderer.updateProgress(this._progress.toString());
+        };
+        Game.prototype.clearLines = function (yvals) {
+            var lines = 0;
+            yvals.sort(function (a, b) { return a - b; });
+            for (var _i = 0, yvals_1 = yvals; _i < yvals_1.length; _i++) {
+                var y = yvals_1[_i];
+                for (var i = 0; i < this._width; i++) {
+                    var block = this._field.getAt(y * this._width + i);
+                    if (!block.solid || !block.clearable) {
+                        break;
+                    }
+                    if (i == this._width - 1) {
+                        ++lines;
+                        this._field.clearLineAt(y);
+                    }
+                }
+            }
+            return lines;
+        };
+        Game.prototype.Triggered = function (keyCode) {
+            if (this._active) {
+                switch (keyCode) {
+                    case this._controls[Inputs.CW]:
+                        this.rotate(ASC.Rotations.CW);
+                        break;
+                    case this._controls[Inputs.RIGHT]:
+                        this.move(ASC.Directions.RIGHT);
+                        break;
+                    case this._controls[Inputs.SD]:
+                        this.move(ASC.Directions.DOWN);
+                        break;
+                    case this._controls[Inputs.LEFT]:
+                        this.move(ASC.Directions.LEFT);
+                        break;
+                    case this._controls[Inputs.CCW]:
+                        this.rotate(ASC.Rotations.CCW);
+                        break;
+                    case this._controls[Inputs.CWCW]:
+                        this.rotate(ASC.Rotations.CWCW);
+                        break;
+                    case this._controls[Inputs.HD]:
+                        this.hardDrop();
+                        break;
+                    case this._controls[Inputs.HOLD]:
+                        this.hold();
+                        break;
+                }
+                this.update();
+            }
+        };
+        return Game;
+    }());
+    ASC.Game = Game;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -221,298 +506,39 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var Rotations;
-    (function (Rotations) {
-        Rotations[Rotations["NONE"] = 0] = "NONE";
-        Rotations[Rotations["CW"] = 1] = "CW";
-        Rotations[Rotations["CWCW"] = 2] = "CWCW";
-        Rotations[Rotations["CCW"] = 3] = "CCW";
-    })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
-    var Directions;
-    (function (Directions) {
-        Directions[Directions["UP"] = 0] = "UP";
-        Directions[Directions["RIGHT"] = 1] = "RIGHT";
-        Directions[Directions["DOWN"] = 2] = "DOWN";
-        Directions[Directions["LEFT"] = 3] = "LEFT";
-    })(Directions = ASC.Directions || (ASC.Directions = {}));
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    var Field = (function () {
-        function Field(width) {
-            this._array = [];
-            this._width = width;
-            this.initialize();
+    var Block = (function () {
+        function Block(color, solid, clearable) {
+            if (color === void 0) { color = 0x000000; }
+            if (solid === void 0) { solid = false; }
+            if (clearable === void 0) { clearable = false; }
+            this._color = color;
+            this._solid = solid;
+            this._clearable = clearable;
         }
-        Field.prototype.initialize = function () {
-            for (var i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
-                this._array.push(new ASC.Block());
-            }
-        };
-        Field.prototype.shift = function (lines) {
-            this._array.splice(0, lines * this._width);
-            for (var i = 0; i < lines * this._width; ++i) {
-                this._array.push(new ASC.Block());
-            }
-        };
-        Field.prototype.getAt = function (index) {
-            return this._array[index];
-        };
-        Field.prototype.getColors = function () {
-            var c = [];
-            for (var _i = 0, _a = this._array; _i < _a.length; _i++) {
-                var i = _a[_i];
-                c.push(i.color);
-            }
-            return c;
-        };
-        Field.prototype.setBlocks = function (indices, block) {
-            for (var _i = 0, indices_1 = indices; _i < indices_1.length; _i++) {
-                var i = indices_1[_i];
-                this._array[i] = block;
-            }
-        };
-        Field.prototype.clearLineAt = function (yval) {
-            this._array.splice(yval * this._width, this._width);
-            for (var i = 0; i < this._width; ++i) {
-                this._array.unshift(new ASC.Block());
-            }
-        };
-        return Field;
+        Object.defineProperty(Block.prototype, "color", {
+            get: function () {
+                return this._color;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Block.prototype, "solid", {
+            get: function () {
+                return this._solid;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Block.prototype, "clearable", {
+            get: function () {
+                return this._clearable;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return Block;
     }());
-    ASC.Field = Field;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    ASC.MAX_FIELD_WIDTH = 20;
-    ASC.MIN_FIELD_WIDTH = 5;
-    ASC.FIELD_HEIGHT = 25;
-    var Inputs;
-    (function (Inputs) {
-        Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
-        Inputs[Inputs["SD"] = 1] = "SD";
-        Inputs[Inputs["LEFT"] = 2] = "LEFT";
-        Inputs[Inputs["CW"] = 3] = "CW";
-        Inputs[Inputs["CCW"] = 4] = "CCW";
-        Inputs[Inputs["CWCW"] = 5] = "CWCW";
-        Inputs[Inputs["HOLD"] = 6] = "HOLD";
-        Inputs[Inputs["HD"] = 7] = "HD";
-    })(Inputs || (Inputs = {}));
-    var Game = (function () {
-        function Game(width, bagSize, pieces, controls, delay, repeat) {
-            if (width === void 0) { width = 12; }
-            if (bagSize === void 0) { bagSize = 6; }
-            if (pieces === void 0) { pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2), new ASC.Piece("L", [8, 11, 12, 13], 2), new ASC.Piece("J", [6, 11, 12, 13], 2),
-                new ASC.Piece("Z", [11, 12, 17, 18], 2), new ASC.Piece("S", [12, 13, 16, 17], 2), new ASC.Piece("I", [11, 12, 13, 14], 2), new ASC.Piece("O", [12, 13, 17, 18], 2)]; }
-            if (controls === void 0) { controls = [39, 40, 37, 38, 83, 68, 16, 32]; }
-            if (delay === void 0) { delay = 100; }
-            if (repeat === void 0) { repeat = 10; }
-            this._pieces = [];
-            this._active = false;
-            if (delay < 1) {
-                throw new Error("Invalid Delay");
-            }
-            if (repeat < 1) {
-                throw new Error("Invalid Repeat");
-            }
-            ASC.InputManager.RegisterObserver(this);
-            ASC.InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
-            this._controls = controls;
-            if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
-                throw new Error("Invalid width: " + width.toString());
-            }
-            this._width = width;
-            this._bagSize = bagSize;
-            this._renderer = new ASC.Renderer(this._width);
-            this._pieces = pieces;
-            this._pieces.forEach(function (i) { return (i.initRotations()); });
-            this.resetGame();
-            app.stage.addChild(this._renderer);
-        }
-        Game.prototype.resetGame = function () {
-            this._field = new ASC.Field(this._width);
-            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
-            this._hold = undefined;
-            this.next();
-            this._active = true;
-            this.update();
-        };
-        Game.prototype.next = function () {
-            this._currentPiece = this._queue.getNext();
-            if (!this.checkShift(0, 0)) {
-                this._active = false;
-                console.log("Game end");
-                this.resetGame();
-            }
-        };
-        Game.prototype.hold = function () {
-            var _a;
-            this._currentPiece.reset();
-            if (this._hold === undefined) {
-                this._hold = this._currentPiece;
-                this.next();
-                return;
-            }
-            _a = [this._currentPiece, this._hold], this._hold = _a[0], this._currentPiece = _a[1];
-        };
-        Game.prototype.hardDrop = function () {
-            this.sonicDrop();
-            this.lock();
-        };
-        Game.prototype.sonicDrop = function () {
-            var i = 0;
-            while (this.checkShift(0, i)) {
-                ++i;
-            }
-            this._currentPiece.move(0, i - 1);
-        };
-        Game.prototype.move = function (dir) {
-            switch (dir) {
-                case ASC.Directions.LEFT:
-                    if (this.checkShift(-1, 0)) {
-                        this._currentPiece.move(-1, 0);
-                    }
-                    break;
-                case ASC.Directions.RIGHT:
-                    if (this.checkShift(1, 0)) {
-                        this._currentPiece.move(1, 0);
-                    }
-                    break;
-                case ASC.Directions.DOWN:
-                    if (this.checkShift(0, 1)) {
-                        this._currentPiece.move(0, 1);
-                    }
-                    break;
-            }
-        };
-        Game.prototype.checkShift = function (x, y) {
-            var coords = this._currentPiece.getCoords(this._width);
-            var yvals = this._currentPiece.getYVals();
-            for (var i = 0; i < coords.length; ++i) {
-                var block = this._field.getAt(coords[i] + x + y * this._width);
-                if (block == null ||
-                    yvals[i] != ~~((coords[i] + x) / this._width) ||
-                    block.solid) {
-                    return false;
-                }
-            }
-            return true;
-        };
-        Game.prototype.rotate = function (dir) {
-            this._currentPiece.rotate(dir);
-            if (this.checkShift(0, 0)) {
-                return;
-            }
-            if (dir !== ASC.Rotations.CWCW) {
-                var sign = -(dir - 2);
-                console.log("Trying to kick:");
-                for (var x = 0; x < 8; ++x) {
-                    var xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
-                    for (var i = 0; i < (x + 1) * 2; ++i) {
-                        var ykicks = (Math.pow(-1, i) * ~~(i / 2) + ~~(i / 4));
-                        console.log(xkicks, ykicks);
-                        if (this.checkShift(xkicks, ykicks)) {
-                            this._currentPiece.move(xkicks, ykicks);
-                            return;
-                        }
-                    }
-                }
-            }
-            console.log("Failed Kick.");
-            this._currentPiece.rotate(4 - dir);
-        };
-        Game.prototype.lock = function () {
-            this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(0xFFFFFF, true, true));
-            this.clearLines(this._currentPiece.getYVals());
-            this.next();
-        };
-        Game.prototype.update = function () {
-            this.updateField();
-            this.updateQueue();
-            this.updateHold();
-        };
-        Game.prototype.updateHold = function () {
-            if (this._hold === undefined) {
-                return;
-            }
-            this._renderer.updateHold(this._hold.getRenderShape());
-        };
-        Game.prototype.updateField = function () {
-            var temp = this._field.getColors();
-            var copyCurrent = this._currentPiece.getCopy();
-            this.sonicDrop();
-            for (var _i = 0, _a = this._currentPiece.getCoords(this._width); _i < _a.length; _i++) {
-                var point = _a[_i];
-                temp[point] = 0x888888;
-            }
-            this._currentPiece = copyCurrent;
-            for (var _b = 0, _c = this._currentPiece.getCoords(this._width); _b < _c.length; _b++) {
-                var point = _c[_b];
-                temp[point] = 0xFFFFFF;
-            }
-            this._renderer.updateField(temp);
-        };
-        Game.prototype.updateQueue = function () {
-            var queue = this._queue.getQueue();
-            var q = [];
-            for (var _i = 0, queue_1 = queue; _i < queue_1.length; _i++) {
-                var p = queue_1[_i];
-                q.push(p.getRenderShape());
-            }
-            this._renderer.updateQueue(q);
-        };
-        Game.prototype.clearLines = function (yvals) {
-            var lines = 0;
-            yvals.sort(function (a, b) { return a - b; });
-            for (var _i = 0, yvals_1 = yvals; _i < yvals_1.length; _i++) {
-                var y = yvals_1[_i];
-                for (var i = 0; i < this._width; i++) {
-                    var block = this._field.getAt(y * this._width + i);
-                    if (!block.solid || !block.clearable) {
-                        break;
-                    }
-                    if (i == this._width - 1) {
-                        ++lines;
-                        this._field.clearLineAt(y);
-                    }
-                }
-            }
-            return lines;
-        };
-        Game.prototype.Triggered = function (keyCode) {
-            if (this._active) {
-                switch (keyCode) {
-                    case this._controls[Inputs.CW]:
-                        this.rotate(ASC.Rotations.CW);
-                        break;
-                    case this._controls[Inputs.RIGHT]:
-                        this.move(ASC.Directions.RIGHT);
-                        break;
-                    case this._controls[Inputs.SD]:
-                        this.move(ASC.Directions.DOWN);
-                        break;
-                    case this._controls[Inputs.LEFT]:
-                        this.move(ASC.Directions.LEFT);
-                        break;
-                    case this._controls[Inputs.CCW]:
-                        this.rotate(ASC.Rotations.CCW);
-                        break;
-                    case this._controls[Inputs.CWCW]:
-                        this.rotate(ASC.Rotations.CWCW);
-                        break;
-                    case this._controls[Inputs.HD]:
-                        this.hardDrop();
-                        break;
-                    case this._controls[Inputs.HOLD]:
-                        this.hold();
-                        break;
-                }
-                this.update();
-            }
-        };
-        return Game;
-    }());
-    ASC.Game = Game;
+    ASC.Block = Block;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -706,19 +732,26 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
+    var FIELD_SIZE = 24;
+    var SMALL_SIZE = 10;
     var Renderer = (function (_super) {
         __extends(Renderer, _super);
-        function Renderer(width) {
+        function Renderer(width, progress) {
             var _this = _super.call(this) || this;
             _this._queue = [];
-            _this._field = new ASC.RenderGrid(width, ASC.FIELD_HEIGHT, 24, 10 * 5);
+            _this._field = new ASC.RenderGrid(width, ASC.FIELD_HEIGHT, FIELD_SIZE, SMALL_SIZE * 5);
             _this.addChild(_this._field);
             for (var i = 0; i < ASC.NUM_PREVIEWS; ++i) {
-                _this._queue.push(new ASC.RenderGrid(5, 5, 10, width * 24 + 10 * 5, 10 * 5 * i));
+                _this._queue.push(new ASC.RenderGrid(5, 5, 10, width * FIELD_SIZE + SMALL_SIZE * 5, 10 * 5 * i));
                 _this.addChild(_this._queue[i]);
             }
             _this._hold = new ASC.RenderGrid(5, 5, 10);
             _this.addChild(_this._hold);
+            _this._progressText = progress;
+            _this._progress = new PIXI.Text(progress + "\n", { fontFamily: 'Arial', fontSize: 24, fill: 0x000000, align: 'center' });
+            _this._progress.x = width * FIELD_SIZE + SMALL_SIZE * 5 + 10;
+            _this._progress.y = SMALL_SIZE * 5 * ASC.NUM_PREVIEWS + 10;
+            _this.addChild(_this._progress);
             return _this;
         }
         Renderer.prototype.updateField = function (Field) {
@@ -731,6 +764,9 @@ var ASC;
         };
         Renderer.prototype.updateHold = function (p) {
             this._hold.updateGrid(p);
+        };
+        Renderer.prototype.updateProgress = function (t) {
+            this._progress.text = this._progressText + "\n" + t;
         };
         return Renderer;
     }(PIXI.Container));
@@ -778,5 +814,16 @@ var ASC;
         return RenderGrid;
     }(PIXI.Container));
     ASC.RenderGrid = RenderGrid;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var CLEAR = -1;
+    var SPIN = 2;
+    var AttackTable = (function () {
+        function AttackTable() {
+        }
+        return AttackTable;
+    }());
+    ASC.AttackTable = AttackTable;
 })(ASC || (ASC = {}));
 //# sourceMappingURL=main.js.map

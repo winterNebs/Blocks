@@ -119,18 +119,21 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
-    <TypeScriptCompile Include="game\block.ts" />
+    <TypeScriptCompile Include="game\logic\block.ts" />
     <TypeScriptCompile Include="game\config.ts" />
     <TypeScriptCompile Include="game\inputManager.ts" />
     <TypeScriptCompile Include="game\enums.ts" />
     <TypeScriptCompile Include="game\field.ts" />
     <TypeScriptCompile Include="game\game.ts" />
     <TypeScriptCompile Include="game\ITriggerObserver.ts" />
-    <TypeScriptCompile Include="game\piece.ts" />
-    <TypeScriptCompile Include="game\prng.ts" />
-    <TypeScriptCompile Include="game\queue.ts" />
-    <TypeScriptCompile Include="game\renderer.ts" />
-    <TypeScriptCompile Include="game\renderGrid.ts" />
+    <TypeScriptCompile Include="game\logic\piece.ts" />
+    <TypeScriptCompile Include="game\logic\prng.ts" />
+    <TypeScriptCompile Include="game\logic\queue.ts" />
+    <TypeScriptCompile Include="game\renderer\renderer.ts" />
+    <TypeScriptCompile Include="game\renderer\renderGrid.ts" />
+    <TypeScriptCompile Include="game\scoring\attackTable.ts" />
+    <TypeScriptCompile Include="game\scoring\scoreTable.ts" />
+    <TypeScriptCompile Include="game\scoring\table.ts" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />

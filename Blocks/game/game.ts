@@ -18,6 +18,7 @@
         private _controls: number[];
         private _renderer: Renderer;
         private _active: boolean = false;
+        private _progress: number = 0;
         /**
          * Creates a new game
          * @param width Width of the game feild, (5 < width < 20, Default: 12).
@@ -40,7 +41,7 @@
             }
             this._width = width;
             this._bagSize = bagSize;
-            this._renderer = new Renderer(this._width);
+            this._renderer = new Renderer(this._width, "Lines");
             //For now:
             this._pieces = pieces;
             //this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
@@ -57,6 +58,7 @@
             this._active = true;
             this.update();
         }
+
 
         private next(): void {
             this._currentPiece = this._queue.getNext();
@@ -150,10 +152,32 @@
             console.log("Failed Kick.");
             this._currentPiece.rotate(4 - dir); // Failed, unrotate.
         }
+        private checkPC(): boolean {
+            for (let i = 0; i < this._width * FIELD_HEIGHT; ++i) {
+                if (this._field.getAt(i).clearable && this._field.getAt(i).solid) {
+                    return false
+                }
+            }
+            return true;
+        }
+
+        private checkImmobile(): boolean {
+            return !(this.checkShift(0, 1) ||
+                this.checkShift(0, -1) ||
+                this.checkShift(1, 0) ||
+                this.checkShift(-1, 0));
+        }
 
         private lock() {
+            if (this.checkImmobile()) {
+                console.log("spin");
+            }
             this._field.setBlocks(this._currentPiece.getCoords(this._width), new Block(0xFFFFFF, true, true));
-            this.clearLines(this._currentPiece.getYVals());
+            let cleared = this.clearLines(this._currentPiece.getYVals());
+            this._progress += cleared;
+            if (cleared > 0) {
+                console.log(this.checkPC());
+            }
             this.next();
         }
 
@@ -161,6 +185,7 @@
             this.updateField();
             this.updateQueue();
             this.updateHold();
+            this.updateProgress();
         }
         private updateHold(): void {
             if (this._hold === undefined) {
@@ -190,6 +215,9 @@
                 q.push(p.getRenderShape());
             }
             this._renderer.updateQueue(q);
+        }
+        private updateProgress(): void {
+            this._renderer.updateProgress(this._progress.toString());
         }
 
         private clearLines(yvals: number[]): number { //returns number of lines cleared
@@ -241,6 +269,6 @@
                 }
                 this.update();//remove this and only update when needed
             }
-            }
+        }
     }
 }
