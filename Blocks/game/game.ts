@@ -1,6 +1,5 @@
 ﻿namespace ASC {
     //TODO:
-    //Config files
     //Score
     export const MAX_FIELD_WIDTH: number = 20;
     export const MIN_FIELD_WIDTH: number = 5;
