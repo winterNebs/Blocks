@@ -6,8 +6,8 @@
         public _controls: number[] = [];
         public _delay: number;
         public _repeat: number;
-        public _queueSize: number;
-        public constructor(w: number, p: Piece[], c: number[], d: number, r: number, q: number) {
+        public _bagSize: number;
+        public constructor(w: number, p: Piece[], c: number[], d: number, r: number, b: number) {
             //this._width = 12;
             //this._queueSize = 6;
             //this._pieces = [new Piece("T", [7, 11, 12, 13], 2), new Piece("L", [8, 11, 12, 13], 2), new Piece("J", [6, 11, 12, 13], 2),
@@ -16,7 +16,7 @@
             //this._delay = 100;
             //this._repeat = 10;
             this._width = w;
-            this._queueSize = q;
+            this._bagSize = b;
             this._pieces = p;
             this._controls = c;
             this._delay = d;
@@ -28,7 +28,7 @@
             for (let i of cfg.pieces) {
                 ps.push(new Piece(i[0], i[1], i[2]));
             }
-            let config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.queueSize);
+            let config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.bagSize);
             return config;
         }
     }

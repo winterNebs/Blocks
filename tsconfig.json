@@ -1,6 +1,7 @@
 ﻿{
   "compileOnSave": true,
   "compilerOptions": {
+"sourceMap": false,
     "typeRoots": [
       "node_modules/@types"
     ]

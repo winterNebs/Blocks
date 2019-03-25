@@ -13,15 +13,16 @@
         private _hold: Piece;
         private _queue: Queue;
         private _width: number
-        private _queueSize: number;
+        private _bagSize: number;
         private _pieces: Piece[] = [];
         private _controls: number[];
         private _renderer: Renderer;
+        private _active: boolean = false;
         /**
          * Creates a new game
          * @param width Width of the game feild, (5 < width < 20, Default: 12).
          */
-        public constructor(width: number = 12, queueSize: number = 6,
+        public constructor(width: number = 12, bagSize: number = 6,
             pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2), new Piece("L", [8, 11, 12, 13], 2), new Piece("J", [6, 11, 12, 13], 2),
             new Piece("Z", [11, 12, 17, 18], 2), new Piece("S", [12, 13, 16, 17], 2), new Piece("I", [11, 12, 13, 14], 2), new Piece("O", [12, 13, 17, 18], 2)],
             controls: number[] = [39, 40, 37, 38, 83, 68, 16, 32], delay: number = 100, repeat: number = 10) {
@@ -38,9 +39,8 @@
                 throw new Error("Invalid width: " + width.toString());
             }
             this._width = width;
-            this._queueSize = queueSize
-            this._renderer = new Renderer(this._width, this._queueSize);
-            this._hold = undefined;
+            this._bagSize = bagSize;
+            this._renderer = new Renderer(this._width);
             //For now:
             this._pieces = pieces;
             //this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
@@ -51,14 +51,20 @@
 
         public resetGame(): void {
             this._field = new Field(this._width);
-            this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._queueSize);//NO bag size for now
+            this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);//NO bag size for now
             this._hold = undefined;
             this.next();
+            this._active = true;
             this.update();
         }
 
         private next(): void {
             this._currentPiece = this._queue.getNext();
+            if (!this.checkShift(0, 0)) {
+                this._active = false;
+                console.log("Game end");
+                this.resetGame();
+            }
         }
 
         //TODO:
@@ -127,10 +133,11 @@
             if (dir !== Rotations.CWCW) { //No 180 kicks
                 let sign = -(dir - 2); // - for cw + for ccw for now.
                 //Kick table, maybe change order to generalize
+                console.log("Trying to kick:")
                 for (let x = 0; x < 8; ++x) {
                     let xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
                     for (let i = 0; i < (x + 1) * 2; ++i) {//tune this
-                        let ykicks = Math.pow(-1, i) * ~~(i / 2) + ~~(i / 4);
+                        let ykicks = (Math.pow(-1, i) * ~~(i / 2) + ~~(i / 4));
                         console.log(xkicks, ykicks);
                         if (this.checkShift(xkicks, ykicks)) {
                             this._currentPiece.move(xkicks, ykicks);
@@ -140,9 +147,10 @@
                 }
 
             }
-            console.log("Failed Kick");
+            console.log("Failed Kick.");
             this._currentPiece.rotate(4 - dir); // Failed, unrotate.
         }
+
         private lock() {
             this._field.setBlocks(this._currentPiece.getCoords(this._width), new Block(0xFFFFFF, true, true));
             this.clearLines(this._currentPiece.getYVals());
@@ -204,34 +212,35 @@
         }
 
         Triggered(keyCode: number): void {
-            switch (keyCode) {
-                case this._controls[Inputs.CW]:
-                    this.rotate(Rotations.CW);
-                    break;
-                case this._controls[Inputs.RIGHT]:
-                    this.move(Directions.RIGHT);
-                    break;
-                case this._controls[Inputs.SD]:
-                    this.move(Directions.DOWN);
-                    break;
-                case this._controls[Inputs.LEFT]:
-                    this.move(Directions.LEFT);
-                    break;
-                case this._controls[Inputs.CCW]:
-                    this.rotate(Rotations.CCW);
-                    break;
-                case this._controls[Inputs.CWCW]:
-                    this.rotate(Rotations.CWCW);
-                    break;
-                case this._controls[Inputs.HD]:
-                    this.hardDrop();
-                    break;
-                case this._controls[Inputs.HOLD]:
-                    this.hold();
-                    break;
+            if (this._active) {
+                switch (keyCode) {
+                    case this._controls[Inputs.CW]:
+                        this.rotate(Rotations.CW);
+                        break;
+                    case this._controls[Inputs.RIGHT]:
+                        this.move(Directions.RIGHT);
+                        break;
+                    case this._controls[Inputs.SD]:
+                        this.move(Directions.DOWN);
+                        break;
+                    case this._controls[Inputs.LEFT]:
+                        this.move(Directions.LEFT);
+                        break;
+                    case this._controls[Inputs.CCW]:
+                        this.rotate(Rotations.CCW);
+                        break;
+                    case this._controls[Inputs.CWCW]:
+                        this.rotate(Rotations.CWCW);
+                        break;
+                    case this._controls[Inputs.HD]:
+                        this.hardDrop();
+                        break;
+                    case this._controls[Inputs.HOLD]:
+                        this.hold();
+                        break;
+                }
+                this.update();//remove this and only update when needed
             }
-            this.update();//remove this and only update when needed
-        }
-
+            }
     }
 }
