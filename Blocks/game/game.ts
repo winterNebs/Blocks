@@ -5,7 +5,7 @@
     enum Inputs {
         RIGHT, SD, LEFT, CW, CCW, CWCW, HOLD, HD
     }
-    export class Game implements IInputObserver {
+    export class Game implements ITriggerObserver {
         private _field: Field;
         private _currentPiece: Piece;
         private _hold: Piece;
@@ -15,7 +15,7 @@
         private _pieces: Piece[] = [];
         //Inputs for the game:
         //                            Right, SD,    Left,  CW,    CCW,   180(CWCW),Hold,HD     
-        private _inputs: boolean[] = [false, false, false, false, false, false, false, false];
+        //private _inputs: boolean[] = [false, false, false, false, false, false, false, false];
 
         private _renderer: Renderer;
         /**
@@ -24,6 +24,7 @@
          */
         public constructor(width: number = 12) {
             InputManager.RegisterObserver(this);
+            InputManager.RegisterKeys(this, [Keys.LEFT, Keys.RIGHT, Keys.DOWN], 100, 10);
             if (width > MAX_FIELD_WIDTH || width < MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
@@ -31,12 +32,13 @@
             this._renderer = new Renderer(this._width);
 
             //For now:
-            this._pieces.push(new Piece("T", [7, 11, 12, 13]));
-            this._pieces.push(new Piece("L", [8, 11, 12, 13]));
-            this._pieces.push(new Piece("Z", [11, 12, 17, 18]));
-            this._pieces.push(new Piece("S", [12, 13, 16, 17]));
-            this._pieces.push(new Piece("I", [11, 12, 13, 14]));
-            this._pieces.push(new Piece("O", [12, 13, 17, 18]));
+            this._pieces.push(new Piece("T", [7, 11, 12, 13], 2));
+            this._pieces.push(new Piece("L", [8, 11, 12, 13], 2));
+            this._pieces.push(new Piece("J", [6, 11, 12, 13], 2));
+            this._pieces.push(new Piece("Z", [11, 12, 17, 18], 2));
+            this._pieces.push(new Piece("S", [12, 13, 16, 17], 2));
+            this._pieces.push(new Piece("I", [11, 12, 13, 14], 2));
+            this._pieces.push(new Piece("O", [12, 13, 17, 18], 2));
             //this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
             this._pieces.forEach((i) => (i.initRotations()));
             this.resetGame();
@@ -56,23 +58,18 @@
         }
 
         //TODO:
-
-        //Apply kicks and rotation
-        //Phases?:
-        //Falling
-        //Lock
-
-        //Gravity event
-
         //Garbage Event
 
         private hardDrop(): void {
+            this.sonicDrop();
+            this.lock();
+        }
+        private sonicDrop(): void {
             let i = 0;
             while (this.checkShift(0, i)) {
                 ++i;
             }
             this._currentPiece.move(0, i - 1);
-            this.lock();
         }
 
         private move(dir: Directions): void {
@@ -116,14 +113,14 @@
                 return; //Successful natural rotation
             }
             if (dir !== Rotations.CWCW) { //No 180 kicks
-                let sign = dir - 2; // - for cw + for ccw for now.
+                let sign = -    (dir - 2); // - for cw + for ccw for now.
                 //Kick table, maybe change order to generalize
-                for (let x = 0; x < 16; ++x) {
+                for (let x = 0; x < 8; ++x) {
                     let xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
-                    for (let i = 0; i < 16; ++i) {//tune this
-                        let ykicks = Math.pow(-1, i) * ~~(i / 2);
+                    for (let i = 0; i < (x + 1) * 2; ++i) {//tune this
+                        let ykicks = Math.pow(-1, i) * ~~(i / 2) + ~~(i / 4);
+                        console.log(xkicks, ykicks);
                         if (this.checkShift(xkicks, ykicks)) {
-                            console.log(xkicks, ykicks);
                             this._currentPiece.move(xkicks, ykicks);
                             return; //successful kick
                         }
@@ -142,6 +139,12 @@
 
         private update(): void {
             let temp = this._field.getColors();
+            let copyCurrent = this._currentPiece.getCopy();
+            this.sonicDrop();
+            for (let point of this._currentPiece.getCoords(this._width)) {
+                temp[point] = 0x888888; /// for now
+            }
+            this._currentPiece = copyCurrent;
             for (let point of this._currentPiece.getCoords(this._width)) {
                 temp[point] = 0xFFFFFF; /// for now
             }
@@ -167,55 +170,34 @@
             return lines;
         }
 
-        RecieveNotification(keyevent: KeyboardEvent, down: boolean): void {
-            switch (keyevent.keyCode) {
+        Triggered(keyCode: number): void {
+            switch (keyCode) {
                 case Keys.UP:
-                    if (down) {
-                        this.rotate(Rotations.CW);
-                    }
-                    this._inputs[Inputs.CW] = down;
+                    this.rotate(Rotations.CW);
                     break;
                 case Keys.RIGHT:
-                    if (down) {
-                        this.move(Directions.RIGHT);
-                    }
-                    this._inputs[Inputs.RIGHT] = down;
+                    this.move(Directions.RIGHT);
                     break;
                 case Keys.DOWN:
-                    if (down) {
-                        this.move(Directions.DOWN);
-                    }
-                    this._inputs[Inputs.SD] = down;
+                    this.move(Directions.DOWN);
                     break;
                 case Keys.LEFT:
-                    if (down) {
-                        this.move(Directions.LEFT);
-                    }
-                    this._inputs[Inputs.LEFT] = down;
+                    this.move(Directions.LEFT);
                     break;
                 case Keys.S:
-                    if (down) {
-                        this.rotate(Rotations.CCW);
-                    }
-                    this._inputs[Inputs.CCW] = down;
+                    this.rotate(Rotations.CCW);
                     break;
                 case Keys.D:
-                    if (down) {
-                        this.rotate(Rotations.CWCW);
-                    }
-                    this._inputs[Inputs.CWCW] = down;
+                    this.rotate(Rotations.CWCW);
                     break;
                 case Keys.SPACE:
-                    if (down) {
-                        this.hardDrop();
-                    }
-                    this._inputs[Inputs.HD] = down;
+                    this.hardDrop();
                     break;
                 case Keys.SHIFT:
-                    this._inputs[Inputs.HOLD] = down;
                     break;
             }
             this.update();
         }
+
     }
 }

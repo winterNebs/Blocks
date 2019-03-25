@@ -106,11 +106,11 @@
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
     <TypeScriptCompile Include="game\block.ts" />
-    <TypeScriptCompile Include="game\IInputObserver.ts" />
     <TypeScriptCompile Include="game\inputManager.ts" />
     <TypeScriptCompile Include="game\enums.ts" />
     <TypeScriptCompile Include="game\field.ts" />
     <TypeScriptCompile Include="game\game.ts" />
+    <TypeScriptCompile Include="game\ITriggerObserver.ts" />
     <TypeScriptCompile Include="game\piece.ts" />
     <TypeScriptCompile Include="game\prng.ts" />
     <TypeScriptCompile Include="game\queue.ts" />

@@ -11,45 +11,109 @@
         SHIFT = 16
     }
 
+    class Key {
+        private _code: number;
+        private _pressed: boolean = false;
+        private _delay: number;
+        private _rate: number;
+        //private _timeStart: number = 0;
+        private _timeout: number;
+        private _interval: number;
+        private _listeners: ITriggerObserver[] = [];
+
+
+        public constructor(code: number, delay: number = 100, rate: number = 20) {
+            this._code = code;
+            this._delay = delay;
+            this._rate = rate;
+        }
+        public onPress(): void {
+            this._pressed = true;
+            //this._timeStart = Date.now();
+            this._timeout = setTimeout(this.activate.bind(this), this._delay);
+        }
+        private activate(): void {
+            //let delta = Date.now() - this._timeStart; // milliseconds elapsed since start
+            this._interval = setInterval(this.repeat.bind(this), this._rate)
+            //console.log("activate: " + this._code);
+        }
+        private repeat(): void {
+            //console.log("triggered: " + this._code);
+            for (let l of this._listeners) {
+                //console.log(l);
+                l.Triggered(this._code);
+            }
+        }
+        public onRelease(): void {
+            this._pressed = false;
+            clearTimeout(this._timeout);
+            clearInterval(this._interval);
+            //console.log("Cleared: " + this._code);
+        }
+        public registerTrigger(t: ITriggerObserver): void {
+            this._listeners.push(t);
+        }
+        public get code(): number {
+            return this._code;
+        }
+    }
 
     export class InputManager {
-        private static _keys: boolean[] = [];
-        private static _observers: IInputObserver[] = [];
+        private static _keys: Key[] = [];
+        private static _keyCodes: boolean[] = [];
+        private static _observers: ITriggerObserver[] = [];
         private constructor() { }
 
         public static initialize(): void {
             for (let i = 0; i < 255; ++i) {
-                InputManager._keys[i] = false;
+                InputManager._keyCodes[i] = false;
             }
             window.addEventListener("keydown", InputManager.onKeyDown);
             window.addEventListener("keyup", InputManager.onKeyUp);
         }
 
-        public static isKeyDown(key: Keys): boolean {
-            return InputManager._keys[key];
-        }
-
         private static onKeyDown(event: KeyboardEvent): boolean {
-            InputManager._keys[event.keyCode] = true;
+            if (InputManager._keyCodes[event.keyCode] !== true) {
+                InputManager.NotifyObservers(event.keyCode);
+                InputManager._keyCodes[event.keyCode] = true;
+                if (InputManager._keys.length > 0) {
+                    for (let k of InputManager._keys) {
+                        if (k.code === event.keyCode) {
+                            k.onPress();
+                        }
+                    }
+                }
+            }
+
             event.preventDefault();
             event.stopPropagation();
 
-            InputManager.NotifyObservers(event, true);
 
             return false;
         }
         private static onKeyUp(event: KeyboardEvent): boolean {
-            InputManager._keys[event.keyCode] = false;
+            InputManager._keyCodes[event.keyCode] = false;
+            if (InputManager._keys.length > 0) {
+                for (let k of InputManager._keys) {
+                    if (k.code === event.keyCode) {
+                        k.onRelease();
+                    }
+                }
+            }
             event.preventDefault();
             event.stopPropagation();
-            InputManager.NotifyObservers(event, false);
             return false;
         }
-
-        public static RegisterObserver(Observer: IInputObserver): void {
+        public static RegisterKeys(Observer: ITriggerObserver, keyCodes: number[], delay: number, repeat: number) {
+            for (let i of keyCodes) {
+                InputManager._keys.push(new Key(i, delay, repeat));
+                InputManager._keys[InputManager._keys.length - 1].registerTrigger(Observer);
+            }
+        }
+        public static RegisterObserver(Observer: ITriggerObserver): void {
             InputManager._observers.push(Observer);
         }
-        public static UnregisterObserver(Observer: IInputObserver): void {
+        public static UnregisterObserver(Observer: ITriggerObserver): void {
             let index = InputManager._observers.indexOf(Observer);
             if (index !== -1) {
                 InputManager._observers.splice(index, 1)
@@ -58,9 +122,9 @@
                 console.warn("Cannot unregister observer.")
             }
         }
-        private static NotifyObservers(keyevent: KeyboardEvent, down: boolean) {
+        private static NotifyObservers(keyevent: number) {
             for (let o of InputManager._observers) {
-                o.RecieveNotification(keyevent, down);
+                o.Triggered(keyevent);
             }
         }
 

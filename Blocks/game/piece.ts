@@ -93,6 +93,9 @@
         public getCopy(): Piece {
             let copy = new Piece(this._name, this._shape, this._offset, this._initialOrientation, this._color);
             copy._orientations = this._orientations;
+            copy._x = this._x;
+            copy._y = this._y;
+            copy._currentOrientation = this._currentOrientation;
             return copy;
         }
     }

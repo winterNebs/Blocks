@@ -3,7 +3,7 @@
         private _sprites: PIXI.Sprite[];
         private _width: number;
         private _texture: PIXI.Texture;
-        private _size: number = 24;
+        private _size: number = 16;
         public constructor(width: number) {
             super();
             this._width = width;

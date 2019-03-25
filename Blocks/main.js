@@ -169,22 +169,21 @@ var ASC;
         function Game(width) {
             if (width === void 0) { width = 12; }
             this._pieces = [];
-            //Inputs for the game:
-            //                            Right, SD,    Left,  CW,    CCW,   180(CWCW),Hold,HD     
-            this._inputs = [false, false, false, false, false, false, false, false];
             ASC.InputManager.RegisterObserver(this);
+            ASC.InputManager.RegisterKeys(this, [ASC.Keys.LEFT, ASC.Keys.RIGHT, ASC.Keys.DOWN], 100, 10);
             if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
             this._width = width;
             this._renderer = new ASC.Renderer(this._width);
             //For now:
-            this._pieces.push(new ASC.Piece("T", [7, 11, 12, 13]));
-            this._pieces.push(new ASC.Piece("L", [8, 11, 12, 13]));
-            this._pieces.push(new ASC.Piece("Z", [11, 12, 17, 18]));
-            this._pieces.push(new ASC.Piece("S", [12, 13, 16, 17]));
-            this._pieces.push(new ASC.Piece("I", [11, 12, 13, 14]));
-            this._pieces.push(new ASC.Piece("O", [12, 13, 17, 18]));
+            this._pieces.push(new ASC.Piece("T", [7, 11, 12, 13], 2));
+            this._pieces.push(new ASC.Piece("L", [8, 11, 12, 13], 2));
+            this._pieces.push(new ASC.Piece("J", [6, 11, 12, 13], 2));
+            this._pieces.push(new ASC.Piece("Z", [11, 12, 17, 18], 2));
+            this._pieces.push(new ASC.Piece("S", [12, 13, 16, 17], 2));
+            this._pieces.push(new ASC.Piece("I", [11, 12, 13, 14], 2));
+            this._pieces.push(new ASC.Piece("O", [12, 13, 17, 18], 2));
             //this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
             this._pieces.forEach(function (i) { return (i.initRotations()); });
             this.resetGame();
@@ -201,19 +200,17 @@ var ASC;
             this._currentPiece = this._queue.getNext();
         };
         //TODO:
-        //Apply kicks and rotation
-        //Phases?:
-        //Falling
-        //Lock
-        //Gravity event
         //Garbage Event
         Game.prototype.hardDrop = function () {
+            this.sonicDrop();
+            this.lock();
+        };
+        Game.prototype.sonicDrop = function () {
             var i = 0;
             while (this.checkShift(0, i)) {
                 ++i;
             }
             this._currentPiece.move(0, i - 1);
-            this.lock();
         };
         Game.prototype.move = function (dir) {
             switch (dir) {
@@ -254,14 +251,14 @@ var ASC;
                 return; //Successful natural rotation
             }
             if (dir !== ASC.Rotations.CWCW) { //No 180 kicks
-                var sign = dir - 2; // - for cw + for ccw for now.
+                var sign = -(dir - 2); // - for cw + for ccw for now.
                 //Kick table, maybe change order to generalize
-                for (var x = 0; x < 16; ++x) {
+                for (var x = 0; x < 8; ++x) {
                     var xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
-                    for (var i = 0; i < 16; ++i) { //tune this
-                        var ykicks = Math.pow(-1, i) * ~~(i / 2);
+                    for (var i = 0; i < (x + 1) * 2; ++i) { //tune this
+                        var ykicks = Math.pow(-1, i) * ~~(i / 2) + ~~(i / 4);
+                        console.log(xkicks, ykicks);
                         if (this.checkShift(xkicks, ykicks)) {
-                            console.log(xkicks, ykicks);
                             this._currentPiece.move(xkicks, ykicks);
                             return; //successful kick
                         }
@@ -278,8 +275,15 @@ var ASC;
         };
         Game.prototype.update = function () {
             var temp = this._field.getColors();
+            var copyCurrent = this._currentPiece.getCopy();
+            this.sonicDrop();
             for (var _i = 0, _a = this._currentPiece.getCoords(this._width); _i < _a.length; _i++) {
                 var point = _a[_i];
+                temp[point] = 0x888888; /// for now
+            }
+            this._currentPiece = copyCurrent;
+            for (var _b = 0, _c = this._currentPiece.getCoords(this._width); _b < _c.length; _b++) {
+                var point = _c[_b];
                 temp[point] = 0xFFFFFF; /// for now
             }
             this._renderer.updateField(temp);
@@ -302,52 +306,30 @@ var ASC;
             }
             return lines;
         };
-        Game.prototype.RecieveNotification = function (keyevent, down) {
-            switch (keyevent.keyCode) {
+        Game.prototype.Triggered = function (keyCode) {
+            switch (keyCode) {
                 case ASC.Keys.UP:
-                    if (down) {
-                        this.rotate(ASC.Rotations.CW);
-                    }
-                    this._inputs[Inputs.CW] = down;
+                    this.rotate(ASC.Rotations.CW);
                     break;
                 case ASC.Keys.RIGHT:
-                    if (down) {
-                        this.move(ASC.Directions.RIGHT);
-                    }
-                    this._inputs[Inputs.RIGHT] = down;
+                    this.move(ASC.Directions.RIGHT);
                     break;
                 case ASC.Keys.DOWN:
-                    if (down) {
-                        this.move(ASC.Directions.DOWN);
-                    }
-                    this._inputs[Inputs.SD] = down;
+                    this.move(ASC.Directions.DOWN);
                     break;
                 case ASC.Keys.LEFT:
-                    if (down) {
-                        this.move(ASC.Directions.LEFT);
-                    }
-                    this._inputs[Inputs.LEFT] = down;
+                    this.move(ASC.Directions.LEFT);
                     break;
                 case ASC.Keys.S:
-                    if (down) {
-                        this.rotate(ASC.Rotations.CCW);
-                    }
-                    this._inputs[Inputs.CCW] = down;
+                    this.rotate(ASC.Rotations.CCW);
                     break;
                 case ASC.Keys.D:
-                    if (down) {
-                        this.rotate(ASC.Rotations.CWCW);
-                    }
-                    this._inputs[Inputs.CWCW] = down;
+                    this.rotate(ASC.Rotations.CWCW);
                     break;
                 case ASC.Keys.SPACE:
-                    if (down) {
-                        this.hardDrop();
-                    }
-                    this._inputs[Inputs.HD] = down;
+                    this.hardDrop();
                     break;
                 case ASC.Keys.SHIFT:
-                    this._inputs[Inputs.HOLD] = down;
                     break;
             }
             this.update();
@@ -369,32 +351,99 @@ var ASC;
         Keys[Keys["SPACE"] = 32] = "SPACE";
         Keys[Keys["SHIFT"] = 16] = "SHIFT";
     })(Keys = ASC.Keys || (ASC.Keys = {}));
+    var Key = /** @class */ (function () {
+        function Key(code, delay, rate) {
+            if (delay === void 0) { delay = 100; }
+            if (rate === void 0) { rate = 20; }
+            this._pressed = false;
+            this._listeners = [];
+            this._code = code;
+            this._delay = delay;
+            this._rate = rate;
+        }
+        Key.prototype.onPress = function () {
+            this._pressed = true;
+            //this._timeStart = Date.now();
+            this._timeout = setTimeout(this.activate.bind(this), this._delay);
+        };
+        Key.prototype.activate = function () {
+            //let delta = Date.now() - this._timeStart; // milliseconds elapsed since start
+            this._interval = setInterval(this.repeat.bind(this), this._rate);
+            //console.log("activate: " + this._code);
+        };
+        Key.prototype.repeat = function () {
+            //console.log("triggered: " + this._code);
+            for (var _i = 0, _a = this._listeners; _i < _a.length; _i++) {
+                var l = _a[_i];
+                //console.log(l);
+                l.Triggered(this._code);
+            }
+        };
+        Key.prototype.onRelease = function () {
+            this._pressed = false;
+            clearTimeout(this._timeout);
+            clearInterval(this._interval);
+            //console.log("Cleared: " + this._code);
+        };
+        Key.prototype.registerTrigger = function (t) {
+            this._listeners.push(t);
+        };
+        Object.defineProperty(Key.prototype, "code", {
+            get: function () {
+                return this._code;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return Key;
+    }());
     var InputManager = /** @class */ (function () {
         function InputManager() {
         }
         InputManager.initialize = function () {
             for (var i = 0; i < 255; ++i) {
-                InputManager._keys[i] = false;
+                InputManager._keyCodes[i] = false;
             }
             window.addEventListener("keydown", InputManager.onKeyDown);
             window.addEventListener("keyup", InputManager.onKeyUp);
         };
-        InputManager.isKeyDown = function (key) {
-            return InputManager._keys[key];
-        };
         InputManager.onKeyDown = function (event) {
-            InputManager._keys[event.keyCode] = true;
+            if (InputManager._keyCodes[event.keyCode] !== true) {
+                InputManager.NotifyObservers(event.keyCode);
+                InputManager._keyCodes[event.keyCode] = true;
+                if (InputManager._keys.length > 0) {
+                    for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
+                        var k = _a[_i];
+                        if (k.code === event.keyCode) {
+                            k.onPress();
+                        }
+                    }
+                }
+            }
             event.preventDefault();
             event.stopPropagation();
-            InputManager.NotifyObservers(event, true);
             return false;
         };
         InputManager.onKeyUp = function (event) {
-            InputManager._keys[event.keyCode] = false;
+            InputManager._keyCodes[event.keyCode] = false;
+            if (InputManager._keys.length > 0) {
+                for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
+                    var k = _a[_i];
+                    if (k.code === event.keyCode) {
+                        k.onRelease();
+                    }
+                }
+            }
             event.preventDefault();
             event.stopPropagation();
-            InputManager.NotifyObservers(event, false);
             return false;
+        };
+        InputManager.RegisterKeys = function (Observer, keyCodes, delay, repeat) {
+            for (var _i = 0, keyCodes_1 = keyCodes; _i < keyCodes_1.length; _i++) {
+                var i = keyCodes_1[_i];
+                InputManager._keys.push(new Key(i, delay, repeat));
+                InputManager._keys[InputManager._keys.length - 1].registerTrigger(Observer);
+            }
         };
         InputManager.RegisterObserver = function (Observer) {
             InputManager._observers.push(Observer);
@@ -408,13 +457,14 @@ var ASC;
                 console.warn("Cannot unregister observer.");
             }
         };
-        InputManager.NotifyObservers = function (keyevent, down) {
+        InputManager.NotifyObservers = function (keyevent) {
             for (var _i = 0, _a = InputManager._observers; _i < _a.length; _i++) {
                 var o = _a[_i];
-                o.RecieveNotification(keyevent, down);
+                o.Triggered(keyevent);
             }
         };
         InputManager._keys = [];
+        InputManager._keyCodes = [];
         InputManager._observers = [];
         return InputManager;
     }());
@@ -515,6 +565,9 @@ var ASC;
         Piece.prototype.getCopy = function () {
             var copy = new Piece(this._name, this._shape, this._offset, this._initialOrientation, this._color);
             copy._orientations = this._orientations;
+            copy._x = this._x;
+            copy._y = this._y;
+            copy._currentOrientation = this._currentOrientation;
             return copy;
         };
         return Piece;
@@ -597,7 +650,7 @@ var ASC;
         __extends(Renderer, _super);
         function Renderer(width) {
             var _this = _super.call(this) || this;
-            _this._size = 24;
+            _this._size = 16;
             _this._width = width;
             _this._texture = PIXI.loader.resources["assets/textures/b.png"].texture;
             _this.initalizeSprites();
