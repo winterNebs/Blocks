@@ -29,18 +29,13 @@
         }
         public onPress(): void {
             this._pressed = true;
-            //this._timeStart = Date.now();
             this._timeout = setTimeout(this.activate.bind(this), this._delay);
         }
         private activate(): void {
-            //let delta = Date.now() - this._timeStart; // milliseconds elapsed since start
-            this._interval = setInterval(this.repeat.bind(this), this._rate)
-            //console.log("activate: " + this._code);
+            this._interval = setInterval(this.repeat.bind(this), this._rate);
         }
         private repeat(): void {
-            //console.log("triggered: " + this._code);
             for (let l of this._listeners) {
-                //console.log(l);
                 l.Triggered(this._code);
             }
         }

@@ -1,7 +1,7 @@
 ﻿namespace ASC {
     //TODO:
     //Config files
-    //Hosting?
+    //Score
     export const MAX_FIELD_WIDTH: number = 20;
     export const MIN_FIELD_WIDTH: number = 5;
     export const FIELD_HEIGHT: number = 25;
@@ -16,15 +16,25 @@
         private _width: number
         private _queueSize: number;
         private _pieces: Piece[] = [];
-
+        private _controls: number[];
         private _renderer: Renderer;
         /**
          * Creates a new game
          * @param width Width of the game feild, (5 < width < 20, Default: 12).
          */
-        public constructor(width: number = 12, queueSize: number = 6) {
+        public constructor(width: number = 12, queueSize: number = 6,
+            pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2), new Piece("L", [8, 11, 12, 13], 2), new Piece("J", [6, 11, 12, 13], 2),
+            new Piece("Z", [11, 12, 17, 18], 2), new Piece("S", [12, 13, 16, 17], 2), new Piece("I", [11, 12, 13, 14], 2), new Piece("O", [12, 13, 17, 18], 2)],
+            controls: number[] = [39, 40, 37, 38, 83, 68, 16, 32], delay: number = 100, repeat: number = 10) {
+            if (delay < 1) {
+                throw new Error("Invalid Delay");
+            }
+            if (repeat < 1) {
+                throw new Error("Invalid Repeat");
+            }
             InputManager.RegisterObserver(this);
-            InputManager.RegisterKeys(this, [Keys.LEFT, Keys.RIGHT, Keys.DOWN], 100, 10);
+            InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
+            this._controls = controls
             if (width > MAX_FIELD_WIDTH || width < MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
@@ -33,13 +43,7 @@
             this._renderer = new Renderer(this._width, this._queueSize);
             this._hold = undefined;
             //For now:
-            this._pieces.push(new Piece("T", [7, 11, 12, 13], 2));
-            this._pieces.push(new Piece("L", [8, 11, 12, 13], 2));
-            this._pieces.push(new Piece("J", [6, 11, 12, 13], 2));
-            this._pieces.push(new Piece("Z", [11, 12, 17, 18], 2));
-            this._pieces.push(new Piece("S", [12, 13, 16, 17], 2));
-            this._pieces.push(new Piece("I", [11, 12, 13, 14], 2));
-            this._pieces.push(new Piece("O", [12, 13, 17, 18], 2));
+            this._pieces = pieces;
             //this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
             this._pieces.forEach((i) => (i.initRotations()));
             this.resetGame();
@@ -202,28 +206,28 @@
 
         Triggered(keyCode: number): void {
             switch (keyCode) {
-                case Keys.UP:
+                case this._controls[Inputs.CW]:
                     this.rotate(Rotations.CW);
                     break;
-                case Keys.RIGHT:
+                case this._controls[Inputs.RIGHT]:
                     this.move(Directions.RIGHT);
                     break;
-                case Keys.DOWN:
+                case this._controls[Inputs.SD]:
                     this.move(Directions.DOWN);
                     break;
-                case Keys.LEFT:
+                case this._controls[Inputs.LEFT]:
                     this.move(Directions.LEFT);
                     break;
-                case Keys.S:
+                case this._controls[Inputs.CCW]:
                     this.rotate(Rotations.CCW);
                     break;
-                case Keys.D:
+                case this._controls[Inputs.CWCW]:
                     this.rotate(Rotations.CWCW);
                     break;
-                case Keys.SPACE:
+                case this._controls[Inputs.HD]:
                     this.hardDrop();
                     break;
-                case Keys.SHIFT:
+                case this._controls[Inputs.HOLD]:
                     this.hold();
                     break;
             }

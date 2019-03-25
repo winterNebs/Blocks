@@ -11,25 +11,29 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var configText = prompt("Enter Config Data (Check out the discord for more info: https://discord.gg/GjScWEh)", "{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2],[\"L\", [8, 11, 12, 13], 2],[\"J\", [6, 11, 12, 13], 2],[\"Z\", [11, 12, 17, 18], 2],[\"S\", [12, 13, 16, 17], 2],\t[\"I\", [11, 12, 13, 14], 2],\t[\"O\", [12, 13, 17, 18], 2]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 6}");
+if (configText == null || configText == "") {
+    configText = "{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2],[\"L\", [8, 11, 12, 13], 2],[\"J\", [6, 11, 12, 13], 2],[\"Z\", [11, 12, 17, 18], 2],[\"S\", [12, 13, 16, 17], 2],\t[\"I\", [11, 12, 13, 14], 2],\t[\"O\", [12, 13, 17, 18], 2]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 6}";
+}
 var app = new PIXI.Application(800, 600, { backgroundColor: 0x423c3e });
 document.body.appendChild(app.view);
 var game;
-// load sprites and run game when done
+var config;
 PIXI.loader.add('assets/textures/b.png').load(load);
 function load() {
-    game = new ASC.Game(10);
+    try {
+        config = ASC.Config.fromText(configText);
+    }
+    catch (err) {
+        alert("Something went wrong, using default config: " + err.message);
+        config = ASC.Config.fromText("{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2],[\"L\", [8, 11, 12, 13], 2],[\"J\", [6, 11, 12, 13], 2],[\"Z\", [11, 12, 17, 18], 2],[\"S\", [12, 13, 16, 17], 2],\t[\"I\", [11, 12, 13, 14], 2],\t[\"O\", [12, 13, 17, 18], 2]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 6}");
+    }
+    game = new ASC.Game(config._width, config._queueSize, config._pieces, config._controls, config._delay, config._repeat);
     ASC.InputManager.initialize();
 }
 var ASC;
 (function (ASC) {
-    //Representation of a block.
-    var Block = /** @class */ (function () {
-        /**
-         * Creates a new block.
-         * @param color Color of the block in hex, (Default: 0x000000).
-         * @param solid Solidity of the block, (Default: false).
-         * @param clearable Clearabliltiy of the block, (Default: false).
-         */
+    var Block = (function () {
         function Block(color, solid, clearable) {
             if (color === void 0) { color = 0x000000; }
             if (solid === void 0) { solid = false; }
@@ -70,7 +74,7 @@ var ASC;
         Rotations[Rotations["NONE"] = 0] = "NONE";
         Rotations[Rotations["CW"] = 1] = "CW";
         Rotations[Rotations["CWCW"] = 2] = "CWCW";
-        Rotations[Rotations["CCW"] = 3] = "CCW"; //Stored CW,CWCW, CCW but for math start at 1
+        Rotations[Rotations["CCW"] = 3] = "CCW";
     })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
     var Directions;
     (function (Directions) {
@@ -82,18 +86,12 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    //Representation of a game field.
-    var Field = /** @class */ (function () {
-        /**
-         * Creates a new game feild
-         * @param width Width of the gamefield.
-         */
+    var Field = (function () {
         function Field(width) {
             this._array = [];
             this._width = width;
             this.initialize();
         }
-        //Initialzes the field with empty blocks.
         Field.prototype.initialize = function () {
             for (var i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
                 this._array.push(new ASC.Block());
@@ -105,10 +103,6 @@ var ASC;
                 this._array.push(new ASC.Block());
             }
         };
-        /**
-         * Returns the block at the 1D index.
-         * @param index Index of the block to be returned.
-         */
         Field.prototype.getAt = function (index) {
             return this._array[index];
         };
@@ -120,21 +114,12 @@ var ASC;
             }
             return c;
         };
-        /**
-         * Sets specified indices to a certain block.
-         * @param indices Indices to be replaced.
-         * @param block Type of block to replace with.
-         */
         Field.prototype.setBlocks = function (indices, block) {
             for (var _i = 0, indices_1 = indices; _i < indices_1.length; _i++) {
                 var i = indices_1[_i];
                 this._array[i] = block;
             }
         };
-        /**
-         * Clear the line at the specified y-value.
-         * @param yval Row to be removed.
-         */
         Field.prototype.clearLineAt = function (yval) {
             this._array.splice(yval * this._width, this._width);
             for (var i = 0; i < this._width; ++i) {
@@ -147,9 +132,6 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    //TODO:
-    //Config files
-    //Hosting?
     ASC.MAX_FIELD_WIDTH = 20;
     ASC.MIN_FIELD_WIDTH = 5;
     ASC.FIELD_HEIGHT = 25;
@@ -164,17 +146,25 @@ var ASC;
         Inputs[Inputs["HOLD"] = 6] = "HOLD";
         Inputs[Inputs["HD"] = 7] = "HD";
     })(Inputs || (Inputs = {}));
-    var Game = /** @class */ (function () {
-        /**
-         * Creates a new game
-         * @param width Width of the game feild, (5 < width < 20, Default: 12).
-         */
-        function Game(width, queueSize) {
+    var Game = (function () {
+        function Game(width, queueSize, pieces, controls, delay, repeat) {
             if (width === void 0) { width = 12; }
             if (queueSize === void 0) { queueSize = 6; }
+            if (pieces === void 0) { pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2), new ASC.Piece("L", [8, 11, 12, 13], 2), new ASC.Piece("J", [6, 11, 12, 13], 2),
+                new ASC.Piece("Z", [11, 12, 17, 18], 2), new ASC.Piece("S", [12, 13, 16, 17], 2), new ASC.Piece("I", [11, 12, 13, 14], 2), new ASC.Piece("O", [12, 13, 17, 18], 2)]; }
+            if (controls === void 0) { controls = [39, 40, 37, 38, 83, 68, 16, 32]; }
+            if (delay === void 0) { delay = 100; }
+            if (repeat === void 0) { repeat = 10; }
             this._pieces = [];
+            if (delay < 1) {
+                throw new Error("Invalid Delay");
+            }
+            if (repeat < 1) {
+                throw new Error("Invalid Repeat");
+            }
             ASC.InputManager.RegisterObserver(this);
-            ASC.InputManager.RegisterKeys(this, [ASC.Keys.LEFT, ASC.Keys.RIGHT, ASC.Keys.DOWN], 100, 10);
+            ASC.InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
+            this._controls = controls;
             if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
@@ -182,22 +172,14 @@ var ASC;
             this._queueSize = queueSize;
             this._renderer = new ASC.Renderer(this._width, this._queueSize);
             this._hold = undefined;
-            //For now:
-            this._pieces.push(new ASC.Piece("T", [7, 11, 12, 13], 2));
-            this._pieces.push(new ASC.Piece("L", [8, 11, 12, 13], 2));
-            this._pieces.push(new ASC.Piece("J", [6, 11, 12, 13], 2));
-            this._pieces.push(new ASC.Piece("Z", [11, 12, 17, 18], 2));
-            this._pieces.push(new ASC.Piece("S", [12, 13, 16, 17], 2));
-            this._pieces.push(new ASC.Piece("I", [11, 12, 13, 14], 2));
-            this._pieces.push(new ASC.Piece("O", [12, 13, 17, 18], 2));
-            //this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
+            this._pieces = pieces;
             this._pieces.forEach(function (i) { return (i.initRotations()); });
             this.resetGame();
             app.stage.addChild(this._renderer);
         }
         Game.prototype.resetGame = function () {
             this._field = new ASC.Field(this._width);
-            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._queueSize); //NO bag size for now
+            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._queueSize);
             this._hold = undefined;
             this.next();
             this.update();
@@ -205,8 +187,6 @@ var ASC;
         Game.prototype.next = function () {
             this._currentPiece = this._queue.getNext();
         };
-        //TODO:
-        //Garbage Event
         Game.prototype.hold = function () {
             var _a;
             this._currentPiece.reset();
@@ -252,10 +232,9 @@ var ASC;
             var yvals = this._currentPiece.getYVals();
             for (var i = 0; i < coords.length; ++i) {
                 var block = this._field.getAt(coords[i] + x + y * this._width);
-                if (block == null || //Up, Down bounds
-                    yvals[i] != ~~((coords[i] + x) / this._width) || //Left, Right wrapping bounds
-                    block.solid //Colliding with a block
-                ) {
+                if (block == null ||
+                    yvals[i] != ~~((coords[i] + x) / this._width) ||
+                    block.solid) {
                     return false;
                 }
             }
@@ -264,25 +243,24 @@ var ASC;
         Game.prototype.rotate = function (dir) {
             this._currentPiece.rotate(dir);
             if (this.checkShift(0, 0)) {
-                return; //Successful natural rotation
+                return;
             }
-            if (dir !== ASC.Rotations.CWCW) { //No 180 kicks
-                var sign = -(dir - 2); // - for cw + for ccw for now.
-                //Kick table, maybe change order to generalize
+            if (dir !== ASC.Rotations.CWCW) {
+                var sign = -(dir - 2);
                 for (var x = 0; x < 8; ++x) {
                     var xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
-                    for (var i = 0; i < (x + 1) * 2; ++i) { //tune this
+                    for (var i = 0; i < (x + 1) * 2; ++i) {
                         var ykicks = Math.pow(-1, i) * ~~(i / 2) + ~~(i / 4);
                         console.log(xkicks, ykicks);
                         if (this.checkShift(xkicks, ykicks)) {
                             this._currentPiece.move(xkicks, ykicks);
-                            return; //successful kick
+                            return;
                         }
                     }
                 }
             }
             console.log("Failed Kick");
-            this._currentPiece.rotate(4 - dir); // Failed, unrotate.
+            this._currentPiece.rotate(4 - dir);
         };
         Game.prototype.lock = function () {
             this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(0xFFFFFF, true, true));
@@ -301,23 +279,21 @@ var ASC;
             this._renderer.updateHold(this._hold.getRenderShape());
         };
         Game.prototype.updateField = function () {
-            //Update field
             var temp = this._field.getColors();
             var copyCurrent = this._currentPiece.getCopy();
             this.sonicDrop();
             for (var _i = 0, _a = this._currentPiece.getCoords(this._width); _i < _a.length; _i++) {
                 var point = _a[_i];
-                temp[point] = 0x888888; /// for now
+                temp[point] = 0x888888;
             }
             this._currentPiece = copyCurrent;
             for (var _b = 0, _c = this._currentPiece.getCoords(this._width); _b < _c.length; _b++) {
                 var point = _c[_b];
-                temp[point] = 0xFFFFFF; /// for now
+                temp[point] = 0xFFFFFF;
             }
             this._renderer.updateField(temp);
         };
         Game.prototype.updateQueue = function () {
-            //Update queue
             var queue = this._queue.getQueue();
             var q = [];
             for (var _i = 0, queue_1 = queue; _i < queue_1.length; _i++) {
@@ -328,50 +304,50 @@ var ASC;
         };
         Game.prototype.clearLines = function (yvals) {
             var lines = 0;
-            yvals.sort(function (a, b) { return a - b; }); //sort and remove backwards
-            for (var _i = 0, yvals_1 = yvals; _i < yvals_1.length; _i++) { //checks only placed rows.
+            yvals.sort(function (a, b) { return a - b; });
+            for (var _i = 0, yvals_1 = yvals; _i < yvals_1.length; _i++) {
                 var y = yvals_1[_i];
                 for (var i = 0; i < this._width; i++) {
                     var block = this._field.getAt(y * this._width + i);
                     if (!block.solid || !block.clearable) {
                         break;
                     }
-                    if (i == this._width - 1) { // Loop ends/ also this sucks
+                    if (i == this._width - 1) {
                         ++lines;
                         this._field.clearLineAt(y);
                     }
-                } //re move rows
+                }
             }
             return lines;
         };
         Game.prototype.Triggered = function (keyCode) {
             switch (keyCode) {
-                case ASC.Keys.UP:
+                case this._controls[Inputs.CW]:
                     this.rotate(ASC.Rotations.CW);
                     break;
-                case ASC.Keys.RIGHT:
+                case this._controls[Inputs.RIGHT]:
                     this.move(ASC.Directions.RIGHT);
                     break;
-                case ASC.Keys.DOWN:
+                case this._controls[Inputs.SD]:
                     this.move(ASC.Directions.DOWN);
                     break;
-                case ASC.Keys.LEFT:
+                case this._controls[Inputs.LEFT]:
                     this.move(ASC.Directions.LEFT);
                     break;
-                case ASC.Keys.S:
+                case this._controls[Inputs.CCW]:
                     this.rotate(ASC.Rotations.CCW);
                     break;
-                case ASC.Keys.D:
+                case this._controls[Inputs.CWCW]:
                     this.rotate(ASC.Rotations.CWCW);
                     break;
-                case ASC.Keys.SPACE:
+                case this._controls[Inputs.HD]:
                     this.hardDrop();
                     break;
-                case ASC.Keys.SHIFT:
+                case this._controls[Inputs.HOLD]:
                     this.hold();
                     break;
             }
-            this.update(); //remove this and only update when needed
+            this.update();
         };
         return Game;
     }());
@@ -390,7 +366,7 @@ var ASC;
         Keys[Keys["SPACE"] = 32] = "SPACE";
         Keys[Keys["SHIFT"] = 16] = "SHIFT";
     })(Keys = ASC.Keys || (ASC.Keys = {}));
-    var Key = /** @class */ (function () {
+    var Key = (function () {
         function Key(code, delay, rate) {
             if (delay === void 0) { delay = 100; }
             if (rate === void 0) { rate = 20; }
@@ -402,19 +378,14 @@ var ASC;
         }
         Key.prototype.onPress = function () {
             this._pressed = true;
-            //this._timeStart = Date.now();
             this._timeout = setTimeout(this.activate.bind(this), this._delay);
         };
         Key.prototype.activate = function () {
-            //let delta = Date.now() - this._timeStart; // milliseconds elapsed since start
             this._interval = setInterval(this.repeat.bind(this), this._rate);
-            //console.log("activate: " + this._code);
         };
         Key.prototype.repeat = function () {
-            //console.log("triggered: " + this._code);
             for (var _i = 0, _a = this._listeners; _i < _a.length; _i++) {
                 var l = _a[_i];
-                //console.log(l);
                 l.Triggered(this._code);
             }
         };
@@ -422,7 +393,6 @@ var ASC;
             this._pressed = false;
             clearTimeout(this._timeout);
             clearInterval(this._interval);
-            //console.log("Cleared: " + this._code);
         };
         Key.prototype.registerTrigger = function (t) {
             this._listeners.push(t);
@@ -436,7 +406,7 @@ var ASC;
         });
         return Key;
     }());
-    var InputManager = /** @class */ (function () {
+    var InputManager = (function () {
         function InputManager() {
         }
         InputManager.initialize = function () {
@@ -511,14 +481,14 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var Piece = /** @class */ (function () {
+    var Piece = (function () {
         function Piece(name, shape, offset, initOrient, color) {
             if (offset === void 0) { offset = 0; }
             if (initOrient === void 0) { initOrient = 0; }
             if (color === void 0) { color = 0xFFFFFF; }
-            this._shape = []; //The shape of piece (array of indecies to be filled)
-            this._orientations = []; //Precomputed orientations/rotations
-            this._currentOrientation = 0; //Current orientation
+            this._shape = [];
+            this._orientations = [];
+            this._currentOrientation = 0;
             this._x = 0;
             this._y = 0;
             this._name = name;
@@ -638,24 +608,17 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var PRNG = /** @class */ (function () {
+    var PRNG = (function () {
         function PRNG(seed) {
             this._seed = Math.round(seed) % 2147483647;
             if (this._seed <= 0) {
                 this._seed += 2147483646;
             }
         }
-        /**
-         * Returns a pseudo-random value between 1 and 2^32 - 2.
-         */
         PRNG.prototype.next = function () {
             return this._seed = this._seed * 16807 % 2147483647;
         };
-        /**
-         * Returns a pseudo-random floating point number in range [0, 1).
-         */
         PRNG.prototype.nextFloat = function () {
-            // We know that result of next() will be 1 to 2147483646 (inclusive).
             return (this.next() - 1) / 2147483646;
         };
         PRNG.prototype.shuffleArray = function (array) {
@@ -672,7 +635,7 @@ var ASC;
 var ASC;
 (function (ASC) {
     ASC.NUM_PREVIEWS = 6;
-    var Queue = /** @class */ (function () {
+    var Queue = (function () {
         function Queue(seed, pieces, size) {
             if (size === void 0) { size = pieces.length; }
             this._queue = [];
@@ -695,7 +658,7 @@ var ASC;
             }
         };
         Queue.prototype.getQueue = function () {
-            return this._queue.slice(0, ASC.NUM_PREVIEWS); //need to copy 
+            return this._queue.slice(0, ASC.NUM_PREVIEWS);
         };
         Queue.prototype.getNext = function () {
             var temp = this._queue.splice(0, 1)[0];
@@ -708,7 +671,7 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var Renderer = /** @class */ (function (_super) {
+    var Renderer = (function (_super) {
         __extends(Renderer, _super);
         function Renderer(width, queueSize) {
             var _this = _super.call(this) || this;
@@ -741,7 +704,7 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var RenderGrid = /** @class */ (function (_super) {
+    var RenderGrid = (function (_super) {
         __extends(RenderGrid, _super);
         function RenderGrid(width, height, size, x, y) {
             if (size === void 0) { size = 24; }
@@ -766,16 +729,12 @@ var ASC;
                 s.x = i % this._width * this._size + this._x;
                 s.y = ~~(i / this._width) * this._size + this._y;
                 s.tint = 0x000000;
-                //tint
                 this.addChild(s);
                 this._sprites.push(s);
             }
         };
-        //Color is hex
         RenderGrid.prototype.updateColor = function (index, color) {
-            //if (this._sprites[index].tint != color) {
             this._sprites[index].tint = color;
-            //}
         };
         RenderGrid.prototype.updateGrid = function (Field) {
             for (var i = 0; i < Field.length; ++i) {
@@ -785,5 +744,31 @@ var ASC;
         return RenderGrid;
     }(PIXI.Container));
     ASC.RenderGrid = RenderGrid;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var Config = (function () {
+        function Config(w, p, c, d, r, q) {
+            this._controls = [];
+            this._width = w;
+            this._queueSize = q;
+            this._pieces = p;
+            this._controls = c;
+            this._delay = d;
+            this._repeat = r;
+        }
+        Config.fromText = function (input) {
+            var cfg = JSON.parse(input);
+            var ps = [];
+            for (var _i = 0, _a = cfg.pieces; _i < _a.length; _i++) {
+                var i = _a[_i];
+                ps.push(new ASC.Piece(i[0], i[1], i[2]));
+            }
+            var config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.queueSize);
+            return config;
+        };
+        return Config;
+    }());
+    ASC.Config = Config;
 })(ASC || (ASC = {}));
 //# sourceMappingURL=main.js.map
