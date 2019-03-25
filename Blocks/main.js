@@ -166,8 +166,9 @@ var ASC;
          * Creates a new game
          * @param width Width of the game feild, (5 < width < 20, Default: 12).
          */
-        function Game(width) {
+        function Game(width, queueSize) {
             if (width === void 0) { width = 12; }
+            if (queueSize === void 0) { queueSize = 6; }
             this._pieces = [];
             ASC.InputManager.RegisterObserver(this);
             ASC.InputManager.RegisterKeys(this, [ASC.Keys.LEFT, ASC.Keys.RIGHT, ASC.Keys.DOWN], 100, 10);
@@ -175,7 +176,8 @@ var ASC;
                 throw new Error("Invalid width: " + width.toString());
             }
             this._width = width;
-            this._renderer = new ASC.Renderer(this._width);
+            this._queueSize = queueSize;
+            this._renderer = new ASC.Renderer(this._width, this._queueSize);
             //For now:
             this._pieces.push(new ASC.Piece("T", [7, 11, 12, 13], 2));
             this._pieces.push(new ASC.Piece("L", [8, 11, 12, 13], 2));
@@ -191,7 +193,7 @@ var ASC;
         }
         Game.prototype.resetGame = function () {
             this._field = new ASC.Field(this._width);
-            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces); //NO bag size for now
+            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._queueSize); //NO bag size for now
             this._hold = undefined;
             this.next();
             this.update();
@@ -274,6 +276,7 @@ var ASC;
             this.next();
         };
         Game.prototype.update = function () {
+            //Update field
             var temp = this._field.getColors();
             var copyCurrent = this._currentPiece.getCopy();
             this.sonicDrop();
@@ -287,6 +290,14 @@ var ASC;
                 temp[point] = 0xFFFFFF; /// for now
             }
             this._renderer.updateField(temp);
+            //Update queue
+            var queue = this._queue.getQueue();
+            var q = [];
+            for (var _d = 0, queue_1 = queue; _d < queue_1.length; _d++) {
+                var p = queue_1[_d];
+                q.push(p.getRenderShape());
+            }
+            this._renderer.updateQueue(q);
         };
         Game.prototype.clearLines = function (yvals) {
             var lines = 0;
@@ -570,6 +581,24 @@ var ASC;
             copy._currentOrientation = this._currentOrientation;
             return copy;
         };
+        Piece.prototype.getRenderShape = function () {
+            var temp = [];
+            for (var i = 0; i < 25; ++i) {
+                temp.push(0x000000);
+            }
+            for (var _i = 0, _a = this._shape; _i < _a.length; _i++) {
+                var i = _a[_i];
+                temp[i] = 0xFFFFFF;
+            }
+            return temp;
+        };
+        Object.defineProperty(Piece.prototype, "name", {
+            get: function () {
+                return this._name;
+            },
+            enumerable: true,
+            configurable: true
+        });
         return Piece;
     }());
     ASC.Piece = Piece;
@@ -625,15 +654,16 @@ var ASC;
                 while (tempBag_2.length < this._bagSize) {
                     this._bag.forEach(function (i) { return tempBag_2.push(i.getCopy()); });
                 }
+                this._rng.shuffleArray(tempBag_2);
                 for (var _i = 0, tempBag_1 = tempBag_2; _i < tempBag_1.length; _i++) {
                     var i = tempBag_1[_i];
                     this._queue.push(i);
                 }
             }
         };
-        Queue.prototype.getBag = function () {
-            return this._queue.slice(0, ASC.NUM_PREVIEWS);
-            ;
+        Queue.prototype.getQueue = function () {
+            console.log(this._queue);
+            return this._queue.slice(0, ASC.NUM_PREVIEWS); //need to copy 
         };
         Queue.prototype.getNext = function () {
             var temp = this._queue.splice(0, 1)[0];
@@ -648,38 +678,74 @@ var ASC;
 (function (ASC) {
     var Renderer = /** @class */ (function (_super) {
         __extends(Renderer, _super);
-        function Renderer(width) {
+        function Renderer(width, queueSize) {
             var _this = _super.call(this) || this;
-            _this._size = 16;
+            _this._queue = [];
+            _this._field = new ASC.RenderGrid(width, ASC.FIELD_HEIGHT, 24);
+            _this.addChild(_this._field);
+            for (var i = 0; i < queueSize; ++i) {
+                _this._queue.push(new ASC.RenderGrid(5, 5, 10, width * 24, 10 * 5 * i));
+                _this.addChild(_this._queue[i]);
+            }
+            return _this;
+        }
+        Renderer.prototype.updateField = function (Field) {
+            this._field.updateGrid(Field);
+        };
+        Renderer.prototype.updateQueue = function (q) {
+            for (var i = 0; i < q.length; ++i) {
+                console.log(q[i]);
+                this._queue[i].updateGrid(q[i]);
+            }
+        };
+        return Renderer;
+    }(PIXI.Container));
+    ASC.Renderer = Renderer;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var RenderGrid = /** @class */ (function (_super) {
+        __extends(RenderGrid, _super);
+        function RenderGrid(width, height, size, x, y) {
+            if (size === void 0) { size = 24; }
+            if (x === void 0) { x = 0; }
+            if (y === void 0) { y = 0; }
+            var _this = _super.call(this) || this;
             _this._width = width;
+            _this._height = height;
+            _this._size = size;
+            _this._x = x;
+            _this._y = y;
             _this._texture = PIXI.loader.resources["assets/textures/b.png"].texture;
             _this.initalizeSprites();
             return _this;
         }
-        Renderer.prototype.initalizeSprites = function () {
+        RenderGrid.prototype.initalizeSprites = function () {
             this._sprites = [];
-            for (var i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
+            for (var i = 0; i < this._width * this._height; ++i) {
                 var s = new PIXI.Sprite(this._texture);
-                s.x = i % this._width * this._size;
-                s.y = ~~(i / this._width) * this._size;
+                s.height = this._size;
+                s.width = this._size;
+                s.x = i % this._width * this._size + this._x;
+                s.y = ~~(i / this._width) * this._size + this._y;
                 //tint
                 this.addChild(s);
                 this._sprites.push(s);
             }
         };
         //Color is hex
-        Renderer.prototype.updateColor = function (index, color) {
+        RenderGrid.prototype.updateColor = function (index, color) {
             //if (this._sprites[index].tint != color) {
             this._sprites[index].tint = color;
             //}
         };
-        Renderer.prototype.updateField = function (Field) {
+        RenderGrid.prototype.updateGrid = function (Field) {
             for (var i = 0; i < Field.length; ++i) {
                 this.updateColor(i, Field[i]);
             }
         };
-        return Renderer;
+        return RenderGrid;
     }(PIXI.Container));
-    ASC.Renderer = Renderer;
+    ASC.RenderGrid = RenderGrid;
 })(ASC || (ASC = {}));
 //# sourceMappingURL=main.js.map

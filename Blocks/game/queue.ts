@@ -18,13 +18,15 @@
                 while (tempBag.length < this._bagSize) {
                    this._bag.forEach((i) => tempBag.push(i.getCopy()));
                 }
+                this._rng.shuffleArray(tempBag);
                 for (let i of tempBag) {
                     this._queue.push(i);
                 }
             }
         }
-        public getBag(): Piece[] {
-            return this._queue.slice(0, NUM_PREVIEWS);;
+        public getQueue(): Piece[] {
+            console.log(this._queue);
+            return this._queue.slice(0, NUM_PREVIEWS);//need to copy 
         }
         public getNext(): Piece {
             let temp = this._queue.splice(0, 1)[0];

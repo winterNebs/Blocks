@@ -98,5 +98,18 @@
             copy._currentOrientation = this._currentOrientation;
             return copy;
         }
+        public getRenderShape(): number[] {
+            let temp = [];
+            for (let i = 0; i < 25; ++i) {
+                    temp.push(0x000000);
+            }
+            for (let i of this._shape) {
+                temp[i] = 0xFFFFFF;
+            }
+            return temp;
+        }
+        public get name(): string {
+            return this._name;
+        }
     }
 }

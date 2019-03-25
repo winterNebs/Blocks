@@ -11,7 +11,7 @@
         private _hold: Piece;
         private _queue: Queue;
         private _width: number
-
+        private _queueSize: number;
         private _pieces: Piece[] = [];
         //Inputs for the game:
         //                            Right, SD,    Left,  CW,    CCW,   180(CWCW),Hold,HD     
@@ -22,14 +22,15 @@
          * Creates a new game
          * @param width Width of the game feild, (5 < width < 20, Default: 12).
          */
-        public constructor(width: number = 12) {
+        public constructor(width: number = 12, queueSize: number = 6) {
             InputManager.RegisterObserver(this);
             InputManager.RegisterKeys(this, [Keys.LEFT, Keys.RIGHT, Keys.DOWN], 100, 10);
             if (width > MAX_FIELD_WIDTH || width < MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
             this._width = width;
-            this._renderer = new Renderer(this._width);
+            this._queueSize = queueSize
+            this._renderer = new Renderer(this._width, this._queueSize);
 
             //For now:
             this._pieces.push(new Piece("T", [7, 11, 12, 13], 2));
@@ -47,7 +48,7 @@
 
         public resetGame(): void {
             this._field = new Field(this._width);
-            this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces);//NO bag size for now
+            this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces,this._queueSize);//NO bag size for now
             this._hold = undefined;
             this.next();
             this.update();
@@ -113,7 +114,7 @@
                 return; //Successful natural rotation
             }
             if (dir !== Rotations.CWCW) { //No 180 kicks
-                let sign = -    (dir - 2); // - for cw + for ccw for now.
+                let sign = -(dir - 2); // - for cw + for ccw for now.
                 //Kick table, maybe change order to generalize
                 for (let x = 0; x < 8; ++x) {
                     let xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
@@ -138,6 +139,7 @@
         }
 
         private update(): void {
+            //Update field
             let temp = this._field.getColors();
             let copyCurrent = this._currentPiece.getCopy();
             this.sonicDrop();
@@ -149,6 +151,13 @@
                 temp[point] = 0xFFFFFF; /// for now
             }
             this._renderer.updateField(temp);
+            //Update queue
+            let queue: Piece[] = this._queue.getQueue();
+            let q: number[][] = [];
+            for (let p of queue) {
+                q.push(p.getRenderShape());
+            }
+            this._renderer.updateQueue(q);
         }
 
         private clearLines(yvals: number[]): number { //returns number of lines cleared

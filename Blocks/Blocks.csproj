@@ -115,6 +115,7 @@
     <TypeScriptCompile Include="game\prng.ts" />
     <TypeScriptCompile Include="game\queue.ts" />
     <TypeScriptCompile Include="game\renderer.ts" />
+    <TypeScriptCompile Include="game\renderGrid.ts" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />
