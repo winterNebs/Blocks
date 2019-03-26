@@ -49,7 +49,7 @@ var ASC;
             var ps = [];
             for (var _i = 0, _a = cfg.pieces; _i < _a.length; _i++) {
                 var i = _a[_i];
-                ps.push(new ASC.Piece(i[0], i[1], i[2], Number("0x" + i[3])));
+                ps.push(new ASC.Piece(i[0], i[1], i[2], Number("0x" + i[3]), 0));
             }
             var config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.bagSize);
             return config;
@@ -202,14 +202,15 @@ var ASC;
             }
         };
         Game.prototype.hold = function () {
-            var _a;
             this._currentPiece.reset();
             if (this._hold === undefined) {
                 this._hold = this._currentPiece;
                 this.next();
                 return;
             }
-            _a = [this._currentPiece, this._hold], this._hold = _a[0], this._currentPiece = _a[1];
+            var temp = this._hold;
+            this._hold = this._currentPiece;
+            this._currentPiece = temp;
         };
         Game.prototype.hardDrop = function () {
             this.sonicDrop();
@@ -388,8 +389,8 @@ var ASC;
                         this.move(ASC.Directions.DOWN);
                         break;
                     case this._controls[Inputs.LEFT]:
-                        this.move(ASC.Directions.LEFT);
                         ASC.InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
+                        this.move(ASC.Directions.LEFT);
                         break;
                     case this._controls[Inputs.CCW]:
                         this.rotate(ASC.Rotations.CCW);
@@ -693,7 +694,7 @@ var ASC;
             this._y = 0;
         };
         Piece.prototype.getCopy = function () {
-            var copy = new Piece(this._name, this._shape, this._offset, this._initialOrientation, this._color);
+            var copy = new Piece(this._name, this._shape, this._offset, this._color, this._initialOrientation);
             copy._orientations = this._orientations;
             copy._x = this._x;
             copy._y = this._y;

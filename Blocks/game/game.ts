@@ -83,9 +83,6 @@
                 console.log("Game end");
             }
         }
-
-        //TODO:
-        //Garbage Event
         private hold(): void {
             this._currentPiece.reset();
             if (this._hold === undefined) {
@@ -93,7 +90,9 @@
                 this.next();
                 return;
             }
-            [this._hold, this._currentPiece] = [this._currentPiece, this._hold];
+            let temp = this._hold;
+            this._hold = this._currentPiece;
+            this._currentPiece = temp;
         }
         private hardDrop(): void {
             this.sonicDrop();
@@ -281,8 +280,8 @@
                         this.move(Directions.DOWN);
                         break;
                     case this._controls[Inputs.LEFT]:
-                        this.move(Directions.LEFT);
                         InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
+                        this.move(Directions.LEFT);
                         break;
                     case this._controls[Inputs.CCW]:
                         this.rotate(Rotations.CCW);
