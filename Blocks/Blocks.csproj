@@ -134,6 +134,7 @@
     <TypeScriptCompile Include="game\scoring\attackTable.ts" />
     <TypeScriptCompile Include="game\scoring\scoreTable.ts" />
     <TypeScriptCompile Include="game\scoring\table.ts" />
+    <TypeScriptCompile Include="game\timer.ts" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />

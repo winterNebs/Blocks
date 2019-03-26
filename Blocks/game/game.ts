@@ -4,6 +4,7 @@
     export const MAX_FIELD_WIDTH: number = 20;
     export const MIN_FIELD_WIDTH: number = 5;
     export const FIELD_HEIGHT: number = 25;
+    const TIMELIMIT: number = 60;
     enum Inputs {
         RIGHT, SD, LEFT, CW, CCW, CWCW, HOLD, HD
     }
@@ -20,6 +21,7 @@
         private _active: boolean = false;
         private _progress: number = 0;
         private _attack: AttackTable;
+        private _timer: Timer;
         /**
          * Creates a new game
          * @param width Width of the game feild, (5 < width < 20, Default: 12).
@@ -45,14 +47,14 @@
             this._renderer = new Renderer(this._width, "Attack");
             //For now:
             this._pieces = pieces;
-            //this._pieces.push(new Piece("a", [0, 1, 8, 13, 20, 24]))
             this._pieces.forEach((i) => (i.initRotations()));
-            this.resetGame();
             this._attack = new AttackTable(this._width);
+            this._timer = new Timer(this.tick.bind(this), this.gameOver.bind(this), 30, 60000)
+            this.resetGame();
             app.stage.addChild(this._renderer);
         }
-
         public resetGame(): void {
+            this._timer.start();
             this._field = new Field(this._width);
             this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);//NO bag size for now
             this._hold = undefined;
@@ -61,14 +63,21 @@
             this._progress = 0;
             this.update();
         }
-
+        private tick(): void {
+            this.updateTime();
+        }
+        private gameOver(): void {
+            this._active = false;
+            this.updateTime();
+            this._timer.stop();
+            
+        }
 
         private next(): void {
             this._currentPiece = this._queue.getNext();
             if (!this.checkShift(0, 0)) {
-                this._active = false;
+                this.gameOver();
                 console.log("Game end");
-                this.resetGame();
             }
         }
 
@@ -198,6 +207,11 @@
         }
         private updateHold(): void {
             if (this._hold === undefined) {
+                let temp = [];
+                for (let i = 0; i < 25; ++i) {
+                    temp.push(0x000000);
+                }
+                this._renderer.updateHold(temp);
                 return;
             }
             this._renderer.updateHold(this._hold.getRenderShape());
@@ -228,7 +242,9 @@
         private updateProgress(): void {
             this._renderer.updateProgress(this._progress.toString());
         }
-
+        private updateTime(): void {
+            this._renderer.updateTime((this._timer.elapsed / 1000).toString());
+        }
         private clearLines(yvals: number[]): number { //returns number of lines cleared
             let lines = 0;
             yvals.sort(function (a, b) { return a - b }); //sort and remove backwards
@@ -277,6 +293,9 @@
                         break;
                 }
                 this.update();//remove this and only update when needed
+            }
+            if (keyCode === 115) { //f4
+                this.resetGame();
             }
         }
     }

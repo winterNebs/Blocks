@@ -125,6 +125,7 @@ var ASC;
     ASC.MAX_FIELD_WIDTH = 20;
     ASC.MIN_FIELD_WIDTH = 5;
     ASC.FIELD_HEIGHT = 25;
+    var TIMELIMIT = 60;
     var Inputs;
     (function (Inputs) {
         Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
@@ -165,11 +166,13 @@ var ASC;
             this._renderer = new ASC.Renderer(this._width, "Attack");
             this._pieces = pieces;
             this._pieces.forEach(function (i) { return (i.initRotations()); });
-            this.resetGame();
             this._attack = new ASC.AttackTable(this._width);
+            this._timer = new ASC.Timer(this.tick.bind(this), this.gameOver.bind(this), 30, 60000);
+            this.resetGame();
             app.stage.addChild(this._renderer);
         }
         Game.prototype.resetGame = function () {
+            this._timer.start();
             this._field = new ASC.Field(this._width);
             this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
             this._hold = undefined;
@@ -178,12 +181,19 @@ var ASC;
             this._progress = 0;
             this.update();
         };
+        Game.prototype.tick = function () {
+            this.updateTime();
+        };
+        Game.prototype.gameOver = function () {
+            this._active = false;
+            this.updateTime();
+            this._timer.stop();
+        };
         Game.prototype.next = function () {
             this._currentPiece = this._queue.getNext();
             if (!this.checkShift(0, 0)) {
-                this._active = false;
+                this.gameOver();
                 console.log("Game end");
-                this.resetGame();
             }
         };
         Game.prototype.hold = function () {
@@ -301,6 +311,11 @@ var ASC;
         };
         Game.prototype.updateHold = function () {
             if (this._hold === undefined) {
+                var temp = [];
+                for (var i = 0; i < 25; ++i) {
+                    temp.push(0x000000);
+                }
+                this._renderer.updateHold(temp);
                 return;
             }
             this._renderer.updateHold(this._hold.getRenderShape());
@@ -331,6 +346,9 @@ var ASC;
         };
         Game.prototype.updateProgress = function () {
             this._renderer.updateProgress(this._progress.toString());
+        };
+        Game.prototype.updateTime = function () {
+            this._renderer.updateTime((this._timer.elapsed / 1000).toString());
         };
         Game.prototype.clearLines = function (yvals) {
             var lines = 0;
@@ -379,6 +397,9 @@ var ASC;
                         break;
                 }
                 this.update();
+            }
+            if (keyCode === 115) {
+                this.resetGame();
             }
         };
         return Game;
@@ -759,6 +780,10 @@ var ASC;
             _this._progress.x = width * FIELD_SIZE + SMALL_SIZE * 5 + 10;
             _this._progress.y = SMALL_SIZE * 5 * ASC.NUM_PREVIEWS + 10;
             _this.addChild(_this._progress);
+            _this._time = new PIXI.Text("\n\nhi", { fontFamily: 'Arial', fontSize: 24, fill: 0x000000, align: 'center' });
+            _this._time.x = width * FIELD_SIZE + SMALL_SIZE * 5 + 10;
+            _this._time.y = SMALL_SIZE * 5 * ASC.NUM_PREVIEWS + 10;
+            _this.addChild(_this._time);
             return _this;
         }
         Renderer.prototype.updateField = function (Field) {
@@ -774,6 +799,9 @@ var ASC;
         };
         Renderer.prototype.updateProgress = function (t) {
             this._progress.text = this._progressText + "\n" + t;
+        };
+        Renderer.prototype.updateTime = function (t) {
+            this._time.text = "\n\nTime:" + t;
         };
         return Renderer;
     }(PIXI.Container));
@@ -843,5 +871,48 @@ var ASC;
         return AttackTable;
     }());
     ASC.AttackTable = AttackTable;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var Timer = (function () {
+        function Timer(tick, finish, interval, end) {
+            this._elapsed = 0;
+            this._finish = finish;
+            this._interval = interval;
+            this._tick = tick;
+            this._end = end;
+        }
+        Timer.prototype.start = function () {
+            this.stop();
+            this._elapsed = 0;
+            this._expectedEnd = Date.now() + this._end;
+            this._expected = Date.now() + this._interval;
+            this._timeout = setTimeout(this.step.bind(this), this._interval);
+        };
+        Timer.prototype.stop = function () {
+            clearTimeout(this._timeout);
+        };
+        Timer.prototype.step = function () {
+            this._elapsed += this._interval;
+            if (Date.now() >= this._expectedEnd) {
+                this.stop();
+                this._finish();
+                return;
+            }
+            var drift = Date.now() - this._expected;
+            this._tick();
+            this._expected += this._interval;
+            this._timeout = setTimeout(this.step.bind(this), Math.max(0, this._interval - drift));
+        };
+        Object.defineProperty(Timer.prototype, "elapsed", {
+            get: function () {
+                return this._elapsed;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return Timer;
+    }());
+    ASC.Timer = Timer;
 })(ASC || (ASC = {}));
 //# sourceMappingURL=main.js.map
