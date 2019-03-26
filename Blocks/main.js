@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var defaultText = "{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2,\"FF00FF\"],[\"L\", [8, 11, 12, 13], 2, \"FF9900\"],[\"J\", [6, 11, 12, 13], 2, \"0000FF\"],[\"Z\", [11, 12, 17, 18], 2, \"FF0000\"],[\"S\", [12, 13, 16, 17], 2, \"00FF00\"],[\"I\", [11, 12, 13, 14], 2, \"00FFFF\"],[\"O\", [12, 13, 17, 18], 2, \"FFFF00\"]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"bagSize\": 7}";
+var defaultText = "{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2,\"FF00FF\"],[\"L\", [8, 11, 12, 13], 2, \"FF9900\"],[\"J\", [6, 11, 12, 13], 2, \"0000FF\"],[\"Z\", [6, 7, 12, 13], 2, \"FF0000\"],[\"S\", [7, 8, 11, 12], 2, \"00FF00\"],[\"I\", [11, 12, 13, 14], 2, \"00FFFF\"],[\"O\", [12, 13, 17, 18], 2, \"FFFF00\"]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"bagSize\": 7}";
 var configText = prompt("Enter Config Data (Check out the discord for more info: https://discord.gg/GjScWEh)", defaultText);
 if (configText == null || configText == "") {
     configText = defaultText;
