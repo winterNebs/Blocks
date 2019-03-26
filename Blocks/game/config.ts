@@ -26,7 +26,7 @@
             let cfg = JSON.parse(input);
             let ps: Piece[] = [];
             for (let i of cfg.pieces) {
-                ps.push(new Piece(i[0], i[1], i[2]));
+                ps.push(new Piece(i[0], i[1], i[2], Number("0x"+i[3])));
             }
             let config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.bagSize);
             return config;

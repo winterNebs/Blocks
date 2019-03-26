@@ -185,7 +185,7 @@
 
         private lock() {
             let spin = this.checkImmobile();
-            this._field.setBlocks(this._currentPiece.getCoords(this._width), new Block(0xFFFFFF, true, true));
+            this._field.setBlocks(this._currentPiece.getCoords(this._width), new Block(this._currentPiece.color, true, true));
             let cleared = this.clearLines(this._currentPiece.getYVals());
 
             if (cleared > 0) {
@@ -225,11 +225,11 @@
             let copyCurrent = this._currentPiece.getCopy();
             this.sonicDrop();
             for (let point of this._currentPiece.getCoords(this._width)) {
-                temp[point] = 0x888888; /// for now
+                temp[point] = (this._currentPiece.color & 0xfefefe) >> 1;; /// for now
             }
             this._currentPiece = copyCurrent;
             for (let point of this._currentPiece.getCoords(this._width)) {
-                temp[point] = 0xFFFFFF; /// for now
+                temp[point] = this._currentPiece.color; /// for now
             }
             this._renderer.updateField(temp);
         }

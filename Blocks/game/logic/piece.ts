@@ -14,7 +14,7 @@
         private _color: number;                     //Color of piece
 
 
-        public constructor(name: string, shape: number[], offset: number = 0, initOrient: number = 0, color: number = 0xFFFFFF) {
+        public constructor(name: string, shape: number[], offset: number = 0, color: number = 0xFFFFFF, initOrient: number = 0) {
             this._name = name;
             this.setShape(shape);
             this._offset = offset;
@@ -109,6 +109,7 @@
             copy._x = this._x;
             copy._y = this._y;
             copy._currentOrientation = this._currentOrientation;
+            copy._color = this._color;
             return copy;
         }
         public getRenderShape(): number[] {
@@ -117,12 +118,15 @@
                 temp.push(0x000000);
             }
             for (let i of this._shape) {
-                temp[i] = 0xFFFFFF;
+                temp[i] = this._color;
             }
             return temp;
         }
         public get name(): string {
             return this._name;
+        }
+        public get color(): number {
+            return this._color;
         }
     }
 }

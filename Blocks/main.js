@@ -11,9 +11,10 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var configText = prompt("Enter Config Data (Check out the discord for more info: https://discord.gg/GjScWEh)", "{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2],[\"L\", [8, 11, 12, 13], 2],[\"J\", [6, 11, 12, 13], 2],[\"Z\", [11, 12, 17, 18], 2],[\"S\", [12, 13, 16, 17], 2],\t[\"I\", [11, 12, 13, 14], 2],\t[\"O\", [12, 13, 17, 18], 2]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 7}");
+var defaultText = "{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2,\"FF00FF\"],[\"L\", [8, 11, 12, 13], 2, \"FF9900\"],[\"J\", [6, 11, 12, 13], 2, \"0000FF\"],[\"Z\", [11, 12, 17, 18], 2, \"FF0000\"],[\"S\", [12, 13, 16, 17], 2, \"00FF00\"],[\"I\", [11, 12, 13, 14], 2, \"00FFFF\"],[\"O\", [12, 13, 17, 18], 2, \"FFFF00\"]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 7}";
+var configText = prompt("Enter Config Data (Check out the discord for more info: https://discord.gg/GjScWEh)", defaultText);
 if (configText == null || configText == "") {
-    configText = "{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2],[\"L\", [8, 11, 12, 13], 2],[\"J\", [6, 11, 12, 13], 2],[\"Z\", [11, 12, 17, 18], 2],[\"S\", [12, 13, 16, 17], 2],\t[\"I\", [11, 12, 13, 14], 2],\t[\"O\", [12, 13, 17, 18], 2]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 7}";
+    configText = defaultText;
 }
 var app = new PIXI.Application(800, 600, { backgroundColor: 0x423c3e });
 document.body.appendChild(app.view);
@@ -26,47 +27,11 @@ function load() {
     }
     catch (err) {
         alert("Something went wrong, using default config: " + err.message);
-        config = ASC.Config.fromText("{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2],[\"L\", [8, 11, 12, 13], 2],[\"J\", [6, 11, 12, 13], 2],[\"Z\", [11, 12, 17, 18], 2],[\"S\", [12, 13, 16, 17], 2],\t[\"I\", [11, 12, 13, 14], 2],\t[\"O\", [12, 13, 17, 18], 2]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"queueSize\": 7}");
+        config = ASC.Config.fromText(defaultText);
     }
     game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
     ASC.InputManager.initialize();
 }
-var ASC;
-(function (ASC) {
-    var Block = (function () {
-        function Block(color, solid, clearable) {
-            if (color === void 0) { color = 0x000000; }
-            if (solid === void 0) { solid = false; }
-            if (clearable === void 0) { clearable = false; }
-            this._color = color;
-            this._solid = solid;
-            this._clearable = clearable;
-        }
-        Object.defineProperty(Block.prototype, "color", {
-            get: function () {
-                return this._color;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Block.prototype, "solid", {
-            get: function () {
-                return this._solid;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Block.prototype, "clearable", {
-            get: function () {
-                return this._clearable;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return Block;
-    }());
-    ASC.Block = Block;
-})(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
     var Config = (function () {
@@ -84,7 +49,7 @@ var ASC;
             var ps = [];
             for (var _i = 0, _a = cfg.pieces; _i < _a.length; _i++) {
                 var i = _a[_i];
-                ps.push(new ASC.Piece(i[0], i[1], i[2]));
+                ps.push(new ASC.Piece(i[0], i[1], i[2], Number("0x" + i[3])));
             }
             var config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.bagSize);
             return config;
@@ -92,142 +57,6 @@ var ASC;
         return Config;
     }());
     ASC.Config = Config;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    var Keys;
-    (function (Keys) {
-        Keys[Keys["LEFT"] = 37] = "LEFT";
-        Keys[Keys["UP"] = 38] = "UP";
-        Keys[Keys["RIGHT"] = 39] = "RIGHT";
-        Keys[Keys["DOWN"] = 40] = "DOWN";
-        Keys[Keys["S"] = 83] = "S";
-        Keys[Keys["D"] = 68] = "D";
-        Keys[Keys["SPACE"] = 32] = "SPACE";
-        Keys[Keys["SHIFT"] = 16] = "SHIFT";
-    })(Keys = ASC.Keys || (ASC.Keys = {}));
-    var Key = (function () {
-        function Key(code, delay, rate) {
-            if (delay === void 0) { delay = 100; }
-            if (rate === void 0) { rate = 20; }
-            this._pressed = false;
-            this._listeners = [];
-            this._code = code;
-            this._delay = delay;
-            this._rate = rate;
-        }
-        Key.prototype.onPress = function () {
-            this._pressed = true;
-            this._timeout = setTimeout(this.activate.bind(this), this._delay);
-        };
-        Key.prototype.activate = function () {
-            this._interval = setInterval(this.repeat.bind(this), this._rate);
-        };
-        Key.prototype.repeat = function () {
-            for (var _i = 0, _a = this._listeners; _i < _a.length; _i++) {
-                var l = _a[_i];
-                l.Triggered(this._code);
-            }
-        };
-        Key.prototype.onRelease = function () {
-            this._pressed = false;
-            clearTimeout(this._timeout);
-            clearInterval(this._interval);
-        };
-        Key.prototype.registerTrigger = function (t) {
-            this._listeners.push(t);
-        };
-        Object.defineProperty(Key.prototype, "code", {
-            get: function () {
-                return this._code;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return Key;
-    }());
-    var InputManager = (function () {
-        function InputManager() {
-        }
-        InputManager.initialize = function () {
-            for (var i = 0; i < 255; ++i) {
-                InputManager._keyCodes[i] = false;
-            }
-            window.addEventListener("keydown", InputManager.onKeyDown);
-            window.addEventListener("keyup", InputManager.onKeyUp);
-        };
-        InputManager.onKeyDown = function (event) {
-            if (InputManager._keyCodes[event.keyCode] !== true) {
-                InputManager.NotifyObservers(event.keyCode);
-                InputManager._keyCodes[event.keyCode] = true;
-                if (InputManager._keys.length > 0) {
-                    for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
-                        var k = _a[_i];
-                        if (k.code === event.keyCode) {
-                            k.onPress();
-                        }
-                    }
-                }
-            }
-            event.preventDefault();
-            event.stopPropagation();
-            return false;
-        };
-        InputManager.onKeyUp = function (event) {
-            InputManager._keyCodes[event.keyCode] = false;
-            if (InputManager._keys.length > 0) {
-                for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
-                    var k = _a[_i];
-                    if (k.code === event.keyCode) {
-                        k.onRelease();
-                    }
-                }
-            }
-            event.preventDefault();
-            event.stopPropagation();
-            return false;
-        };
-        InputManager.RegisterKeys = function (Observer, keyCodes, delay, repeat) {
-            for (var _i = 0, keyCodes_1 = keyCodes; _i < keyCodes_1.length; _i++) {
-                var i = keyCodes_1[_i];
-                InputManager._keys.push(new Key(i, delay, repeat));
-                InputManager._keys[InputManager._keys.length - 1].registerTrigger(Observer);
-            }
-        };
-        InputManager.RegisterObserver = function (Observer) {
-            InputManager._observers.push(Observer);
-        };
-        InputManager.UnregisterObserver = function (Observer) {
-            var index = InputManager._observers.indexOf(Observer);
-            if (index !== -1) {
-                InputManager._observers.splice(index, 1);
-            }
-            else {
-                console.warn("Cannot unregister observer.");
-            }
-        };
-        InputManager.NotifyObservers = function (keyevent) {
-            for (var _i = 0, _a = InputManager._observers; _i < _a.length; _i++) {
-                var o = _a[_i];
-                o.Triggered(keyevent);
-            }
-        };
-        InputManager.cancelRepeat = function (keycode) {
-            if (InputManager._keys.length > 0) {
-                for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
-                    var k = _a[_i];
-                    if (k.code === keycode) {
-                        k.onRelease();
-                    }
-                }
-            }
-        };
-        InputManager._keys = [];
-        InputManager._keyCodes = [];
-        InputManager._observers = [];
-        return InputManager;
-    }());
-    ASC.InputManager = InputManager;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -464,7 +293,7 @@ var ASC;
         };
         Game.prototype.lock = function () {
             var spin = this.checkImmobile();
-            this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(0xFFFFFF, true, true));
+            this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(this._currentPiece.color, true, true));
             var cleared = this.clearLines(this._currentPiece.getYVals());
             if (cleared > 0) {
                 if (spin) {
@@ -502,12 +331,13 @@ var ASC;
             this.sonicDrop();
             for (var _i = 0, _a = this._currentPiece.getCoords(this._width); _i < _a.length; _i++) {
                 var point = _a[_i];
-                temp[point] = 0x888888;
+                temp[point] = (this._currentPiece.color & 0xfefefe) >> 1;
+                ;
             }
             this._currentPiece = copyCurrent;
             for (var _b = 0, _c = this._currentPiece.getCoords(this._width); _b < _c.length; _b++) {
                 var point = _c[_b];
-                temp[point] = 0xFFFFFF;
+                temp[point] = this._currentPiece.color;
             }
             this._renderer.updateField(temp);
         };
@@ -586,11 +416,183 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
+    var Keys;
+    (function (Keys) {
+        Keys[Keys["LEFT"] = 37] = "LEFT";
+        Keys[Keys["UP"] = 38] = "UP";
+        Keys[Keys["RIGHT"] = 39] = "RIGHT";
+        Keys[Keys["DOWN"] = 40] = "DOWN";
+        Keys[Keys["S"] = 83] = "S";
+        Keys[Keys["D"] = 68] = "D";
+        Keys[Keys["SPACE"] = 32] = "SPACE";
+        Keys[Keys["SHIFT"] = 16] = "SHIFT";
+    })(Keys = ASC.Keys || (ASC.Keys = {}));
+    var Key = (function () {
+        function Key(code, delay, rate) {
+            if (delay === void 0) { delay = 100; }
+            if (rate === void 0) { rate = 20; }
+            this._pressed = false;
+            this._listeners = [];
+            this._code = code;
+            this._delay = delay;
+            this._rate = rate;
+        }
+        Key.prototype.onPress = function () {
+            this._pressed = true;
+            this._timeout = setTimeout(this.activate.bind(this), this._delay);
+        };
+        Key.prototype.activate = function () {
+            this._interval = setInterval(this.repeat.bind(this), this._rate);
+        };
+        Key.prototype.repeat = function () {
+            for (var _i = 0, _a = this._listeners; _i < _a.length; _i++) {
+                var l = _a[_i];
+                l.Triggered(this._code);
+            }
+        };
+        Key.prototype.onRelease = function () {
+            this._pressed = false;
+            clearTimeout(this._timeout);
+            clearInterval(this._interval);
+        };
+        Key.prototype.registerTrigger = function (t) {
+            this._listeners.push(t);
+        };
+        Object.defineProperty(Key.prototype, "code", {
+            get: function () {
+                return this._code;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return Key;
+    }());
+    var InputManager = (function () {
+        function InputManager() {
+        }
+        InputManager.initialize = function () {
+            for (var i = 0; i < 255; ++i) {
+                InputManager._keyCodes[i] = false;
+            }
+            window.addEventListener("keydown", InputManager.onKeyDown);
+            window.addEventListener("keyup", InputManager.onKeyUp);
+        };
+        InputManager.onKeyDown = function (event) {
+            if (InputManager._keyCodes[event.keyCode] !== true) {
+                InputManager.NotifyObservers(event.keyCode);
+                InputManager._keyCodes[event.keyCode] = true;
+                if (InputManager._keys.length > 0) {
+                    for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
+                        var k = _a[_i];
+                        if (k.code === event.keyCode) {
+                            k.onPress();
+                        }
+                    }
+                }
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        };
+        InputManager.onKeyUp = function (event) {
+            InputManager._keyCodes[event.keyCode] = false;
+            if (InputManager._keys.length > 0) {
+                for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
+                    var k = _a[_i];
+                    if (k.code === event.keyCode) {
+                        k.onRelease();
+                    }
+                }
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        };
+        InputManager.RegisterKeys = function (Observer, keyCodes, delay, repeat) {
+            for (var _i = 0, keyCodes_1 = keyCodes; _i < keyCodes_1.length; _i++) {
+                var i = keyCodes_1[_i];
+                InputManager._keys.push(new Key(i, delay, repeat));
+                InputManager._keys[InputManager._keys.length - 1].registerTrigger(Observer);
+            }
+        };
+        InputManager.RegisterObserver = function (Observer) {
+            InputManager._observers.push(Observer);
+        };
+        InputManager.UnregisterObserver = function (Observer) {
+            var index = InputManager._observers.indexOf(Observer);
+            if (index !== -1) {
+                InputManager._observers.splice(index, 1);
+            }
+            else {
+                console.warn("Cannot unregister observer.");
+            }
+        };
+        InputManager.NotifyObservers = function (keyevent) {
+            for (var _i = 0, _a = InputManager._observers; _i < _a.length; _i++) {
+                var o = _a[_i];
+                o.Triggered(keyevent);
+            }
+        };
+        InputManager.cancelRepeat = function (keycode) {
+            if (InputManager._keys.length > 0) {
+                for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
+                    var k = _a[_i];
+                    if (k.code === keycode) {
+                        k.onRelease();
+                    }
+                }
+            }
+        };
+        InputManager._keys = [];
+        InputManager._keyCodes = [];
+        InputManager._observers = [];
+        return InputManager;
+    }());
+    ASC.InputManager = InputManager;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var Block = (function () {
+        function Block(color, solid, clearable) {
+            if (color === void 0) { color = 0x000000; }
+            if (solid === void 0) { solid = false; }
+            if (clearable === void 0) { clearable = false; }
+            this._color = color;
+            this._solid = solid;
+            this._clearable = clearable;
+        }
+        Object.defineProperty(Block.prototype, "color", {
+            get: function () {
+                return this._color;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Block.prototype, "solid", {
+            get: function () {
+                return this._solid;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Block.prototype, "clearable", {
+            get: function () {
+                return this._clearable;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return Block;
+    }());
+    ASC.Block = Block;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
     var Piece = (function () {
-        function Piece(name, shape, offset, initOrient, color) {
+        function Piece(name, shape, offset, color, initOrient) {
             if (offset === void 0) { offset = 0; }
-            if (initOrient === void 0) { initOrient = 0; }
             if (color === void 0) { color = 0xFFFFFF; }
+            if (initOrient === void 0) { initOrient = 0; }
             this._shape = [];
             this._orientations = [];
             this._currentOrientation = 0;
@@ -696,6 +698,7 @@ var ASC;
             copy._x = this._x;
             copy._y = this._y;
             copy._currentOrientation = this._currentOrientation;
+            copy._color = this._color;
             return copy;
         };
         Piece.prototype.getRenderShape = function () {
@@ -705,13 +708,20 @@ var ASC;
             }
             for (var _i = 0, _a = this._shape; _i < _a.length; _i++) {
                 var i = _a[_i];
-                temp[i] = 0xFFFFFF;
+                temp[i] = this._color;
             }
             return temp;
         };
         Object.defineProperty(Piece.prototype, "name", {
             get: function () {
                 return this._name;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Piece.prototype, "color", {
+            get: function () {
+                return this._color;
             },
             enumerable: true,
             configurable: true
