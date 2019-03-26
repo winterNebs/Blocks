@@ -22,6 +22,14 @@
             this._color = color;
             this.reset();
         }
+        public validateOffset(width: number): boolean {
+            for (let i of this._orientations[this._initialOrientation]) {
+                if (~~(i / 5) !== ~~(((i % 5) + ~~(i / 5) * width + this._offset) / width)) {
+                    throw new Error("Invalid offset! Piece will spawn out of bounds:");
+                }
+            }
+            return true;
+        }
         public initRotations(): void {
             this._orientations.push(this._shape);
             let temp: number[] = [];
@@ -106,7 +114,7 @@
         public getRenderShape(): number[] {
             let temp = [];
             for (let i = 0; i < 25; ++i) {
-                    temp.push(0x000000);
+                temp.push(0x000000);
             }
             for (let i of this._shape) {
                 temp[i] = 0xFFFFFF;

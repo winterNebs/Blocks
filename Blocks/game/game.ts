@@ -45,11 +45,14 @@
             this._width = width;
             this._bagSize = bagSize;
             this._renderer = new Renderer(this._width, "Attack");
-            //For now:
+            //Verify piece offset.
+            for (let p of pieces) {
+                p.validateOffset(this._width);
+            }
             this._pieces = pieces;
             this._pieces.forEach((i) => (i.initRotations()));
             this._attack = new AttackTable(this._width);
-            this._timer = new Timer(this.tick.bind(this), this.gameOver.bind(this), 30, 60000)
+            this._timer = new Timer(this.tick.bind(this), this.gameOver.bind(this), 500, 60000)
             this.resetGame();
             app.stage.addChild(this._renderer);
         }
