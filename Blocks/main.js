@@ -212,6 +212,16 @@ var ASC;
                 o.Triggered(keyevent);
             }
         };
+        InputManager.cancelRepeat = function (keycode) {
+            if (InputManager._keys.length > 0) {
+                for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
+                    var k = _a[_i];
+                    if (k.code === keycode) {
+                        k.onRelease();
+                    }
+                }
+            }
+        };
         InputManager._keys = [];
         InputManager._keyCodes = [];
         InputManager._observers = [];
@@ -542,12 +552,14 @@ var ASC;
                         break;
                     case this._controls[Inputs.RIGHT]:
                         this.move(ASC.Directions.RIGHT);
+                        ASC.InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
                         break;
                     case this._controls[Inputs.SD]:
                         this.move(ASC.Directions.DOWN);
                         break;
                     case this._controls[Inputs.LEFT]:
                         this.move(ASC.Directions.LEFT);
+                        ASC.InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
                         break;
                     case this._controls[Inputs.CCW]:
                         this.rotate(ASC.Rotations.CCW);

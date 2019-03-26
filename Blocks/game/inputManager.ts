@@ -122,7 +122,15 @@
                 o.Triggered(keyevent);
             }
         }
-
+        public static cancelRepeat(keycode: number): void {
+            if (InputManager._keys.length > 0) {
+                for (let k of InputManager._keys) {
+                    if (k.code === keycode) {
+                        k.onRelease();
+                    }
+                }
+            }
+        }
 
     }
 }

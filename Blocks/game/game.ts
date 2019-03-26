@@ -275,12 +275,14 @@
                         break;
                     case this._controls[Inputs.RIGHT]:
                         this.move(Directions.RIGHT);
+                        InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
                         break;
                     case this._controls[Inputs.SD]:
                         this.move(Directions.DOWN);
                         break;
                     case this._controls[Inputs.LEFT]:
                         this.move(Directions.LEFT);
+                        InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
                         break;
                     case this._controls[Inputs.CCW]:
                         this.rotate(Rotations.CCW);
