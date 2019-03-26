@@ -1,6 +1,6 @@
 ﻿namespace ASC {
     const FIELD_SIZE = 24;
-    const SMALL_SIZE = 10;
+    const SMALL_SIZE = 16;
     export class Renderer extends PIXI.Container {
         private _field: RenderGrid;
         private _queue: RenderGrid[] = [];
@@ -13,10 +13,10 @@
             this._field = new RenderGrid(width, FIELD_HEIGHT, FIELD_SIZE, SMALL_SIZE * 5);
             this.addChild(this._field);
             for (let i = 0; i < NUM_PREVIEWS; ++i) {
-                this._queue.push(new RenderGrid(5, 5, 10, width * FIELD_SIZE + SMALL_SIZE * 5, 10 * 5 * i));
+                this._queue.push(new RenderGrid(5, 5, SMALL_SIZE, width * FIELD_SIZE + SMALL_SIZE * 5, SMALL_SIZE * 5 * i));
                 this.addChild(this._queue[i]);
             }
-            this._hold = new RenderGrid(5, 5, 10);
+            this._hold = new RenderGrid(5, 5, SMALL_SIZE);
             this.addChild(this._hold);
             this._progressText = progress;
             this._progress = new PIXI.Text(progress + "\n", { fontFamily: 'Arial', fontSize: 24, fill: 0x000000, align: 'center' });

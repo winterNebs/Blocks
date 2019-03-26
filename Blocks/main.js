@@ -797,7 +797,7 @@ var ASC;
 var ASC;
 (function (ASC) {
     var FIELD_SIZE = 24;
-    var SMALL_SIZE = 10;
+    var SMALL_SIZE = 16;
     var Renderer = (function (_super) {
         __extends(Renderer, _super);
         function Renderer(width, progress) {
@@ -806,10 +806,10 @@ var ASC;
             _this._field = new ASC.RenderGrid(width, ASC.FIELD_HEIGHT, FIELD_SIZE, SMALL_SIZE * 5);
             _this.addChild(_this._field);
             for (var i = 0; i < ASC.NUM_PREVIEWS; ++i) {
-                _this._queue.push(new ASC.RenderGrid(5, 5, 10, width * FIELD_SIZE + SMALL_SIZE * 5, 10 * 5 * i));
+                _this._queue.push(new ASC.RenderGrid(5, 5, SMALL_SIZE, width * FIELD_SIZE + SMALL_SIZE * 5, SMALL_SIZE * 5 * i));
                 _this.addChild(_this._queue[i]);
             }
-            _this._hold = new ASC.RenderGrid(5, 5, 10);
+            _this._hold = new ASC.RenderGrid(5, 5, SMALL_SIZE);
             _this.addChild(_this._hold);
             _this._progressText = progress;
             _this._progress = new PIXI.Text(progress + "\n", { fontFamily: 'Arial', fontSize: 24, fill: 0x000000, align: 'center' });
