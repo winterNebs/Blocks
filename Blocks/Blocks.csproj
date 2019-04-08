@@ -110,6 +110,7 @@
   <ItemGroup>
     <Content Include="pixi\pixi.min.js.map" />
     <None Include="Properties\PublishProfiles\ASCENSION - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\ascension1 - Web Deploy.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

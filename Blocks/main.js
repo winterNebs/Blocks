@@ -179,7 +179,7 @@ var ASC;
             ASC.InputManager.RegisterObserver(this);
             ASC.InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
             this._controls = controls;
-            if (width >= ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
+            if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
             this._width = width;
@@ -995,7 +995,7 @@ var SETTINGS;
         settings.appendChild(widthText);
         var widthSlider = document.createElement("input");
         widthSlider.setAttribute("type", "range");
-        widthSlider.setAttribute("min", (ASC.MIN_FIELD_WIDTH + 1).toString());
+        widthSlider.setAttribute("min", ASC.MIN_FIELD_WIDTH.toString());
         widthSlider.setAttribute("max", ASC.MAX_FIELD_WIDTH.toString());
         widthSlider.setAttribute("value", "10");
         widthSlider.oninput = function () {

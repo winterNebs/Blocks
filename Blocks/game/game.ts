@@ -41,7 +41,7 @@
             InputManager.RegisterObserver(this);
             InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
             this._controls = controls
-            if (width >= MAX_FIELD_WIDTH || width < MIN_FIELD_WIDTH) {
+            if (width > MAX_FIELD_WIDTH || width < MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
             this._width = width;

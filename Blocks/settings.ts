@@ -20,7 +20,7 @@
 
         let widthSlider: HTMLInputElement = <HTMLInputElement>document.createElement("input");
         widthSlider.setAttribute("type", "range");
-        widthSlider.setAttribute("min", (ASC.MIN_FIELD_WIDTH + 1).toString());
+        widthSlider.setAttribute("min", ASC.MIN_FIELD_WIDTH.toString());
         widthSlider.setAttribute("max", ASC.MAX_FIELD_WIDTH.toString());
         widthSlider.setAttribute("value", "10");
 
