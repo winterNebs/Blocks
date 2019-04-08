@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "name": "asc",
+  "private": true,
+  "devDependencies": {},
+  "dependencies": {
+    "@types/pixi.js": "^4.8.6",
+    "typescript": "^3.4.2"
+  },
+  "description": "A complex falling-blocks puzzle game",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/winterNebs/Blocks.git"
+  },
+  "author": "winterNebs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/winterNebs/Blocks/issues"
+  },
+  "homepage": "https://github.com/winterNebs/Blocks#readme"
+}

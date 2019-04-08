@@ -20,7 +20,7 @@
             this._elapsed = 0;
             this._expectedEnd = Date.now() + this._end;
             this._expected = Date.now() + this._interval;
-            this._timeout = setTimeout(this.step.bind(this), this._interval);
+            this._timeout = window.setTimeout(this.step.bind(this), this._interval);
         }
         public stop(): void {
             clearTimeout(this._timeout);
@@ -37,7 +37,7 @@
             var drift = Date.now() - this._expected;
             this._tick();
             this._expected += this._interval;
-            this._timeout = setTimeout(this.step.bind(this), Math.max(0, this._interval - drift));
+            this._timeout = window.setTimeout(this.step.bind(this), Math.max(0, this._interval - drift));
         }
         public get elapsed(): number {
             return this._elapsed;

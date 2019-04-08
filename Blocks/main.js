@@ -11,26 +11,33 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
-var defaultText = "{\"width\": 10,\"pieces\":[[\"T\", [7, 11, 12, 13], 2,\"FF00FF\"],[\"L\", [8, 11, 12, 13], 2, \"FF9900\"],[\"J\", [6, 11, 12, 13], 2, \"0000FF\"],[\"Z\", [6, 7, 12, 13], 2, \"FF0000\"],[\"S\", [7, 8, 11, 12], 2, \"00FF00\"],[\"I\", [11, 12, 13, 14], 2, \"00FFFF\"],[\"O\", [12, 13, 17, 18], 2, \"FFFF00\"]],\"controls\": [39, 40, 37, 38, 83, 68, 16, 32],\"delay\": 100,\"repeat\": 10,\"bagSize\": 7}";
-var configText = prompt("Enter Config Data (Check out the discord for more info: https://discord.gg/GjScWEh)", defaultText);
-if (configText == null || configText == "") {
-    configText = defaultText;
-}
 var app = new PIXI.Application(800, 600, { backgroundColor: 0x423c3e });
+app.view.setAttribute('tabindex', '0');
+document.body.onclick = function () {
+    ASC.InputManager.setFocus(document.activeElement == app.view);
+};
+PIXI.loader.add('assets/textures/b.png').load(load);
 document.body.appendChild(app.view);
 var game;
-var config;
-PIXI.loader.add('assets/textures/b.png').load(load);
-function load() {
-    try {
-        config = ASC.Config.fromText(configText);
+function startGame(config) {
+    if (config === null) {
+        game = new ASC.Game();
     }
-    catch (err) {
-        alert("Something went wrong, using default config: " + err.message);
-        config = ASC.Config.fromText(defaultText);
+    else {
+        game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
     }
-    game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
     ASC.InputManager.initialize();
+}
+function load() {
+    startGame(null);
+    var discord = document.createElement("a");
+    discord.setAttribute("href", "https://discord.gg/GjScWEh");
+    discord.innerText = "discord";
+    document.body.appendChild(discord);
+    var newGameButton = document.createElement("button");
+    newGameButton.innerText = "New Game";
+    newGameButton.onclick = function () { return (game.resetGame()); };
+    document.body.appendChild(newGameButton);
 }
 var ASC;
 (function (ASC) {
@@ -53,6 +60,15 @@ var ASC;
             }
             var config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.bagSize);
             return config;
+        };
+        Config.pieceFromText = function (input) {
+            var p = JSON.parse(input);
+            var ps = [];
+            for (var _i = 0, p_1 = p; _i < p_1.length; _i++) {
+                var i = p_1[_i];
+                ps.push(new ASC.Piece(i[0], i[1], i[2], Number("0x" + i[3]), 0));
+            }
+            return ps;
         };
         return Config;
     }());
@@ -142,14 +158,18 @@ var ASC;
         function Game(width, bagSize, pieces, controls, delay, repeat) {
             if (width === void 0) { width = 12; }
             if (bagSize === void 0) { bagSize = 6; }
-            if (pieces === void 0) { pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2), new ASC.Piece("L", [8, 11, 12, 13], 2), new ASC.Piece("J", [6, 11, 12, 13], 2),
-                new ASC.Piece("Z", [11, 12, 17, 18], 2), new ASC.Piece("S", [12, 13, 16, 17], 2), new ASC.Piece("I", [11, 12, 13, 14], 2), new ASC.Piece("O", [12, 13, 17, 18], 2)]; }
+            if (pieces === void 0) { pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
+                new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]; }
             if (controls === void 0) { controls = [39, 40, 37, 38, 83, 68, 16, 32]; }
             if (delay === void 0) { delay = 100; }
             if (repeat === void 0) { repeat = 10; }
             this._pieces = [];
             this._active = false;
             this._progress = 0;
+            for (var i = app.stage.children.length - 1; i >= 0; --i) {
+                app.stage.removeChild(app.stage.children[i]);
+            }
+            ;
             if (delay < 1) {
                 throw new Error("Invalid Delay");
             }
@@ -159,7 +179,7 @@ var ASC;
             ASC.InputManager.RegisterObserver(this);
             ASC.InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
             this._controls = controls;
-            if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
+            if (width >= ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
             this._width = width;
@@ -440,10 +460,10 @@ var ASC;
         }
         Key.prototype.onPress = function () {
             this._pressed = true;
-            this._timeout = setTimeout(this.activate.bind(this), this._delay);
+            this._timeout = window.setTimeout(this.activate.bind(this), this._delay);
         };
         Key.prototype.activate = function () {
-            this._interval = setInterval(this.repeat.bind(this), this._rate);
+            this._interval = window.setInterval(this.repeat.bind(this), this._rate);
         };
         Key.prototype.repeat = function () {
             for (var _i = 0, _a = this._listeners; _i < _a.length; _i++) {
@@ -471,6 +491,9 @@ var ASC;
     var InputManager = (function () {
         function InputManager() {
         }
+        InputManager.setFocus = function (f) {
+            InputManager._focus = f;
+        };
         InputManager.initialize = function () {
             for (var i = 0; i < 255; ++i) {
                 InputManager._keyCodes[i] = false;
@@ -479,34 +502,38 @@ var ASC;
             window.addEventListener("keyup", InputManager.onKeyUp);
         };
         InputManager.onKeyDown = function (event) {
-            if (InputManager._keyCodes[event.keyCode] !== true) {
-                InputManager.NotifyObservers(event.keyCode);
-                InputManager._keyCodes[event.keyCode] = true;
+            if (InputManager._focus) {
+                if (InputManager._keyCodes[event.keyCode] !== true) {
+                    InputManager.NotifyObservers(event.keyCode);
+                    InputManager._keyCodes[event.keyCode] = true;
+                    if (InputManager._keys.length > 0) {
+                        for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
+                            var k = _a[_i];
+                            if (k.code === event.keyCode) {
+                                k.onPress();
+                            }
+                        }
+                    }
+                }
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            return false;
+        };
+        InputManager.onKeyUp = function (event) {
+            if (InputManager._focus) {
+                InputManager._keyCodes[event.keyCode] = false;
                 if (InputManager._keys.length > 0) {
                     for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
                         var k = _a[_i];
                         if (k.code === event.keyCode) {
-                            k.onPress();
+                            k.onRelease();
                         }
                     }
                 }
+                event.preventDefault();
+                event.stopPropagation();
             }
-            event.preventDefault();
-            event.stopPropagation();
-            return false;
-        };
-        InputManager.onKeyUp = function (event) {
-            InputManager._keyCodes[event.keyCode] = false;
-            if (InputManager._keys.length > 0) {
-                for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
-                    var k = _a[_i];
-                    if (k.code === event.keyCode) {
-                        k.onRelease();
-                    }
-                }
-            }
-            event.preventDefault();
-            event.stopPropagation();
             return false;
         };
         InputManager.RegisterKeys = function (Observer, keyCodes, delay, repeat) {
@@ -547,6 +574,7 @@ var ASC;
         InputManager._keys = [];
         InputManager._keyCodes = [];
         InputManager._observers = [];
+        InputManager._focus = true;
         return InputManager;
     }());
     ASC.InputManager = InputManager;
@@ -923,7 +951,7 @@ var ASC;
             this._elapsed = 0;
             this._expectedEnd = Date.now() + this._end;
             this._expected = Date.now() + this._interval;
-            this._timeout = setTimeout(this.step.bind(this), this._interval);
+            this._timeout = window.setTimeout(this.step.bind(this), this._interval);
         };
         Timer.prototype.stop = function () {
             clearTimeout(this._timeout);
@@ -938,7 +966,7 @@ var ASC;
             var drift = Date.now() - this._expected;
             this._tick();
             this._expected += this._interval;
-            this._timeout = setTimeout(this.step.bind(this), Math.max(0, this._interval - drift));
+            this._timeout = window.setTimeout(this.step.bind(this), Math.max(0, this._interval - drift));
         };
         Object.defineProperty(Timer.prototype, "elapsed", {
             get: function () {
@@ -951,4 +979,131 @@ var ASC;
     }());
     ASC.Timer = Timer;
 })(ASC || (ASC = {}));
+var SETTINGS;
+(function (SETTINGS) {
+    function init() {
+        var pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
+            new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00)];
+        var config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32], 100, 10, 7);
+        var settings = document.createElement("div");
+        settings.style.border = "1px solid black";
+        var title = document.createElement("H1");
+        title.innerText = "Settings";
+        settings.appendChild(title);
+        var widthText = document.createElement("label");
+        widthText.innerText = "Width: " + config._width.toString();
+        settings.appendChild(widthText);
+        var widthSlider = document.createElement("input");
+        widthSlider.setAttribute("type", "range");
+        widthSlider.setAttribute("min", (ASC.MIN_FIELD_WIDTH + 1).toString());
+        widthSlider.setAttribute("max", ASC.MAX_FIELD_WIDTH.toString());
+        widthSlider.setAttribute("value", "10");
+        widthSlider.oninput = function () {
+            if (!isNaN(Number(widthSlider.value))) {
+                config._width = Number(widthSlider.value);
+                widthText.innerText = "Width: " + config._width.toString();
+            }
+        };
+        settings.appendChild(widthSlider);
+        var controlsTitle = document.createElement("H2");
+        controlsTitle.innerText = "Controls:";
+        settings.appendChild(controlsTitle);
+        var controlTable = document.createElement("table");
+        var labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop"];
+        var row;
+        var _loop_1 = function (i) {
+            if (i % 4 === 0) {
+                row = document.createElement("tr");
+                controlTable.appendChild(row);
+            }
+            var item = document.createElement("th");
+            item.innerText = labels[i] + ": ";
+            var numberbox = document.createElement("input");
+            numberbox.setAttribute("type", "number");
+            numberbox.readOnly = true;
+            numberbox.setAttribute("value", config._controls[i].toString());
+            numberbox.onkeydown = function (event) {
+                if (event.keyCode !== 27) {
+                    numberbox.value = event.keyCode.toString();
+                    config._controls[i] = event.keyCode;
+                }
+                numberbox.blur();
+            };
+            item.appendChild(numberbox);
+            row.appendChild(item);
+        };
+        for (var i = 0; i < labels.length; ++i) {
+            _loop_1(i);
+        }
+        settings.appendChild(controlTable);
+        var delayText = document.createElement("label");
+        delayText.innerText = "Delay: ";
+        settings.appendChild(delayText);
+        var delay = document.createElement("input");
+        delay.setAttribute("type", "number");
+        delay.setAttribute("min", "1");
+        delay.setAttribute("value", config._delay.toString());
+        delay.oninput = function () {
+            if (!isNaN(Number(delay.value))) {
+                config._delay = Number(delay.value);
+            }
+        };
+        settings.appendChild(delay);
+        var repeatText = document.createElement("label");
+        repeatText.innerText = "Repeat: ";
+        settings.appendChild(repeatText);
+        var repeat = document.createElement("input");
+        repeat.setAttribute("type", "number");
+        repeat.setAttribute("min", "1");
+        repeat.setAttribute("value", config._repeat.toString());
+        repeat.oninput = function () {
+            if (!isNaN(Number(repeat.value))) {
+                config._repeat = Number(repeat.value);
+            }
+        };
+        settings.appendChild(repeat);
+        var bagText = document.createElement("label");
+        bagText.innerText = "Bag: ";
+        settings.appendChild(bagText);
+        var bag = document.createElement("input");
+        bag.setAttribute("type", "number");
+        bag.setAttribute("min", "0");
+        bag.setAttribute("value", config._bagSize.toString());
+        bag.oninput = function () {
+            if (!isNaN(Number(repeat.value))) {
+                config._bagSize = Number(bag.value);
+            }
+        };
+        settings.appendChild(bag);
+        var pieceText = document.createElement("label");
+        pieceText.innerText = "Enter Pieces: ";
+        settings.appendChild(pieceText);
+        var pieceInput = document.createElement("input");
+        pieceInput.setAttribute("type", "text");
+        settings.appendChild(pieceInput);
+        var pieceSubmit = document.createElement("button");
+        pieceSubmit.innerText = "Submit Pieces";
+        pieceSubmit.onclick = function () {
+            try {
+                var pieces_2 = ASC.Config.pieceFromText(pieceInput.value);
+                if (pieces_2 !== null) {
+                    config._pieces = pieces_2;
+                }
+            }
+            catch (err) {
+                alert("Error in peiece config: " + err.message);
+            }
+        };
+        settings.appendChild(pieceSubmit);
+        settings.appendChild(document.createElement("hr"));
+        var apply = document.createElement("button");
+        apply.innerText = "Apply Settings";
+        apply.onclick = function () {
+            startGame(config);
+        };
+        settings.appendChild(apply);
+        document.body.appendChild(settings);
+    }
+    init();
+})(SETTINGS || (SETTINGS = {}));
 //# sourceMappingURL=main.js.map

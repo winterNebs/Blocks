@@ -97,6 +97,7 @@
   <ItemGroup>
     <Content Include="assets\textures\b.png" />
     <Content Include="assets\textures\a.jpg" />
+    <Content Include="game.html" />
     <Content Include="index.html" />
     <Content Include="pixi\pixi.min.js" />
     <Content Include="Web.config">
@@ -108,7 +109,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="pixi\pixi.min.js.map" />
-    <None Include="packages.config" />
     <None Include="Properties\PublishProfiles\ASCENSION - Web Deploy.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -135,6 +135,7 @@
     <TypeScriptCompile Include="game\scoring\scoreTable.ts" />
     <TypeScriptCompile Include="game\scoring\table.ts" />
     <TypeScriptCompile Include="game\timer.ts" />
+    <TypeScriptCompile Include="settings.ts" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />

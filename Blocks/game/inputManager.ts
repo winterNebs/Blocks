@@ -21,7 +21,6 @@
         private _interval: number;
         private _listeners: ITriggerObserver[] = [];
 
-
         public constructor(code: number, delay: number = 100, rate: number = 20) {
             this._code = code;
             this._delay = delay;
@@ -29,10 +28,10 @@
         }
         public onPress(): void {
             this._pressed = true;
-            this._timeout = setTimeout(this.activate.bind(this), this._delay);
+            this._timeout = window.setTimeout(this.activate.bind(this), this._delay);
         }
         private activate(): void {
-            this._interval = setInterval(this.repeat.bind(this), this._rate);
+            this._interval = window.setInterval(this.repeat.bind(this), this._rate);
         }
         private repeat(): void {
             for (let l of this._listeners) {
@@ -58,7 +57,11 @@
         private static _keyCodes: boolean[] = [];
         private static _observers: ITriggerObserver[] = [];
         private constructor() { }
+        private static _focus: boolean = true;
 
+        public static setFocus(f: boolean): void {
+            InputManager._focus = f;
+        }
         public static initialize(): void {
             for (let i = 0; i < 255; ++i) {
                 InputManager._keyCodes[i] = false;
@@ -68,35 +71,39 @@
         }
 
         private static onKeyDown(event: KeyboardEvent): boolean {
-            if (InputManager._keyCodes[event.keyCode] !== true) {
-                InputManager.NotifyObservers(event.keyCode);
-                InputManager._keyCodes[event.keyCode] = true;
-                if (InputManager._keys.length > 0) {
-                    for (let k of InputManager._keys) {
-                        if (k.code === event.keyCode) {
-                            k.onPress();
+            if (InputManager._focus) {
+                if (InputManager._keyCodes[event.keyCode] !== true) {
+                    InputManager.NotifyObservers(event.keyCode);
+                    InputManager._keyCodes[event.keyCode] = true;
+                    if (InputManager._keys.length > 0) {
+                        for (let k of InputManager._keys) {
+                            if (k.code === event.keyCode) {
+                                k.onPress();
+                            }
                         }
                     }
                 }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+
             }
-
-            event.preventDefault();
-            event.stopPropagation();
-
-
             return false;
         }
         private static onKeyUp(event: KeyboardEvent): boolean {
-            InputManager._keyCodes[event.keyCode] = false;
-            if (InputManager._keys.length > 0) {
-                for (let k of InputManager._keys) {
-                    if (k.code === event.keyCode) {
-                        k.onRelease();
+            if (InputManager._focus) {
+                InputManager._keyCodes[event.keyCode] = false;
+                if (InputManager._keys.length > 0) {
+                    for (let k of InputManager._keys) {
+                        if (k.code === event.keyCode) {
+                            k.onRelease();
+                        }
                     }
                 }
+                event.preventDefault();
+                event.stopPropagation();
             }
-            event.preventDefault();
-            event.stopPropagation();
             return false;
         }
         public static RegisterKeys(Observer: ITriggerObserver, keyCodes: number[], delay: number, repeat: number) {
