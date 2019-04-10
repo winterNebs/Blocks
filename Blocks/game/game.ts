@@ -54,12 +54,12 @@
             this._pieces = pieces;
             this._pieces.forEach((i) => (i.initRotations()));
             this._attack = new AttackTable(this._width);
-            this._timer = new Timer(this.tick.bind(this), this.gameOver.bind(this), 500, 60000)
+            //this._timer = new Timer(this.tick.bind(this), this.gameOver.bind(this), 500, 60000);
             this.resetGame();
             app.stage.addChild(this._renderer);
         }
         public resetGame(): void {
-            this._timer.start();
+            //this._timer.start();
             this._field = new Field(this._width);
             this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);//NO bag size for now
             this._hold = undefined;
@@ -74,7 +74,7 @@
         private gameOver(): void {
             this._active = false;
             this.updateTime();
-            this._timer.stop();
+            //this._timer.stop();
             
         }
 
@@ -247,7 +247,8 @@
             this._renderer.updateProgress(this._progress.toString());
         }
         private updateTime(): void {
-            this._renderer.updateTime((this._timer.elapsed / 1000).toString());
+            this._renderer.updateTime("Timer off for now :)");
+            //this._renderer.updateTime((this._timer.elapsed / 1000).toString());
         }
         private clearLines(yvals: number[]): number { //returns number of lines cleared
             let lines = 0;

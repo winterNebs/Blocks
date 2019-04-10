@@ -194,12 +194,10 @@ var ASC;
             this._pieces = pieces;
             this._pieces.forEach(function (i) { return (i.initRotations()); });
             this._attack = new ASC.AttackTable(this._width);
-            this._timer = new ASC.Timer(this.tick.bind(this), this.gameOver.bind(this), 500, 60000);
             this.resetGame();
             app.stage.addChild(this._renderer);
         }
         Game.prototype.resetGame = function () {
-            this._timer.start();
             this._field = new ASC.Field(this._width);
             this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
             this._hold = undefined;
@@ -214,7 +212,6 @@ var ASC;
         Game.prototype.gameOver = function () {
             this._active = false;
             this.updateTime();
-            this._timer.stop();
         };
         Game.prototype.next = function () {
             this._currentPiece = this._queue.getNext();
@@ -377,7 +374,7 @@ var ASC;
             this._renderer.updateProgress(this._progress.toString());
         };
         Game.prototype.updateTime = function () {
-            this._renderer.updateTime((this._timer.elapsed / 1000).toString());
+            this._renderer.updateTime("Timer off for now :)");
         };
         Game.prototype.clearLines = function (yvals) {
             var lines = 0;
