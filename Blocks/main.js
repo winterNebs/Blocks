@@ -992,6 +992,7 @@ var SETTINGS;
         var widthText = document.createElement("label");
         widthText.innerText = "Width: " + config._width.toString();
         settings.appendChild(widthText);
+        settings.appendChild(document.createElement("br"));
         var widthSlider = document.createElement("input");
         widthSlider.setAttribute("type", "range");
         widthSlider.setAttribute("min", ASC.MIN_FIELD_WIDTH.toString());
@@ -1140,7 +1141,7 @@ var SETTINGS;
         offsetSlider.setAttribute("min", "0");
         offsetSlider.setAttribute("max", config._width.toString());
         offsetSlider.setAttribute("value", "0");
-        offsetSlider.onchange = function () {
+        offsetSlider.oninput = function () {
             offsetText.innerText = "Offset (where piece spawns): " + offsetSlider.value;
         };
         pieceDiv.appendChild(document.createElement("br"));

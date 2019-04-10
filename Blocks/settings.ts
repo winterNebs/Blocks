@@ -18,6 +18,8 @@
 
         settings.appendChild(widthText);
 
+        settings.appendChild(document.createElement("br"));
+
         let widthSlider: HTMLInputElement = <HTMLInputElement>document.createElement("input");
         widthSlider.setAttribute("type", "range");
         widthSlider.setAttribute("min", ASC.MIN_FIELD_WIDTH.toString());
@@ -206,7 +208,7 @@
         offsetSlider.setAttribute("min", "0");
         offsetSlider.setAttribute("max", config._width.toString());
         offsetSlider.setAttribute("value", "0");
-        offsetSlider.onchange = function (){
+        offsetSlider.oninput = function (){
             offsetText.innerText = "Offset (where piece spawns): " + offsetSlider.value;
         }
 
