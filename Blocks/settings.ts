@@ -183,8 +183,14 @@
 
         pieceDiv.appendChild(document.createElement("br"));
 
+        let pieceColorText: HTMLElement = document.createElement("label");
+        pieceColorText.innerText = "Piece Color (Chrome and Firefox will have color picker, other browsers enter in form #FFF000): ";
+
+        pieceDiv.appendChild(pieceColorText);
+
         let pieceColor: HTMLInputElement = <HTMLInputElement>document.createElement("input");
         pieceColor.setAttribute("type", "color");
+        pieceColor.setAttribute("value", "#FFFFFF")
 
         pieceDiv.appendChild(pieceColor);
 
