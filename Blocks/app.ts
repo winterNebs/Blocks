@@ -10,17 +10,17 @@ document.body.appendChild(app.view);
 let game: ASC.Game;
 
 function startGame(config: ASC.Config) {
-    if (config === null) {
-        game = new ASC.Game();
-    }
-    else {
+    try {
         game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
     }
-    ASC.InputManager.initialize();
-
+    catch (err) {
+        alert("Error in config: " + err);
+        game = new ASC.Game();
+    }
 }
 function load() {
-    startGame(null);
+    game = new ASC.Game();
+    ASC.InputManager.initialize();
     let discord = document.createElement("a");
     discord.setAttribute("href", "https://discord.gg/GjScWEh");
     discord.innerText = "discord";

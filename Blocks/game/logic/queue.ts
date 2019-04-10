@@ -19,7 +19,7 @@
                    this._bag.forEach((i) => tempBag.push(i.getCopy()));
                 }
                 this._rng.shuffleArray(tempBag);
-                for (let i of tempBag) {
+                for (let i of tempBag.splice(0, this._bagSize)) {
                     this._queue.push(i);
                 }
             }

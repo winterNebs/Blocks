@@ -20,16 +20,17 @@ PIXI.loader.add('assets/textures/b.png').load(load);
 document.body.appendChild(app.view);
 var game;
 function startGame(config) {
-    if (config === null) {
-        game = new ASC.Game();
-    }
-    else {
+    try {
         game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
     }
-    ASC.InputManager.initialize();
+    catch (err) {
+        alert("Error in config: " + err);
+        game = new ASC.Game();
+    }
 }
 function load() {
-    startGame(null);
+    game = new ASC.Game();
+    ASC.InputManager.initialize();
     var discord = document.createElement("a");
     discord.setAttribute("href", "https://discord.gg/GjScWEh");
     discord.innerText = "discord";
@@ -799,13 +800,13 @@ var ASC;
         }
         Queue.prototype.generateQueue = function () {
             if (this._queue.length < this._bagSize) {
-                var tempBag_2 = [];
-                while (tempBag_2.length < this._bagSize) {
-                    this._bag.forEach(function (i) { return tempBag_2.push(i.getCopy()); });
+                var tempBag_1 = [];
+                while (tempBag_1.length < this._bagSize) {
+                    this._bag.forEach(function (i) { return tempBag_1.push(i.getCopy()); });
                 }
-                this._rng.shuffleArray(tempBag_2);
-                for (var _i = 0, tempBag_1 = tempBag_2; _i < tempBag_1.length; _i++) {
-                    var i = tempBag_1[_i];
+                this._rng.shuffleArray(tempBag_1);
+                for (var _i = 0, _a = tempBag_1.splice(0, this._bagSize); _i < _a.length; _i++) {
+                    var i = _a[_i];
                     this._queue.push(i);
                 }
             }
@@ -983,7 +984,7 @@ var SETTINGS;
 (function (SETTINGS) {
     function init() {
         var pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
-            new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00)];
+            new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
         var config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32], 100, 10, 7);
         var settings = document.createElement("div");
         settings.style.border = "1px solid black";
@@ -1075,27 +1076,97 @@ var SETTINGS;
             }
         };
         settings.appendChild(bag);
-        var pieceText = document.createElement("label");
-        pieceText.innerText = "Enter Pieces: ";
-        settings.appendChild(pieceText);
-        var pieceInput = document.createElement("input");
-        pieceInput.setAttribute("type", "text");
-        settings.appendChild(pieceInput);
-        var pieceSubmit = document.createElement("button");
-        pieceSubmit.innerText = "Submit Pieces";
-        pieceSubmit.onclick = function () {
-            try {
-                var pieces_2 = ASC.Config.pieceFromText(pieceInput.value);
-                if (pieces_2 !== null) {
-                    config._pieces = pieces_2;
+        settings.appendChild(document.createElement("hr"));
+        var pieceDiv = document.createElement("div");
+        var pieceSelect = document.createElement("select");
+        updateList();
+        function updateList() {
+            while (pieceSelect.firstChild) {
+                pieceSelect.removeChild(pieceSelect.lastChild);
+            }
+            for (var i = 0; i < pieces.length; ++i) {
+                var p = document.createElement("option");
+                p.value = i.toString();
+                p.innerText = pieces[i].name;
+                pieceSelect.appendChild(p);
+            }
+        }
+        pieceDiv.appendChild(pieceSelect);
+        var removePiece = document.createElement("button");
+        removePiece.innerText = "Remove Piece";
+        removePiece.onclick = function () {
+            if (pieces.length > 1) {
+                pieces.splice(Number(pieceSelect.value), 1);
+            }
+            else {
+                alert("Need at least one piece");
+            }
+            updateList();
+        };
+        pieceDiv.appendChild(removePiece);
+        settings.appendChild(document.createElement("hr"));
+        var editorTable = document.createElement("table");
+        var row1;
+        var checks = [];
+        for (var i = 0; i < 25; ++i) {
+            if (i % 5 === 0) {
+                row1 = document.createElement("tr");
+                editorTable.appendChild(row1);
+            }
+            var check = document.createElement("input");
+            check.setAttribute("type", "checkbox");
+            checks.push(check);
+            row1.appendChild(check);
+        }
+        pieceDiv.appendChild(editorTable);
+        var pieceNameText = document.createElement("label");
+        pieceNameText.innerText = "Piece Name: ";
+        pieceDiv.appendChild(pieceNameText);
+        var pieceNameInput = document.createElement("input");
+        pieceNameInput.setAttribute("type", "text");
+        pieceDiv.appendChild(pieceNameInput);
+        pieceDiv.appendChild(document.createElement("br"));
+        var pieceColor = document.createElement("input");
+        pieceColor.setAttribute("type", "color");
+        pieceDiv.appendChild(pieceColor);
+        pieceDiv.appendChild(document.createElement("br"));
+        var offsetText = document.createElement("label");
+        offsetText.innerText = "Offset (where piece spawns): 0";
+        pieceDiv.appendChild(offsetText);
+        var offsetSlider = document.createElement("input");
+        offsetSlider.setAttribute("type", "range");
+        offsetSlider.setAttribute("min", "0");
+        offsetSlider.setAttribute("max", config._width.toString());
+        offsetSlider.setAttribute("value", "0");
+        offsetSlider.onchange = function () {
+            offsetText.innerText = "Offset (where piece spawns): " + offsetSlider.value;
+        };
+        pieceDiv.appendChild(document.createElement("br"));
+        pieceDiv.appendChild(offsetSlider);
+        var addPiece = document.createElement("button");
+        addPiece.innerText = "Add Piece";
+        addPiece.onclick = function () {
+            var indices = [];
+            for (var i = 0; i < checks.length; ++i) {
+                if (checks[i].checked) {
+                    indices.push(i);
                 }
             }
-            catch (err) {
-                alert("Error in peiece config: " + err.message);
+            if (indices.length > 0) {
+                try {
+                    pieces.push(new ASC.Piece(pieceNameInput.value, indices, offsetSlider.valueAsNumber, Number("0x" + pieceColor.value.substring(1))));
+                    updateList();
+                }
+                catch (err) {
+                    alert("Invalid Piece: " + err);
+                }
+            }
+            else {
+                alert("Need at least 1 block");
             }
         };
-        settings.appendChild(pieceSubmit);
-        settings.appendChild(document.createElement("hr"));
+        pieceDiv.appendChild(addPiece);
+        settings.appendChild(pieceDiv);
         var apply = document.createElement("button");
         apply.innerText = "Apply Settings";
         apply.onclick = function () {

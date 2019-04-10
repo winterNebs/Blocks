@@ -2,7 +2,7 @@
 
     function init() {
         let pieces: ASC.Piece[] = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
-            new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00)];
+        new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
         let config: ASC.Config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32], 100, 10, 7);
 
         let settings: HTMLElement = document.createElement("div");
@@ -120,35 +120,121 @@
 
         settings.appendChild(bag);
 
-        let pieceText: HTMLElement = document.createElement("label");
-        pieceText.innerText = "Enter Pieces: ";
-
-        settings.appendChild(pieceText);
-
-        let pieceInput: HTMLInputElement = <HTMLInputElement>document.createElement("input");
-        pieceInput.setAttribute("type", "text");
-
-        settings.appendChild(pieceInput);
-
-        let pieceSubmit: HTMLInputElement = <HTMLInputElement>document.createElement("button");
-        pieceSubmit.innerText = "Submit Pieces"
-        pieceSubmit.onclick = function () {
-            try {
-                let pieces = ASC.Config.pieceFromText(pieceInput.value);
-                if (pieces !== null) {
-                    config._pieces = pieces;
-                }
-            }
-            catch (err) {
-                alert("Error in peiece config: " + err.message)
-            }
-        }
-
-        settings.appendChild(pieceSubmit);
-
         settings.appendChild(document.createElement("hr"));
 
-        let apply: HTMLInputElement = <HTMLInputElement>document.createElement("button");
+        let pieceDiv: HTMLDivElement = <HTMLDivElement>document.createElement("div");
+
+        let pieceSelect: HTMLSelectElement = <HTMLSelectElement>document.createElement("select");
+        updateList();
+        function updateList() {
+            while (pieceSelect.firstChild) {
+                pieceSelect.removeChild(pieceSelect.lastChild);
+            }
+            for (let i = 0; i < pieces.length; ++i) {
+                let p = document.createElement("option");
+                p.value = i.toString();
+                p.innerText = pieces[i].name;
+                pieceSelect.appendChild(p);
+            }
+        }
+        pieceDiv.appendChild(pieceSelect);
+
+        let removePiece: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
+        removePiece.innerText = "Remove Piece"
+        removePiece.onclick = function () {
+            if (pieces.length > 1) {
+                pieces.splice(Number(pieceSelect.value), 1);
+            }
+            else {
+                alert("Need at least one piece");
+            }
+            updateList();
+        }
+        pieceDiv.appendChild(removePiece);
+
+
+
+        settings.appendChild(document.createElement("hr"));
+        let editorTable: HTMLElement = document.createElement("table")
+        let row1: HTMLElement;
+        let checks: HTMLInputElement[] = [];
+        for (let i = 0; i < 25; ++i) {
+            if (i % 5 === 0) {
+                row1 = document.createElement("tr");
+                editorTable.appendChild(row1);
+            }
+            let check: HTMLInputElement = document.createElement("input");
+            check.setAttribute("type", "checkbox");
+            checks.push(check);
+            row1.appendChild(check);
+        }
+
+        pieceDiv.appendChild(editorTable);
+
+        let pieceNameText: HTMLElement = document.createElement("label");
+        pieceNameText.innerText = "Piece Name: ";
+
+        pieceDiv.appendChild(pieceNameText);
+
+        let pieceNameInput: HTMLInputElement = <HTMLInputElement>document.createElement("input");
+        pieceNameInput.setAttribute("type", "text");
+
+        pieceDiv.appendChild(pieceNameInput);
+
+        pieceDiv.appendChild(document.createElement("br"));
+
+        let pieceColor: HTMLInputElement = <HTMLInputElement>document.createElement("input");
+        pieceColor.setAttribute("type", "color");
+
+        pieceDiv.appendChild(pieceColor);
+
+        pieceDiv.appendChild(document.createElement("br"));
+
+        let offsetText: HTMLElement = document.createElement("label");
+        offsetText.innerText = "Offset (where piece spawns): 0";
+
+        pieceDiv.appendChild(offsetText);
+
+        let offsetSlider: HTMLInputElement = <HTMLInputElement>document.createElement("input");
+        offsetSlider.setAttribute("type", "range");
+        offsetSlider.setAttribute("min", "0");
+        offsetSlider.setAttribute("max", config._width.toString());
+        offsetSlider.setAttribute("value", "0");
+        offsetSlider.onchange = function (){
+            offsetText.innerText = "Offset (where piece spawns): " + offsetSlider.value;
+        }
+
+        pieceDiv.appendChild(document.createElement("br"));
+
+        pieceDiv.appendChild(offsetSlider);
+
+        let addPiece: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
+        addPiece.innerText = "Add Piece"
+        addPiece.onclick = function () {
+            let indices: number[] = [];
+            for (let i = 0; i < checks.length; ++i) {
+                if (checks[i].checked) {
+                    indices.push(i);
+                }
+            }
+            if (indices.length > 0) {
+                try {
+                    pieces.push(new ASC.Piece(pieceNameInput.value, indices, offsetSlider.valueAsNumber, Number("0x" + pieceColor.value.substring(1))));
+                    updateList();
+                }
+                catch (err) {
+                    alert("Invalid Piece: " + err);
+                }
+            }
+            else {
+                alert("Need at least 1 block");
+            }
+        }
+        pieceDiv.appendChild(addPiece);
+
+        settings.appendChild(pieceDiv);
+
+        let apply: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
         apply.innerText = "Apply Settings"
         apply.onclick = function () {
             startGame(config);
