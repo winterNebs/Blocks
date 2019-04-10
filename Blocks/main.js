@@ -27,6 +27,7 @@ function startGame(config) {
         alert("Error in config: " + err);
         game = new ASC.Game();
     }
+    app.view.focus();
 }
 function load() {
     game = new ASC.Game();
