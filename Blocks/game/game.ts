@@ -10,9 +10,10 @@
     }
     export class Game implements ITriggerObserver {
         private _field: Field;
+        private _map: number[];
         private _currentPiece: Piece;
         private _hold: Piece;
-        private _queue: Queue;
+        private _queue: IQueue;
         private _width: number
         private _bagSize: number;
         private _pieces: Piece[] = [];
@@ -21,16 +22,25 @@
         private _active: boolean = false;
         private _progress: number = 0;
         private _attack: AttackTable;
+        private _order: number[];
+        private _static: boolean;
         private _timer: Timer;
         /**
          * Creates a new game
          * @param width Width of the game feild, (5 < width < 20, Default: 12).
          */
-        public constructor(width: number = 12, bagSize: number = 6,
-            pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
-                new Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)],
-            controls: number[] = [39, 40, 37, 38, 83, 68, 16, 32], delay: number = 100, repeat: number = 10) {
-            for (var i = app.stage.children.length - 1; i >= 0; --i) { app.stage.removeChild(app.stage.children[i]); };
+        public constructor(
+            width: number = 12, bagSize: number = 6,
+            pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+            new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
+            new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)],
+            controls: number[] = [39, 40, 37, 38, 83, 68, 16, 32],
+            staticQueue: boolean = false, order: number[] = null, clearable:number[]=[],
+            delay: number = 100, repeat: number = 10) {
+
+            for (var i = app.stage.children.length - 1; i >= 0; --i) {
+                app.stage.removeChild(app.stage.children[i]);
+            };
 
             if (delay < 1) {
                 throw new Error("Invalid Delay");
@@ -46,6 +56,9 @@
             }
             this._width = width;
             this._bagSize = bagSize;
+            this._order = order;
+            this._static = staticQueue;
+            this._map = clearable;
             this._renderer = new Renderer(this._width, "Attack");
             //Verify piece offset.
             for (let p of pieces) {
@@ -58,11 +71,17 @@
             this.resetGame();
             app.stage.addChild(this._renderer);
         }
+
         public resetGame(): void {
-            //this._timer.start();
             this._field = new Field(this._width);
-            this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);//NO bag size for now
             this._hold = undefined;
+            if (this._static) {
+                this._field.setBlocks(this._map, new Block(0xDDDDDD, true, true));
+                this._queue = new StaticQueue(this._pieces, this._order);
+            }
+            else {
+                this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
+            }
             this.next();
             this._active = true;
             this._progress = 0;
@@ -75,7 +94,7 @@
             this._active = false;
             this.updateTime();
             //this._timer.stop();
-            
+
         }
 
         private next(): void {

@@ -21,7 +21,7 @@ document.body.appendChild(app.view);
 var game;
 function startGame(config) {
     try {
-        game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
+        game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, false, [], [], config._delay, config._repeat);
     }
     catch (err) {
         alert("Error in config: " + err);
@@ -157,12 +157,16 @@ var ASC;
         Inputs[Inputs["HD"] = 7] = "HD";
     })(Inputs || (Inputs = {}));
     var Game = (function () {
-        function Game(width, bagSize, pieces, controls, delay, repeat) {
+        function Game(width, bagSize, pieces, controls, staticQueue, order, clearable, delay, repeat) {
             if (width === void 0) { width = 12; }
             if (bagSize === void 0) { bagSize = 6; }
-            if (pieces === void 0) { pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
-                new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]; }
+            if (pieces === void 0) { pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+                new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
+                new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]; }
             if (controls === void 0) { controls = [39, 40, 37, 38, 83, 68, 16, 32]; }
+            if (staticQueue === void 0) { staticQueue = false; }
+            if (order === void 0) { order = null; }
+            if (clearable === void 0) { clearable = []; }
             if (delay === void 0) { delay = 100; }
             if (repeat === void 0) { repeat = 10; }
             this._pieces = [];
@@ -186,6 +190,9 @@ var ASC;
             }
             this._width = width;
             this._bagSize = bagSize;
+            this._order = order;
+            this._static = staticQueue;
+            this._map = clearable;
             this._renderer = new ASC.Renderer(this._width, "Attack");
             for (var _i = 0, pieces_1 = pieces; _i < pieces_1.length; _i++) {
                 var p = pieces_1[_i];
@@ -199,8 +206,14 @@ var ASC;
         }
         Game.prototype.resetGame = function () {
             this._field = new ASC.Field(this._width);
-            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
             this._hold = undefined;
+            if (this._static) {
+                this._field.setBlocks(this._map, new ASC.Block(0xDDDDDD, true, true));
+                this._queue = new ASC.StaticQueue(this._pieces, this._order);
+            }
+            else {
+                this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
+            }
             this.next();
             this._active = true;
             this._progress = 0;
@@ -787,14 +800,26 @@ var ASC;
 var ASC;
 (function (ASC) {
     ASC.NUM_PREVIEWS = 6;
-    var Queue = (function () {
+    var IQueue = (function () {
+        function IQueue() {
+        }
+        return IQueue;
+    }());
+    ASC.IQueue = IQueue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var Queue = (function (_super) {
+        __extends(Queue, _super);
         function Queue(seed, pieces, size) {
             if (size === void 0) { size = pieces.length; }
-            this._queue = [];
-            this._rng = new ASC.PRNG(seed);
-            this._bag = pieces;
-            this._bagSize = size;
-            this.generateQueue();
+            var _this = _super.call(this) || this;
+            _this._queue = [];
+            _this._rng = new ASC.PRNG(seed);
+            _this._bag = pieces;
+            _this._bagSize = size;
+            _this.generateQueue();
+            return _this;
         }
         Queue.prototype.generateQueue = function () {
             if (this._queue.length < this._bagSize) {
@@ -818,7 +843,7 @@ var ASC;
             return temp;
         };
         return Queue;
-    }());
+    }(ASC.IQueue));
     ASC.Queue = Queue;
 })(ASC || (ASC = {}));
 var ASC;
@@ -1103,19 +1128,30 @@ var SETTINGS;
             updateList();
         };
         pieceDiv.appendChild(removePiece);
+        var mouseDown = 0;
+        document.body.onmousedown = function () { ++mouseDown; };
+        document.body.onmouseup = function () { --mouseDown; };
         settings.appendChild(document.createElement("hr"));
         var editorTable = document.createElement("table");
         var row1;
         var checks = [];
-        for (var i = 0; i < 25; ++i) {
+        var _loop_2 = function (i) {
             if (i % 5 === 0) {
                 row1 = document.createElement("tr");
                 editorTable.appendChild(row1);
             }
             var check = document.createElement("input");
             check.setAttribute("type", "checkbox");
+            check.onmouseover = function dragCheck() {
+                if (mouseDown) {
+                    check.checked = !check.checked;
+                }
+            };
             checks.push(check);
             row1.appendChild(check);
+        };
+        for (var i = 0; i < 25; ++i) {
+            _loop_2(i);
         }
         pieceDiv.appendChild(editorTable);
         var pieceNameText = document.createElement("label");
@@ -1180,4 +1216,29 @@ var SETTINGS;
     }
     init();
 })(SETTINGS || (SETTINGS = {}));
+var ASC;
+(function (ASC) {
+    var StaticQueue = (function (_super) {
+        __extends(StaticQueue, _super);
+        function StaticQueue(pieces, order) {
+            var _this = _super.call(this) || this;
+            _this._queue = [];
+            _this._bag = pieces;
+            for (var _i = 0, order_1 = order; _i < order_1.length; _i++) {
+                var i = order_1[_i];
+                _this._queue.push(_this._bag[i].getCopy());
+            }
+            return _this;
+        }
+        StaticQueue.prototype.getQueue = function () {
+            return this._queue.slice(0, ASC.NUM_PREVIEWS);
+        };
+        StaticQueue.prototype.getNext = function () {
+            var temp = this._queue.splice(0, 1)[0];
+            return temp;
+        };
+        return StaticQueue;
+    }(ASC.IQueue));
+    ASC.StaticQueue = StaticQueue;
+})(ASC || (ASC = {}));
 //# sourceMappingURL=main.js.map

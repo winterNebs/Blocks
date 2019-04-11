@@ -11,7 +11,8 @@ let game: ASC.Game;
 
 function startGame(config: ASC.Config) {
     try {
-        game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
+        //game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls,, config._delay, config._repeat);
+        game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls,false,[],[], config._delay, config._repeat);
     }
     catch (err) {
         alert("Error in config: " + err);

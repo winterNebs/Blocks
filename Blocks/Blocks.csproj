@@ -97,6 +97,7 @@
   <ItemGroup>
     <Content Include="assets\textures\b.png" />
     <Content Include="assets\textures\a.jpg" />
+    <Content Include="checkbox.css" />
     <Content Include="game.html" />
     <Content Include="index.html" />
     <Content Include="pixi\pixi.min.js" />
@@ -127,9 +128,12 @@
     <TypeScriptCompile Include="game\field.ts" />
     <TypeScriptCompile Include="game\game.ts" />
     <TypeScriptCompile Include="game\ITriggerObserver.ts" />
+    <TypeScriptCompile Include="game\logic\map.ts" />
     <TypeScriptCompile Include="game\logic\piece.ts" />
     <TypeScriptCompile Include="game\logic\prng.ts" />
+    <TypeScriptCompile Include="game\logic\Iqueue.ts" />
     <TypeScriptCompile Include="game\logic\queue.ts" />
+    <TypeScriptCompile Include="game\logic\staticQueue.ts" />
     <TypeScriptCompile Include="game\renderer\renderer.ts" />
     <TypeScriptCompile Include="game\renderer\renderGrid.ts" />
     <TypeScriptCompile Include="game\scoring\attackTable.ts" />

@@ -153,8 +153,11 @@
             updateList();
         }
         pieceDiv.appendChild(removePiece);
+        
 
-
+        var mouseDown = 0;
+        document.body.onmousedown = function () { ++mouseDown; }
+        document.body.onmouseup = function () { --mouseDown; }
 
         settings.appendChild(document.createElement("hr"));
         let editorTable: HTMLElement = document.createElement("table")
@@ -167,6 +170,11 @@
             }
             let check: HTMLInputElement = document.createElement("input");
             check.setAttribute("type", "checkbox");
+            check.onmouseover = function dragCheck() {
+                if (mouseDown) {
+                    check.checked = !check.checked;
+                }
+            }
             checks.push(check);
             row1.appendChild(check);
         }
