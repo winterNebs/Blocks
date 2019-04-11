@@ -948,13 +948,16 @@ var ASC;
             this._width = width;
         }
         AttackTable.prototype.clear = function (num) {
-            return num + CLEAR;
+            return this.widthMultiplier(num + CLEAR);
         };
         AttackTable.prototype.spin = function (num) {
-            return num * SPIN;
+            return this.widthMultiplier(num * SPIN);
         };
         AttackTable.prototype.perfectClear = function (num) {
-            return PC;
+            return this.widthMultiplier(PC);
+        };
+        AttackTable.prototype.widthMultiplier = function (num) {
+            return num + ~~(num * (this._width - 10) / 4);
         };
         return AttackTable;
     }());
@@ -1128,9 +1131,9 @@ var SETTINGS;
             updateList();
         };
         pieceDiv.appendChild(removePiece);
-        var mouseDown = 0;
-        document.body.onmousedown = function () { ++mouseDown; };
-        document.body.onmouseup = function () { --mouseDown; };
+        var mouseDown = false;
+        document.body.onmousedown = function () { mouseDown = true; };
+        document.body.onmouseup = function () { mouseDown = false; };
         settings.appendChild(document.createElement("hr"));
         var editorTable = document.createElement("table");
         var row1;

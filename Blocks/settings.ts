@@ -155,9 +155,9 @@
         pieceDiv.appendChild(removePiece);
         
 
-        var mouseDown = 0;
-        document.body.onmousedown = function () { ++mouseDown; }
-        document.body.onmouseup = function () { --mouseDown; }
+        var mouseDown = false;
+        document.body.onmousedown = function () { mouseDown=true; }
+        document.body.onmouseup = function () { mouseDown=false; }
 
         settings.appendChild(document.createElement("hr"));
         let editorTable: HTMLElement = document.createElement("table")
