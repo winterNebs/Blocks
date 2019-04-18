@@ -98,6 +98,7 @@
     <Content Include="assets\textures\b.png" />
     <Content Include="assets\textures\a.jpg" />
     <Content Include="checkbox.css" />
+    <Content Include="designer.html" />
     <Content Include="game.html" />
     <Content Include="index.html" />
     <Content Include="pixi\pixi.min.js" />
@@ -121,6 +122,8 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
+    <TypeScriptCompile Include="dragutil.ts" />
+    <TypeScriptCompile Include="pieceEditor.ts" />
     <TypeScriptCompile Include="game\logic\block.ts" />
     <TypeScriptCompile Include="game\config.ts" />
     <TypeScriptCompile Include="game\inputManager.ts" />
@@ -140,6 +143,7 @@
     <TypeScriptCompile Include="game\scoring\scoreTable.ts" />
     <TypeScriptCompile Include="game\scoring\table.ts" />
     <TypeScriptCompile Include="game\timer.ts" />
+    <TypeScriptCompile Include="mapDesigner.ts" />
     <TypeScriptCompile Include="settings.ts" />
   </ItemGroup>
   <ItemGroup>

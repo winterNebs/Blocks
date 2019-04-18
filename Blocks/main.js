@@ -629,6 +629,16 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
+    ASC.NUM_PREVIEWS = 6;
+    var IQueue = (function () {
+        function IQueue() {
+        }
+        return IQueue;
+    }());
+    ASC.IQueue = IQueue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
     var Piece = (function () {
         function Piece(name, shape, offset, color, initOrient) {
             if (offset === void 0) { offset = 0; }
@@ -799,16 +809,6 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    ASC.NUM_PREVIEWS = 6;
-    var IQueue = (function () {
-        function IQueue() {
-        }
-        return IQueue;
-    }());
-    ASC.IQueue = IQueue;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
     var Queue = (function (_super) {
         __extends(Queue, _super);
         function Queue(seed, pieces, size) {
@@ -845,6 +845,31 @@ var ASC;
         return Queue;
     }(ASC.IQueue));
     ASC.Queue = Queue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    var StaticQueue = (function (_super) {
+        __extends(StaticQueue, _super);
+        function StaticQueue(pieces, order) {
+            var _this = _super.call(this) || this;
+            _this._queue = [];
+            _this._bag = pieces;
+            for (var _i = 0, order_1 = order; _i < order_1.length; _i++) {
+                var i = order_1[_i];
+                _this._queue.push(_this._bag[i].getCopy());
+            }
+            return _this;
+        }
+        StaticQueue.prototype.getQueue = function () {
+            return this._queue.slice(0, ASC.NUM_PREVIEWS);
+        };
+        StaticQueue.prototype.getNext = function () {
+            var temp = this._queue.splice(0, 1)[0];
+            return temp;
+        };
+        return StaticQueue;
+    }(ASC.IQueue));
+    ASC.StaticQueue = StaticQueue;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -1006,12 +1031,238 @@ var ASC;
     }());
     ASC.Timer = Timer;
 })(ASC || (ASC = {}));
+var M;
+(function (M) {
+    var MapEditor = (function () {
+        function MapEditor() {
+            this._mapDiv = document.createElement("div");
+            this._mapTable = document.createElement("table");
+            this._blocks = [];
+            this._width = 12;
+            var mapR;
+            var _loop_1 = function (i) {
+                if (i % this_1._width === 0) {
+                    mapR = document.createElement("tr");
+                    this_1._mapTable.appendChild(mapR);
+                }
+                var b = document.createElement("input");
+                b.setAttribute("type", "checkbox");
+                b.onmouseenter = function () {
+                    if (D.Drag.mouseDown) {
+                        b.checked = D.Drag.lastState;
+                    }
+                };
+                b.onmousedown = function (ev) {
+                    D.Drag.lastState = !b.checked;
+                    D.Drag.lastSelected = b;
+                    b.checked = D.Drag.lastState;
+                    ev.preventDefault();
+                };
+                b.onmouseup = function (ev) {
+                    if (D.Drag.lastSelected == b) {
+                        b.checked = !b.checked;
+                    }
+                    ev.preventDefault();
+                };
+                b.ondragover = function (ev) {
+                    ev.preventDefault();
+                    ev.preventDefault();
+                };
+                this_1._blocks.push(b);
+                mapR.appendChild(b);
+            };
+            var this_1 = this;
+            for (var i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
+                _loop_1(i);
+            }
+            this._mapDiv.appendChild(this._mapTable);
+        }
+        MapEditor.prototype.getDiv = function () {
+            return this._mapDiv;
+        };
+        MapEditor.prototype.setWidth = function (width) {
+            this._width = width;
+        };
+        return MapEditor;
+    }());
+    M.MapEditor = MapEditor;
+    function init() {
+    }
+    init();
+})(M || (M = {}));
+var D;
+(function (D) {
+    var Drag = (function () {
+        function Drag() {
+        }
+        Drag.init = function () {
+            document.body.onmousedown = function () {
+                Drag.mouseDown = true;
+            };
+            document.body.onmouseup = function () {
+                Drag.mouseDown = false;
+            };
+            document.body.onmouseleave = function () {
+                Drag.mouseDown = false;
+            };
+        };
+        Drag.mouseDown = false;
+        Drag.lastState = false;
+        return Drag;
+    }());
+    D.Drag = Drag;
+})(D || (D = {}));
+var P;
+(function (P) {
+    var PieceEditor = (function () {
+        function PieceEditor(width, pieces) {
+            if (width === void 0) { width = 12; }
+            if (pieces === void 0) { pieces = []; }
+            this._pieceDiv = document.createElement("div");
+            this._pieces = [];
+            this._width = 12;
+            this._pieceSelect = document.createElement("select");
+            this._checks = [];
+            this._pieceNameInput = document.createElement("input");
+            this._pieceColor = document.createElement("input");
+            this._offsetSlider = document.createElement("input");
+            this._offsetText = document.createElement("label");
+            this._width = width;
+            this._pieces = pieces;
+            this.updateList();
+            this._pieceDiv.appendChild(this._pieceSelect);
+            var removePiece = document.createElement("button");
+            removePiece.innerText = "Remove Piece";
+            removePiece.onclick = this.removePieceClick.bind(this);
+            this._pieceDiv.appendChild(removePiece);
+            var editorTable = document.createElement("table");
+            var row1;
+            var _loop_2 = function (i) {
+                if (i % 5 === 0) {
+                    row1 = document.createElement("tr");
+                    editorTable.appendChild(row1);
+                }
+                var check = document.createElement("input");
+                check.setAttribute("type", "checkbox");
+                check.onmouseenter = function () {
+                    if (D.Drag.mouseDown) {
+                        check.checked = D.Drag.lastState;
+                    }
+                };
+                check.onmousedown = function (ev) {
+                    D.Drag.lastState = !check.checked;
+                    D.Drag.lastSelected = check;
+                    check.checked = D.Drag.lastState;
+                    ev.preventDefault();
+                };
+                check.onmouseup = function (ev) {
+                    if (D.Drag.lastSelected == check) {
+                        check.checked = !check.checked;
+                    }
+                    ev.preventDefault();
+                };
+                check.ondragover = function (ev) {
+                    ev.preventDefault();
+                };
+                this_2._checks.push(check);
+                row1.appendChild(check);
+            };
+            var this_2 = this;
+            for (var i = 0; i < 25; ++i) {
+                _loop_2(i);
+            }
+            this._pieceDiv.appendChild(editorTable);
+            var pieceNameText = document.createElement("label");
+            pieceNameText.innerText = "Piece Name: ";
+            this._pieceDiv.appendChild(pieceNameText);
+            this._pieceNameInput.setAttribute("type", "text");
+            this._pieceDiv.appendChild(this._pieceNameInput);
+            this._pieceDiv.appendChild(document.createElement("br"));
+            var pieceColorText = document.createElement("label");
+            pieceColorText.innerText = "Piece Color (Chrome and Firefox will have color picker, other browsers enter in form #FFF000): ";
+            this._pieceDiv.appendChild(pieceColorText);
+            this._pieceColor.setAttribute("type", "color");
+            this._pieceColor.setAttribute("value", "#FFFFFF");
+            this._pieceDiv.appendChild(this._pieceColor);
+            this._pieceDiv.appendChild(document.createElement("br"));
+            this._offsetText.innerText = "Offset (where piece spawns): 0";
+            this._pieceDiv.appendChild(this._offsetText);
+            this._offsetSlider.setAttribute("type", "range");
+            this._offsetSlider.setAttribute("min", "0");
+            this._offsetSlider.setAttribute("max", this._width.toString());
+            this._offsetSlider.setAttribute("value", "0");
+            this._offsetSlider.oninput = this.offsetUpdate.bind(this);
+            this._pieceDiv.appendChild(document.createElement("br"));
+            this._pieceDiv.appendChild(this._offsetSlider);
+            var addPiece = document.createElement("button");
+            addPiece.innerText = "Add Piece";
+            addPiece.onclick = this.addPieceClick.bind(this);
+            this._pieceDiv.appendChild(addPiece);
+        }
+        PieceEditor.prototype.removePieceClick = function () {
+            if (this._pieces.length > 1) {
+                this._pieces.splice(Number(this._pieceSelect.value), 1);
+            }
+            else {
+                alert("Need at least one piece");
+            }
+            this.updateList();
+        };
+        PieceEditor.prototype.addPieceClick = function () {
+            var indices = [];
+            for (var i = 0; i < this._checks.length; ++i) {
+                if (this._checks[i].checked) {
+                    indices.push(i);
+                }
+            }
+            if (indices.length > 0) {
+                try {
+                    this._pieces.push(new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1))));
+                    this.updateList();
+                }
+                catch (err) {
+                    alert("Invalid Piece: " + err);
+                }
+            }
+            else {
+                alert("Need at least 1 block");
+            }
+        };
+        PieceEditor.prototype.offsetUpdate = function () {
+            this._offsetText.innerText = "Offset (where piece spawns): " + this._offsetSlider.value;
+        };
+        PieceEditor.prototype.updateList = function () {
+            while (this._pieceSelect.firstChild) {
+                this._pieceSelect.removeChild(this._pieceSelect.lastChild);
+            }
+            for (var i = 0; i < this._pieces.length; ++i) {
+                var p = document.createElement("option");
+                p.value = i.toString();
+                p.innerText = this._pieces[i].name;
+                this._pieceSelect.appendChild(p);
+            }
+        };
+        PieceEditor.prototype.getDiv = function () {
+            return this._pieceDiv;
+        };
+        PieceEditor.prototype.setWidth = function (width) {
+            this._width = width;
+        };
+        PieceEditor.prototype.getPieces = function () {
+            return this._pieces;
+        };
+        return PieceEditor;
+    }());
+    P.PieceEditor = PieceEditor;
+})(P || (P = {}));
 var SETTINGS;
 (function (SETTINGS) {
     function init() {
         var pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
             new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
         var config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32], 100, 10, 7);
+        var pieceEditor = new P.PieceEditor(config._width, pieces);
+        D.Drag.init();
         var settings = document.createElement("div");
         settings.style.border = "1px solid black";
         var title = document.createElement("H1");
@@ -1029,6 +1280,7 @@ var SETTINGS;
         widthSlider.oninput = function () {
             if (!isNaN(Number(widthSlider.value))) {
                 config._width = Number(widthSlider.value);
+                pieceEditor.setWidth(config._width);
                 widthText.innerText = "Width: " + config._width.toString();
             }
         };
@@ -1039,7 +1291,7 @@ var SETTINGS;
         var controlTable = document.createElement("table");
         var labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop"];
         var row;
-        var _loop_1 = function (i) {
+        var _loop_3 = function (i) {
             if (i % 4 === 0) {
                 row = document.createElement("tr");
                 controlTable.appendChild(row);
@@ -1061,7 +1313,7 @@ var SETTINGS;
             row.appendChild(item);
         };
         for (var i = 0; i < labels.length; ++i) {
-            _loop_1(i);
+            _loop_3(i);
         }
         settings.appendChild(controlTable);
         var delayText = document.createElement("label");
@@ -1104,114 +1356,11 @@ var SETTINGS;
         };
         settings.appendChild(bag);
         settings.appendChild(document.createElement("hr"));
-        var pieceDiv = document.createElement("div");
-        var pieceSelect = document.createElement("select");
-        updateList();
-        function updateList() {
-            while (pieceSelect.firstChild) {
-                pieceSelect.removeChild(pieceSelect.lastChild);
-            }
-            for (var i = 0; i < pieces.length; ++i) {
-                var p = document.createElement("option");
-                p.value = i.toString();
-                p.innerText = pieces[i].name;
-                pieceSelect.appendChild(p);
-            }
-        }
-        pieceDiv.appendChild(pieceSelect);
-        var removePiece = document.createElement("button");
-        removePiece.innerText = "Remove Piece";
-        removePiece.onclick = function () {
-            if (pieces.length > 1) {
-                pieces.splice(Number(pieceSelect.value), 1);
-            }
-            else {
-                alert("Need at least one piece");
-            }
-            updateList();
-        };
-        pieceDiv.appendChild(removePiece);
-        var mouseDown = false;
-        document.body.onmousedown = function () { mouseDown = true; };
-        document.body.onmouseup = function () { mouseDown = false; };
-        settings.appendChild(document.createElement("hr"));
-        var editorTable = document.createElement("table");
-        var row1;
-        var checks = [];
-        var _loop_2 = function (i) {
-            if (i % 5 === 0) {
-                row1 = document.createElement("tr");
-                editorTable.appendChild(row1);
-            }
-            var check = document.createElement("input");
-            check.setAttribute("type", "checkbox");
-            check.onmouseover = function dragCheck() {
-                if (mouseDown) {
-                    check.checked = !check.checked;
-                }
-            };
-            checks.push(check);
-            row1.appendChild(check);
-        };
-        for (var i = 0; i < 25; ++i) {
-            _loop_2(i);
-        }
-        pieceDiv.appendChild(editorTable);
-        var pieceNameText = document.createElement("label");
-        pieceNameText.innerText = "Piece Name: ";
-        pieceDiv.appendChild(pieceNameText);
-        var pieceNameInput = document.createElement("input");
-        pieceNameInput.setAttribute("type", "text");
-        pieceDiv.appendChild(pieceNameInput);
-        pieceDiv.appendChild(document.createElement("br"));
-        var pieceColorText = document.createElement("label");
-        pieceColorText.innerText = "Piece Color (Chrome and Firefox will have color picker, other browsers enter in form #FFF000): ";
-        pieceDiv.appendChild(pieceColorText);
-        var pieceColor = document.createElement("input");
-        pieceColor.setAttribute("type", "color");
-        pieceColor.setAttribute("value", "#FFFFFF");
-        pieceDiv.appendChild(pieceColor);
-        pieceDiv.appendChild(document.createElement("br"));
-        var offsetText = document.createElement("label");
-        offsetText.innerText = "Offset (where piece spawns): 0";
-        pieceDiv.appendChild(offsetText);
-        var offsetSlider = document.createElement("input");
-        offsetSlider.setAttribute("type", "range");
-        offsetSlider.setAttribute("min", "0");
-        offsetSlider.setAttribute("max", config._width.toString());
-        offsetSlider.setAttribute("value", "0");
-        offsetSlider.oninput = function () {
-            offsetText.innerText = "Offset (where piece spawns): " + offsetSlider.value;
-        };
-        pieceDiv.appendChild(document.createElement("br"));
-        pieceDiv.appendChild(offsetSlider);
-        var addPiece = document.createElement("button");
-        addPiece.innerText = "Add Piece";
-        addPiece.onclick = function () {
-            var indices = [];
-            for (var i = 0; i < checks.length; ++i) {
-                if (checks[i].checked) {
-                    indices.push(i);
-                }
-            }
-            if (indices.length > 0) {
-                try {
-                    pieces.push(new ASC.Piece(pieceNameInput.value, indices, offsetSlider.valueAsNumber, Number("0x" + pieceColor.value.substring(1))));
-                    updateList();
-                }
-                catch (err) {
-                    alert("Invalid Piece: " + err);
-                }
-            }
-            else {
-                alert("Need at least 1 block");
-            }
-        };
-        pieceDiv.appendChild(addPiece);
-        settings.appendChild(pieceDiv);
+        settings.appendChild(pieceEditor.getDiv());
         var apply = document.createElement("button");
         apply.innerText = "Apply Settings";
         apply.onclick = function () {
+            config._pieces = pieceEditor.getPieces();
             startGame(config);
         };
         settings.appendChild(apply);
@@ -1219,29 +1368,4 @@ var SETTINGS;
     }
     init();
 })(SETTINGS || (SETTINGS = {}));
-var ASC;
-(function (ASC) {
-    var StaticQueue = (function (_super) {
-        __extends(StaticQueue, _super);
-        function StaticQueue(pieces, order) {
-            var _this = _super.call(this) || this;
-            _this._queue = [];
-            _this._bag = pieces;
-            for (var _i = 0, order_1 = order; _i < order_1.length; _i++) {
-                var i = order_1[_i];
-                _this._queue.push(_this._bag[i].getCopy());
-            }
-            return _this;
-        }
-        StaticQueue.prototype.getQueue = function () {
-            return this._queue.slice(0, ASC.NUM_PREVIEWS);
-        };
-        StaticQueue.prototype.getNext = function () {
-            var temp = this._queue.splice(0, 1)[0];
-            return temp;
-        };
-        return StaticQueue;
-    }(ASC.IQueue));
-    ASC.StaticQueue = StaticQueue;
-})(ASC || (ASC = {}));
 //# sourceMappingURL=main.js.map
