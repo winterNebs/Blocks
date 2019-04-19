@@ -859,10 +859,9 @@ var ASC;
                 while (tempBag.length < this_1._bagSize) {
                     this_1._bag.forEach(function (i) { return tempBag.push(i.getCopy()); });
                 }
-                tempBag.splice(0, this_1._bagSize);
                 this_1._rng.shuffleArray(tempBag);
-                for (var _i = 0, tempBag_1 = tempBag; _i < tempBag_1.length; _i++) {
-                    var i = tempBag_1[_i];
+                for (var _i = 0, _a = tempBag.slice(0, this_1._bagSize + 1); _i < _a.length; _i++) {
+                    var i = _a[_i];
                     this_1._queue.push(i);
                 }
             };

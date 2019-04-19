@@ -2,7 +2,7 @@
 namespace ASC {
     export class Queue extends IQueue {
         private _bag: Piece[];      //Bag for randomization
-        private _bagSize: number;   //Size of memory (0 for memoryless)
+        private _bagSize: number;   //Size of memory (1 for memoryless)
         private _queue: Piece[] = [];
         private _rng: PRNG;
 
@@ -22,9 +22,8 @@ namespace ASC {
                 while (tempBag.length < this._bagSize) {
                     this._bag.forEach((i) => tempBag.push(i.getCopy())); // Fill it with a copy
                 }
-                tempBag.splice(0, this._bagSize);
                 this._rng.shuffleArray(tempBag);
-                for (let i of tempBag) {
+                for (let i of tempBag.slice(0, this._bagSize + 1)) {
                     this._queue.push(i);
                 }
             }
