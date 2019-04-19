@@ -104,7 +104,7 @@
             this._y = 0;
         }
         public getCopy(): Piece {
-            let copy = new Piece(this._name, this._shape, this._offset, this._color,this._initialOrientation);
+            let copy = new Piece(this._name, this._shape, this._offset, this._color, this._initialOrientation);
             copy._orientations = this._orientations;
             copy._x = this._x;
             copy._y = this._y;
@@ -122,11 +122,17 @@
             }
             return temp;
         }
+        public getShape(): number[] {
+            return this._shape.slice(0);
+        }
         public get name(): string {
             return this._name;
         }
         public get color(): number {
             return this._color;
+        }
+        public get offset(): number {
+            return this._offset;
         }
     }
 }

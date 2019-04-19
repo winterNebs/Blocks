@@ -15,15 +15,23 @@ namespace P {
         public constructor(width: number = 12, pieces: ASC.Piece[] = []) {
             this._width = width;
             this._pieces = pieces;
-            this.updateList();
+
+            this._pieceSelect.onchange = this.displayPiece.bind(this);
 
             this._pieceDiv.appendChild(this._pieceSelect);
+
+
+            let addPiece: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
+            addPiece.innerText = "Apply Piece Settings"
+            addPiece.onclick = this.addPieceClick.bind(this);
+            this._pieceDiv.appendChild(addPiece);
 
             let removePiece: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
             removePiece.innerText = "Remove Piece"
             removePiece.onclick = this.removePieceClick.bind(this);
 
             this._pieceDiv.appendChild(removePiece);
+
 
             let editorTable: HTMLElement = document.createElement("table")
             let row1: HTMLElement;
@@ -57,6 +65,8 @@ namespace P {
                 this._checks.push(check);
                 row1.appendChild(check);
             }
+
+
 
             this._pieceDiv.appendChild(editorTable);
 
@@ -97,10 +107,10 @@ namespace P {
 
             this._pieceDiv.appendChild(this._offsetSlider);
 
-            let addPiece: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
-            addPiece.innerText = "Add Piece"
-            addPiece.onclick = this.addPieceClick.bind(this);
-            this._pieceDiv.appendChild(addPiece);
+
+
+            this.updateList();
+            this.displayPiece();
         }
 
         private removePieceClick() {
@@ -121,8 +131,15 @@ namespace P {
             }
             if (indices.length > 0) {
                 try {
-                    this._pieces.push(new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1))));
+                    let val = this._pieceSelect.selectedIndex;
+                    if (val == this._pieceSelect.childElementCount - 1) {
+                        this._pieces.push(new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1))));
+                    }
+                    else {
+                        this._pieces[val] = new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1)));
+                    }
                     this.updateList();
+                    this.displayPiece();
                 }
                 catch (err) {
                     alert("Invalid Piece: " + err);
@@ -147,9 +164,36 @@ namespace P {
                 p.innerText = this._pieces[i].name;
                 this._pieceSelect.appendChild(p);
             }
+            let n = document.createElement("option");
+            n.value = this._pieceSelect.childElementCount.toString();
+            n.innerText = "New Piece";
+            this._pieceSelect.appendChild(n);
         }
 
-       
+        private displayPiece(): void {
+            //Update current piece
+            let val = this._pieceSelect.selectedIndex;
+            if (val !== this._pieceSelect.childElementCount - 1) {
+                //Update checks
+                for (let i of this._checks) {
+                    i.checked = false;
+                }
+                for (let i of this._pieces[val].getShape()) {
+                    this._checks[i].checked = true;
+                }
+                this._pieceNameInput.value = this._pieces[val].name;
+                this._pieceColor.value = this.cth(this._pieces[val].color);
+                this._offsetSlider.value = this._pieces[val].offset.toString();
+            }
+
+        }
+
+        private cth(i: number): string {
+            let hex = '000000'
+            hex += i.toString(16);
+            hex = hex.substring(hex.length-6, hex.length);
+            return "#" + hex;
+        }
         public getDiv(): HTMLDivElement {
             return this._pieceDiv;
         }

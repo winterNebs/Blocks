@@ -41,6 +41,28 @@ function load() {
     newGameButton.onclick = function () { return (game.resetGame()); };
     document.body.appendChild(newGameButton);
 }
+var D;
+(function (D) {
+    var Drag = (function () {
+        function Drag() {
+        }
+        Drag.init = function () {
+            document.body.onmousedown = function () {
+                Drag.mouseDown = true;
+            };
+            document.body.onmouseup = function () {
+                Drag.mouseDown = false;
+            };
+            document.body.onmouseleave = function () {
+                Drag.mouseDown = false;
+            };
+        };
+        Drag.mouseDown = false;
+        Drag.lastState = false;
+        return Drag;
+    }());
+    D.Drag = Drag;
+})(D || (D = {}));
 var ASC;
 (function (ASC) {
     var Config = (function () {
@@ -763,6 +785,9 @@ var ASC;
             }
             return temp;
         };
+        Piece.prototype.getShape = function () {
+            return this._shape.slice(0);
+        };
         Object.defineProperty(Piece.prototype, "name", {
             get: function () {
                 return this._name;
@@ -773,6 +798,13 @@ var ASC;
         Object.defineProperty(Piece.prototype, "color", {
             get: function () {
                 return this._color;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Piece.prototype, "offset", {
+            get: function () {
+                return this._offset;
             },
             enumerable: true,
             configurable: true
@@ -1090,28 +1122,6 @@ var M;
     }
     init();
 })(M || (M = {}));
-var D;
-(function (D) {
-    var Drag = (function () {
-        function Drag() {
-        }
-        Drag.init = function () {
-            document.body.onmousedown = function () {
-                Drag.mouseDown = true;
-            };
-            document.body.onmouseup = function () {
-                Drag.mouseDown = false;
-            };
-            document.body.onmouseleave = function () {
-                Drag.mouseDown = false;
-            };
-        };
-        Drag.mouseDown = false;
-        Drag.lastState = false;
-        return Drag;
-    }());
-    D.Drag = Drag;
-})(D || (D = {}));
 var P;
 (function (P) {
     var PieceEditor = (function () {
@@ -1129,8 +1139,12 @@ var P;
             this._offsetText = document.createElement("label");
             this._width = width;
             this._pieces = pieces;
-            this.updateList();
+            this._pieceSelect.onchange = this.displayPiece.bind(this);
             this._pieceDiv.appendChild(this._pieceSelect);
+            var addPiece = document.createElement("button");
+            addPiece.innerText = "Apply Piece Settings";
+            addPiece.onclick = this.addPieceClick.bind(this);
+            this._pieceDiv.appendChild(addPiece);
             var removePiece = document.createElement("button");
             removePiece.innerText = "Remove Piece";
             removePiece.onclick = this.removePieceClick.bind(this);
@@ -1194,10 +1208,8 @@ var P;
             this._offsetSlider.oninput = this.offsetUpdate.bind(this);
             this._pieceDiv.appendChild(document.createElement("br"));
             this._pieceDiv.appendChild(this._offsetSlider);
-            var addPiece = document.createElement("button");
-            addPiece.innerText = "Add Piece";
-            addPiece.onclick = this.addPieceClick.bind(this);
-            this._pieceDiv.appendChild(addPiece);
+            this.updateList();
+            this.displayPiece();
         }
         PieceEditor.prototype.removePieceClick = function () {
             if (this._pieces.length > 1) {
@@ -1217,8 +1229,15 @@ var P;
             }
             if (indices.length > 0) {
                 try {
-                    this._pieces.push(new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1))));
+                    var val = this._pieceSelect.selectedIndex;
+                    if (val == this._pieceSelect.childElementCount - 1) {
+                        this._pieces.push(new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1))));
+                    }
+                    else {
+                        this._pieces[val] = new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1)));
+                    }
                     this.updateList();
+                    this.displayPiece();
                 }
                 catch (err) {
                     alert("Invalid Piece: " + err);
@@ -1241,6 +1260,32 @@ var P;
                 p.innerText = this._pieces[i].name;
                 this._pieceSelect.appendChild(p);
             }
+            var n = document.createElement("option");
+            n.value = this._pieceSelect.childElementCount.toString();
+            n.innerText = "New Piece";
+            this._pieceSelect.appendChild(n);
+        };
+        PieceEditor.prototype.displayPiece = function () {
+            var val = this._pieceSelect.selectedIndex;
+            if (val !== this._pieceSelect.childElementCount - 1) {
+                for (var _i = 0, _a = this._checks; _i < _a.length; _i++) {
+                    var i = _a[_i];
+                    i.checked = false;
+                }
+                for (var _b = 0, _c = this._pieces[val].getShape(); _b < _c.length; _b++) {
+                    var i = _c[_b];
+                    this._checks[i].checked = true;
+                }
+                this._pieceNameInput.value = this._pieces[val].name;
+                this._pieceColor.value = this.cth(this._pieces[val].color);
+                this._offsetSlider.value = this._pieces[val].offset.toString();
+            }
+        };
+        PieceEditor.prototype.cth = function (i) {
+            var hex = '000000';
+            hex += i.toString(16);
+            hex = hex.substring(hex.length - 6, hex.length);
+            return "#" + hex;
         };
         PieceEditor.prototype.getDiv = function () {
             return this._pieceDiv;
