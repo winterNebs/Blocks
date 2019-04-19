@@ -854,16 +854,21 @@ var ASC;
             return _this;
         }
         Queue.prototype.generateQueue = function () {
-            if (this._queue.length < this._bagSize) {
-                var tempBag_1 = [];
-                while (tempBag_1.length < this._bagSize) {
-                    this._bag.forEach(function (i) { return tempBag_1.push(i.getCopy()); });
+            var _loop_1 = function () {
+                var tempBag = [];
+                while (tempBag.length < this_1._bagSize) {
+                    this_1._bag.forEach(function (i) { return tempBag.push(i.getCopy()); });
                 }
-                this._rng.shuffleArray(tempBag_1);
-                for (var _i = 0, _a = tempBag_1.splice(0, this._bagSize); _i < _a.length; _i++) {
-                    var i = _a[_i];
-                    this._queue.push(i);
+                tempBag.splice(0, this_1._bagSize);
+                this_1._rng.shuffleArray(tempBag);
+                for (var _i = 0, tempBag_1 = tempBag; _i < tempBag_1.length; _i++) {
+                    var i = tempBag_1[_i];
+                    this_1._queue.push(i);
                 }
+            };
+            var this_1 = this;
+            while (this._queue.length < ASC.NUM_PREVIEWS) {
+                _loop_1();
             }
         };
         Queue.prototype.getQueue = function () {
@@ -1072,10 +1077,10 @@ var M;
             this._blocks = [];
             this._width = 12;
             var mapR;
-            var _loop_1 = function (i) {
-                if (i % this_1._width === 0) {
+            var _loop_2 = function (i) {
+                if (i % this_2._width === 0) {
                     mapR = document.createElement("tr");
-                    this_1._mapTable.appendChild(mapR);
+                    this_2._mapTable.appendChild(mapR);
                 }
                 var b = document.createElement("input");
                 b.setAttribute("type", "checkbox");
@@ -1100,12 +1105,12 @@ var M;
                     ev.preventDefault();
                     ev.preventDefault();
                 };
-                this_1._blocks.push(b);
+                this_2._blocks.push(b);
                 mapR.appendChild(b);
             };
-            var this_1 = this;
+            var this_2 = this;
             for (var i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
-                _loop_1(i);
+                _loop_2(i);
             }
             this._mapDiv.appendChild(this._mapTable);
         }
@@ -1151,7 +1156,7 @@ var P;
             this._pieceDiv.appendChild(removePiece);
             var editorTable = document.createElement("table");
             var row1;
-            var _loop_2 = function (i) {
+            var _loop_3 = function (i) {
                 if (i % 5 === 0) {
                     row1 = document.createElement("tr");
                     editorTable.appendChild(row1);
@@ -1178,12 +1183,12 @@ var P;
                 check.ondragover = function (ev) {
                     ev.preventDefault();
                 };
-                this_2._checks.push(check);
+                this_3._checks.push(check);
                 row1.appendChild(check);
             };
-            var this_2 = this;
+            var this_3 = this;
             for (var i = 0; i < 25; ++i) {
-                _loop_2(i);
+                _loop_3(i);
             }
             this._pieceDiv.appendChild(editorTable);
             var pieceNameText = document.createElement("label");
@@ -1219,6 +1224,7 @@ var P;
                 alert("Need at least one piece");
             }
             this.updateList();
+            this.displayPiece();
         };
         PieceEditor.prototype.addPieceClick = function () {
             var indices = [];
@@ -1336,7 +1342,7 @@ var SETTINGS;
         var controlTable = document.createElement("table");
         var labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop"];
         var row;
-        var _loop_3 = function (i) {
+        var _loop_4 = function (i) {
             if (i % 4 === 0) {
                 row = document.createElement("tr");
                 controlTable.appendChild(row);
@@ -1358,7 +1364,7 @@ var SETTINGS;
             row.appendChild(item);
         };
         for (var i = 0; i < labels.length; ++i) {
-            _loop_3(i);
+            _loop_4(i);
         }
         settings.appendChild(controlTable);
         var delayText = document.createElement("label");

@@ -14,16 +14,23 @@ namespace ASC {
             this.generateQueue();
         }
         private generateQueue(): void {
-            if (this._queue.length < this._bagSize) {
+            //Less pieces then previews
+            //Add enoguh pieces until it's full
+            while (this._queue.length < NUM_PREVIEWS) {
                 let tempBag = [];
+                //Make sure enough pieces for larger bag size than pieces
                 while (tempBag.length < this._bagSize) {
-                    this._bag.forEach((i) => tempBag.push(i.getCopy()));
+                    this._bag.forEach((i) => tempBag.push(i.getCopy())); // Fill it with a copy
                 }
+                tempBag.splice(0, this._bagSize);
                 this._rng.shuffleArray(tempBag);
-                for (let i of tempBag.splice(0, this._bagSize)) {
+                for (let i of tempBag) {
                     this._queue.push(i);
                 }
             }
+
+
+            //Take the number of pieces for bag size
         }
         public getQueue(): Piece[] {
             return this._queue.slice(0, NUM_PREVIEWS);//need to copy 

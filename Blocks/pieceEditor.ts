@@ -121,6 +121,7 @@ namespace P {
                 alert("Need at least one piece");
             }
             this.updateList();
+            this.displayPiece();
         }
         private addPieceClick() {
             let indices: number[] = [];
