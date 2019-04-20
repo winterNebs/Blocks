@@ -122,8 +122,8 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
-    <TypeScriptCompile Include="dragutil.ts" />
-    <TypeScriptCompile Include="pieceEditor.ts" />
+    <TypeScriptCompile Include="webgui\dragutil.ts" />
+    <TypeScriptCompile Include="webgui\pieceEditor.ts" />
     <TypeScriptCompile Include="game\logic\block.ts" />
     <TypeScriptCompile Include="game\config.ts" />
     <TypeScriptCompile Include="game\inputManager.ts" />
@@ -143,8 +143,8 @@
     <TypeScriptCompile Include="game\scoring\scoreTable.ts" />
     <TypeScriptCompile Include="game\scoring\table.ts" />
     <TypeScriptCompile Include="game\timer.ts" />
-    <TypeScriptCompile Include="mapDesigner.ts" />
-    <TypeScriptCompile Include="settings.ts" />
+    <TypeScriptCompile Include="webgui\mapDesigner.ts" />
+    <TypeScriptCompile Include="webgui\settings.ts" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{4A0DDDB5-7A95-4FBF-97CC-616D07737A77}" />

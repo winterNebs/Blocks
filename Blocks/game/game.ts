@@ -38,8 +38,8 @@
             staticQueue: boolean = false, order: number[] = null, clearable:number[]=[],
             delay: number = 100, repeat: number = 10) {
 
-            for (var i = app.stage.children.length - 1; i >= 0; --i) {
-                app.stage.removeChild(app.stage.children[i]);
+            for (var i = RUN.app.stage.children.length - 1; i >= 0; --i) {
+                RUN.app.stage.removeChild(RUN.app.stage.children[i]);
             };
 
             if (delay < 1) {
@@ -69,7 +69,7 @@
             this._attack = new AttackTable(this._width);
             //this._timer = new Timer(this.tick.bind(this), this.gameOver.bind(this), 500, 60000);
             this.resetGame();
-            app.stage.addChild(this._renderer);
+            RUN.app.stage.addChild(this._renderer);
         }
 
         public resetGame(): void {
