@@ -31,8 +31,15 @@ namespace SETTINGS {
 
         widthSlider.oninput = function () {
             if (!isNaN(Number(widthSlider.value))) {
+                let temp = config._width
                 config._width = Number(widthSlider.value);
-                pieceEditor.setWidth(config._width);
+                try {
+                    pieceEditor.setWidth(config._width);
+                }
+                catch (err) {
+                    alert(err);
+                    config._width = temp;
+                }
                 widthText.innerText = "Width: " + config._width.toString();
             }
         }

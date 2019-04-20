@@ -12,7 +12,8 @@ namespace P {
         private _offsetText: HTMLElement = document.createElement("label");
 
 
-        public constructor(width: number = 12, pieces: ASC.Piece[] = []) {
+        public constructor(width: number = 12, pieces: ASC.Piece[] = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
+        new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]) {
             this._width = width;
             this._pieces = pieces;
 
@@ -162,7 +163,7 @@ namespace P {
             for (let i = 0; i < this._pieces.length; ++i) {
                 let p = document.createElement("option");
                 p.value = i.toString();
-                p.innerText = this._pieces[i].name;
+                p.innerText = i.toString() + ". \"" + this._pieces[i].name + "\"";
                 this._pieceSelect.appendChild(p);
             }
             let n = document.createElement("option");
@@ -176,23 +177,21 @@ namespace P {
             let val = this._pieceSelect.selectedIndex;
             if (val !== this._pieceSelect.childElementCount - 1) {
                 //Update checks
-                for (let i of this._checks) {
-                    i.checked = false;
-                }
-                for (let i of this._pieces[val].getShape()) {
-                    this._checks[i].checked = true;
+                let shape = this._pieces[val].getRenderShape();
+                for (let i = 0; i < 25; i++) {
+                    this._checks[i].checked = (shape[i] !== -1);
                 }
                 this._pieceNameInput.value = this._pieces[val].name;
                 this._pieceColor.value = this.cth(this._pieces[val].color);
                 this._offsetSlider.value = this._pieces[val].offset.toString();
+                this.offsetUpdate();
             }
 
         }
-
         private cth(i: number): string {
             let hex = '000000'
             hex += i.toString(16);
-            hex = hex.substring(hex.length-6, hex.length);
+            hex = hex.substring(hex.length - 6, hex.length);
             return "#" + hex;
         }
         public getDiv(): HTMLDivElement {
@@ -200,6 +199,9 @@ namespace P {
         }
 
         public setWidth(width: number): void {
+            for (let i of this._pieces) {
+                i.validateOffset(width);
+            }
             this._width = width;
         }
 

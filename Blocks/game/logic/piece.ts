@@ -15,7 +15,7 @@
 
 
         public constructor(name: string, shape: number[], offset: number = 0, color: number = 0xFFFFFF, initOrient: number = 0) {
-            this._name = name;
+            this._name = name.substr(0,1);
             this.setShape(shape);
             this._offset = offset;
             this._initialOrientation = initOrient;
@@ -25,7 +25,7 @@
         public validateOffset(width: number): boolean {
             for (let i of this._orientations[this._initialOrientation]) {
                 if (~~(i / 5) !== ~~(((i % 5) + ~~(i / 5) * width + this._offset) / width)) {
-                    throw new Error("Invalid offset! Piece will spawn out of bounds:");
+                    throw new Error("Invalid offset! Piece will spawn out of bounds:" + this._name + " offset: " + this._offset);
                 }
             }
             return true;
@@ -115,15 +115,12 @@
         public getRenderShape(): number[] {
             let temp = [];
             for (let i = 0; i < 25; ++i) {
-                temp.push(0x000000);
+                temp.push(-1);
             }
             for (let i of this._shape) {
                 temp[i] = this._color;
             }
             return temp;
-        }
-        public getShape(): number[] {
-            return this._shape.slice(0);
         }
         public get name(): string {
             return this._name;

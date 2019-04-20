@@ -123,6 +123,7 @@
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
     <TypeScriptCompile Include="webgui\dragutil.ts" />
+    <TypeScriptCompile Include="webgui\numberarrayconverter.ts" />
     <TypeScriptCompile Include="webgui\pieceEditor.ts" />
     <TypeScriptCompile Include="game\logic\block.ts" />
     <TypeScriptCompile Include="game\config.ts" />

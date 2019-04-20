@@ -34,7 +34,12 @@
         //Color is hex
         private updateColor(index: number, color: number): void {
             //if (this._sprites[index].tint != color) {
-            this._sprites[index].tint = color;
+            if (color < 0) {
+                this._sprites[index].tint = 0x000000;
+            }
+            else {
+                this._sprites[index].tint = color;
+            }
             //}
         }
         public updateGrid(Field: number[]): void {
