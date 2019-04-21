@@ -84,9 +84,9 @@
             this.next();
             this._active = true;
             this._progress = 0;
+            this._renderer.updateTime("new game haha :)");
             this.update();
 
-            this._renderer.updateTime("new game haha :)");
         }
         private tick(): void {
             this.updateTime();

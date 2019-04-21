@@ -207,8 +207,8 @@ var ASC;
             this.next();
             this._active = true;
             this._progress = 0;
-            this.update();
             this._renderer.updateTime("new game haha :)");
+            this.update();
         }
         tick() {
             this.updateTime();
