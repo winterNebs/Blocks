@@ -1522,7 +1522,7 @@ var SETTINGS;
                 let shape = [];
                 let i = 0;
                 let sss = B.binaryFrom64(r.substring(1, 6));
-                for (let s of sss.substring(0, 2 * sss.length - 25).split('')) {
+                for (let s of sss.substring(0, 25).split('')) {
                     if (Number(s) == 1) {
                         shape.push(i);
                     }
