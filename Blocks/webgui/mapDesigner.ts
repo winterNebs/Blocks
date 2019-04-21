@@ -85,17 +85,7 @@ namespace M {
                 alert("Too many pieces: Max 64");
                 return;
             }
-            if (!isNaN(Number(this._widthSlider.value))) {
-                let temp = this._width
-                this._width = Number(this._widthSlider.value);
-                try {
-                    this._pieceEditor.setWidth(this._width);
-                }
-                catch (err) {
-                    alert(err);
-                    this._width = temp;
-                }
-            }
+            
             let output = "";
             // Store map info in the following format:
             //Width |&|Pieces <- ouch|&|Queue|&| Map
