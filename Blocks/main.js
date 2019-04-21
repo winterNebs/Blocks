@@ -1230,10 +1230,11 @@ var M;
             for (let p of this._pieceEditor.getPieces()) {
                 output += B.pad(p.name, ' ', 1);
                 let b = "";
+                console.log(b);
                 for (let i of p.getRenderShape()) {
                     b += Number(i !== -1);
                 }
-                output += B.pad(B.binaryTo64(b), '0', 5);
+                output += B.binaryTo64(b).padEnd(5, '0');
                 output += B.fromNumber(p.offset);
                 output += B.pad(B.hexTo64(p.color.toString(16)), '0', 4);
             }
@@ -1522,7 +1523,8 @@ var SETTINGS;
                 let shape = [];
                 let i = 0;
                 let sss = B.binaryFrom64(r.substring(1, 6));
-                for (let s of sss.substring(0, 25).split('')) {
+                console.log(sss);
+                for (let s of sss.substring(5).split('')) {
                     if (Number(s) == 1) {
                         shape.push(i);
                     }

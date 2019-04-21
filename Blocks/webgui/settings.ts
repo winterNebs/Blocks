@@ -163,7 +163,8 @@ namespace SETTINGS {
                 let shape: number[] = [];
                 let i = 0;
                 let sss = B.binaryFrom64(r.substring(1, 6));
-                for (let s of sss.substring(0, 25).split('')) {
+                console.log(sss)
+                for (let s of sss.substring(5).split('')) {
                     if (Number(s) == 1) {
                         shape.push(i);
                     }

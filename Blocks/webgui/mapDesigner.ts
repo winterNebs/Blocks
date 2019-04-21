@@ -110,12 +110,12 @@ namespace M {
             //Piece, 11 char * n pieces 
             for (let p of this._pieceEditor.getPieces()) {
                 output += B.pad(p.name, ' ', 1); //1  //PAD
-
                 let b = "";
+                console.log(b);
                 for (let i of p.getRenderShape()) {
                     b += Number(i !== -1);
                 }
-                output += B.pad(B.binaryTo64(b), '0', 5); // 5 //PAD 
+                output += B.binaryTo64(b).padEnd(5, '0');
                 output += B.fromNumber(p.offset); // 1
                 output += B.pad(B.hexTo64(p.color.toString(16)), '0', 4); //4 //PAD (change these to pad start smh)
 
