@@ -113,6 +113,7 @@ namespace SETTINGS {
         repeat.setAttribute("min", "1");
         repeat.setAttribute("value", config._repeat.toString());
 
+
         repeat.oninput = function () {
             if (!isNaN(Number(repeat.value))) {
                 config._repeat = Number(repeat.value);
@@ -166,6 +167,8 @@ namespace SETTINGS {
             for (let i = 0; i < controlsBox.length; ++i) {
                 controlsBox[i].setAttribute("value", config._controls[i].toString());
             }
+            delay.setAttribute("value", config._delay.toString());
+            repeat.setAttribute("value", config._repeat.toString());
             RUN.afterLoad = () => (RUN.startGame(config, map, staticQueue, mapShape));
         }
 
@@ -222,6 +225,7 @@ namespace SETTINGS {
             }
             c += "c=" + JSON.stringify(config._controls) + ";";
             c += "r=" + JSON.stringify(config._repeat) + ";";
+            c += "d=" + JSON.stringify(config._delay) + ';';
             if (!map) {
                 c += "b=" + JSON.stringify(config._bagSize) + ";";
             }
@@ -254,6 +258,9 @@ namespace SETTINGS {
                                 break;
                             case 'r':
                                 config._repeat = JSON.parse(v.substring(2));
+                                break;
+                            case 'd':
+                                config._delay = JSON.parse(v.substring(2));
                                 break;
                         }
                     }
