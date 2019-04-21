@@ -65,8 +65,6 @@ var ASC;
             this._field = new ASC.Field(this._width);
             this._hold = undefined;
             if (this._static) {
-                console.log(this._map);
-                console.log(this._order);
                 this._field.setBlocks(this._map, new ASC.Block(0xDDDDDD, true, true));
                 this._queue = new ASC.StaticQueue(this._pieces, this._order);
             }
@@ -88,9 +86,9 @@ var ASC;
         }
         next() {
             this._currentPiece = this._queue.getNext();
-            if (!this.checkShift(0, 0)) {
+            if (this._currentPiece == undefined || !this.checkShift(0, 0)) {
                 this.gameOver();
-                console.log("Game end");
+                this._renderer.updateTime("Game end");
             }
         }
         hold() {
@@ -199,6 +197,10 @@ var ASC;
                 }
                 if (this.checkPC()) {
                     this._progress += this._attack.perfectClear(cleared);
+                    if (this._static) {
+                        this.gameOver();
+                        this._renderer.updateTime("You Win");
+                    }
                 }
             }
             this.next();
@@ -238,9 +240,17 @@ var ASC;
         updateQueue() {
             //Update queue
             let queue = this._queue.getQueue();
+            while (queue.length < ASC.NUM_PREVIEWS) {
+                queue.push(undefined);
+            }
             let q = [];
             for (let p of queue) {
-                q.push(p.getRenderShape());
+                if (p == undefined) {
+                    q.push(new Array(25).fill(0));
+                }
+                else {
+                    q.push(p.getRenderShape());
+                }
             }
             this._renderer.updateQueue(q);
         }
@@ -267,6 +277,39 @@ var ASC;
                 } //re move rows
             }
             return lines;
+        }
+        touchControl(code) {
+            if (this._active) {
+                switch (code) {
+                    case 0:
+                        ASC.InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
+                        this.move(ASC.Directions.LEFT);
+                        break;
+                    case 1:
+                        this.move(ASC.Directions.DOWN);
+                        break;
+                    case 2:
+                        this.move(ASC.Directions.RIGHT);
+                        ASC.InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
+                        break;
+                    case 3:
+                        this.rotate(ASC.Rotations.CW);
+                        break;
+                    case 4:
+                        this.rotate(ASC.Rotations.CWCW);
+                        break;
+                    case 5:
+                        this.rotate(ASC.Rotations.CCW);
+                        break;
+                    case 6:
+                        this.hardDrop();
+                        break;
+                    case 7:
+                        this.hold();
+                        break;
+                }
+                this.update(); //remove this and only update when needed
+            }
         }
         Triggered(keyCode) {
             if (this._active) {

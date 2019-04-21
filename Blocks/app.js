@@ -15,9 +15,6 @@ var RUN;
         try {
             if (config !== undefined) {
                 RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, static, queue, map, config._delay, config._repeat);
-                /* game = new ASC.Game(10, config._bagSize, [new ASC.Piece("lol", [4, 7,], 0, 0xFF0000)], config._controls, true, [0, 0, 0, 0, 0, 0, 0], [
-                    210, 211, 212, 213, 214, 216, 217, 218, 219, 220, 221, 222, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 235, 236, 237, 238, 239, 240, 241, 243, 244, 245, 246, 247, 248, 249
-                ], config._delay, config._repeat);*/
             }
             else {
                 RUN.game = new ASC.Game();
@@ -31,7 +28,12 @@ var RUN;
     }
     RUN.startGame = startGame;
     function load() {
-        startGame();
+        if (RUN.afterLoad == undefined) {
+            startGame();
+        }
+        else {
+            RUN.afterLoad();
+        }
         RUN.app.view.focus();
         ASC.InputManager.initialize();
         let discord = document.createElement("a");
@@ -42,5 +44,13 @@ var RUN;
         newGameButton.innerText = "New Game";
         newGameButton.onclick = () => (RUN.game.resetGame());
         document.body.appendChild(newGameButton);
+        let lables = ["Left", "Softdrop", "Right", "Clockwise", "180", "Counter Clockwise", "Hard Drop", "Hold"];
+        for (let i = 0; i < lables.length; ++i) {
+            let be = document.createElement("button");
+            be.innerText = lables[i];
+            be.onclick = function () { RUN.game.touchControl(i); };
+            be.style.fontSize = "2em";
+            document.body.appendChild(be);
+        }
     }
 })(RUN || (RUN = {}));

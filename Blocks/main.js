@@ -43,6 +43,14 @@ var RUN;
         newGameButton.innerText = "New Game";
         newGameButton.onclick = () => (RUN.game.resetGame());
         document.body.appendChild(newGameButton);
+        let lables = ["Left", "Softdrop", "Right", "Clockwise", "180", "Counter Clockwise", "Hard Drop", "Hold"];
+        for (let i = 0; i < lables.length; ++i) {
+            let be = document.createElement("button");
+            be.innerText = lables[i];
+            be.onclick = function () { RUN.game.touchControl(i); };
+            be.style.fontSize = "2em";
+            document.body.appendChild(be);
+        }
     }
 })(RUN || (RUN = {}));
 var ASC;
@@ -402,6 +410,39 @@ var ASC;
                 }
             }
             return lines;
+        }
+        touchControl(code) {
+            if (this._active) {
+                switch (code) {
+                    case 0:
+                        ASC.InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
+                        this.move(ASC.Directions.LEFT);
+                        break;
+                    case 1:
+                        this.move(ASC.Directions.DOWN);
+                        break;
+                    case 2:
+                        this.move(ASC.Directions.RIGHT);
+                        ASC.InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
+                        break;
+                    case 3:
+                        this.rotate(ASC.Rotations.CW);
+                        break;
+                    case 4:
+                        this.rotate(ASC.Rotations.CWCW);
+                        break;
+                    case 5:
+                        this.rotate(ASC.Rotations.CCW);
+                        break;
+                    case 6:
+                        this.hardDrop();
+                        break;
+                    case 7:
+                        this.hold();
+                        break;
+                }
+                this.update();
+            }
         }
         Triggered(keyCode) {
             if (this._active) {

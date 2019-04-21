@@ -298,7 +298,40 @@
 
             return lines;
         }
+        public touchControl(code: number): void {
+            if (this._active) {
+                switch (code) {
+                    case 0:
+                        InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
+                        this.move(Directions.LEFT);
+                        break;
+                    case 1:
+                        this.move(Directions.DOWN);
+                        break;
+                    case 2:
+                        this.move(Directions.RIGHT);
+                        InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
+                        break;
+                    case 3:
 
+                        this.rotate(Rotations.CW);
+                        break;
+                    case 4:
+                        this.rotate(Rotations.CWCW);
+                        break;
+                    case 5:
+                        this.rotate(Rotations.CCW);
+                        break;
+                    case 6:
+                        this.hardDrop();
+                        break;
+                    case 7:
+                        this.hold();
+                        break;
+                }
+                this.update();//remove this and only update when needed
+            }
+        }
         Triggered(keyCode: number): void {
             if (this._active) {
                 switch (keyCode) {
