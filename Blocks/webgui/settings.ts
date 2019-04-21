@@ -180,7 +180,7 @@ namespace SETTINGS {
             staticQueue = queue;
             let map: number[] = [];
             let rawmap: string = B.binaryFrom64(cfg[3]);
-            rawmap = rawmap.substring(0, config._width * ASC.FIELD_HEIGHT);
+            rawmap = rawmap.substring(rawmap.length-config._width * ASC.FIELD_HEIGHT);
             let i = 0;
             for (let r of rawmap.split('')) {
                 if (Number(r) == 1) {

@@ -101,7 +101,6 @@ namespace M {
             for (let p of this._pieceEditor.getPieces()) {
                 output += B.pad(p.name, ' ', 1); //1  //PAD
                 let b = "";
-                console.log(b);
                 for (let i of p.getRenderShape()) {
                     b += Number(i !== -1);
                 }

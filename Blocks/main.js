@@ -1219,7 +1219,6 @@ var M;
             for (let p of this._pieceEditor.getPieces()) {
                 output += B.pad(p.name, ' ', 1);
                 let b = "";
-                console.log(b);
                 for (let i of p.getRenderShape()) {
                     b += Number(i !== -1);
                 }
@@ -1529,7 +1528,7 @@ var SETTINGS;
             staticQueue = queue;
             let map = [];
             let rawmap = B.binaryFrom64(cfg[3]);
-            rawmap = rawmap.substring(0, config._width * ASC.FIELD_HEIGHT);
+            rawmap = rawmap.substring(rawmap.length - config._width * ASC.FIELD_HEIGHT);
             let i = 0;
             for (let r of rawmap.split('')) {
                 if (Number(r) == 1) {
