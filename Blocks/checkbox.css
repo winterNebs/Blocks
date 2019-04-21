@@ -9,12 +9,18 @@
     display: block;
     float: left;
 }
+
 tr {
     margin: 0px;
     padding: 0px;
     border: 0px;
 }
+
 table {
     border-collapse: collapse;
     border-spacing: 0;
+}
+
+* {
+    touch-action: manipulation;
 }
