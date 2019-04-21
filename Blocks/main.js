@@ -208,6 +208,7 @@ var ASC;
             this._active = true;
             this._progress = 0;
             this.update();
+            this._renderer.updateTime("new game haha :)");
         }
         tick() {
             this.updateTime();
