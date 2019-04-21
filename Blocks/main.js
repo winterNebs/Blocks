@@ -47,7 +47,7 @@ var RUN;
         for (let i = 0; i < lables.length; ++i) {
             let be = document.createElement("button");
             be.innerText = lables[i];
-            be.onclick = function () { RUN.game.touchControl(i); };
+            be.onclick = function (ev) { RUN.game.touchControl(i); ev.preventDefault(); };
             be.style.fontSize = "2em";
             document.body.appendChild(be);
         }

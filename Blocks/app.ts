@@ -52,7 +52,7 @@
         for (let i = 0; i < lables.length; ++i) {
             let be: HTMLButtonElement = document.createElement("button");
             be.innerText = lables[i];
-            be.onclick = function () { game.touchControl(i); };
+            be.onclick = function (ev) { game.touchControl(i); ev.preventDefault()};
             be.style.fontSize="2em";
             document.body.appendChild(be);
         }
