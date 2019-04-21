@@ -219,5 +219,13 @@ namespace P {
             this._addPiece.disabled = state;
             this._removePiece.disabled = state;
         }
+        public setPieces(p: ASC.Piece[]) {
+            this._pieces = p;
+            for (let i of this._pieces) {
+                i.validateOffset(this._width);
+            }
+            this.updateList();
+            this.displayPiece();
+        }
     }
 }

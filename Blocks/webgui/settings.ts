@@ -2,6 +2,8 @@
 namespace SETTINGS {
 
     export function init(map: boolean = false) {
+
+
         let staticQueue: number[] = [];
         let mapShape: number[] = [];
         let pieces: ASC.Piece[] = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
@@ -55,6 +57,7 @@ namespace SETTINGS {
 
         let controlTable: HTMLElement = document.createElement("table")
         const labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop"];
+        let controlsBox: HTMLElement[] = [];
         let row: HTMLElement;
         for (let i = 0; i < labels.length; ++i) {
             if (i % 4 === 0) {
@@ -75,6 +78,7 @@ namespace SETTINGS {
                 numberbox.blur();
             }
             item.appendChild(numberbox);
+            controlsBox.push(numberbox);
             row.appendChild(item);
         }
 
@@ -141,16 +145,31 @@ namespace SETTINGS {
 
         settings.appendChild(pieceEditor.getDiv());
 
+
+
         let apply: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
         apply.innerText = "Apply Settings"
         apply.onclick = function () {
             config._pieces = pieceEditor.getPieces();
             RUN.startGame(config, map, staticQueue, mapShape);
+            saveCookie();
         }
 
         settings.appendChild(apply);
 
         document.body.appendChild(settings);
+
+
+        if (document.cookie !== "") {
+            readCookie();
+
+            for (let i = 0; i < controlsBox.length; ++i) {
+                controlsBox[i].setAttribute("value", config._controls[i].toString());
+            }
+            RUN.afterLoad = () => (RUN.startGame(config, map, staticQueue, mapShape));
+        }
+
+
         if (map) {
             widthSlider.disabled = true;
             pieceEditor.disable(true);
@@ -180,7 +199,7 @@ namespace SETTINGS {
             staticQueue = queue;
             let map: number[] = [];
             let rawmap: string = B.binaryFrom64(cfg[3]);
-            rawmap = rawmap.substring(rawmap.length-config._width * ASC.FIELD_HEIGHT);
+            rawmap = rawmap.substring(rawmap.length - config._width * ASC.FIELD_HEIGHT);
             let i = 0;
             for (let r of rawmap.split('')) {
                 if (Number(r) == 1) {
@@ -190,6 +209,60 @@ namespace SETTINGS {
             }
             mapShape = map;
             RUN.afterLoad = () => (RUN.startGame(config, true, staticQueue, mapShape));
+
         }
+        function saveCookie() { //If no cookie
+            let c = "";
+            //Cookie format:
+            //Version: ?; pieces; controls; delay; rate; bagsize;
+            c += "ver=0.001;";
+            if (!map) {
+                c += "p=" + JSON.stringify(config._pieces) + ";";
+
+            }
+            c += "c=" + JSON.stringify(config._controls) + ";";
+            c += "r=" + JSON.stringify(config._repeat) + ";";
+            if (!map) {
+                c += "b=" + JSON.stringify(config._bagSize) + ";";
+            }
+            c += "Expires: 2147483647;"
+            document.cookie = encodeURIComponent(c);
+        }
+        function readCookie() {
+            let vals = decodeURIComponent(document.cookie).split(";");
+
+            vals = vals.filter(function (el) { return el; });
+            //Check verison
+            try {
+                for (let v of vals) {
+                    if (v != null && v.length > 2) {
+                        switch (v.charAt(0)) {
+                            case 'p':
+                                if (!map) {
+                                    let p = ASC.Config.pieceFromText(v.substring(2));
+                                    config._pieces = p;
+                                    pieceEditor.setPieces(p);
+                                }
+                                break;
+                            case 'b':
+                                if (!map) {
+                                    config._bagSize = JSON.parse(v.substring(2));
+                                }
+                                break;
+                            case 'c':
+                                config._controls = JSON.parse(v.substring(2));
+                                break;
+                            case 'r':
+                                config._repeat = JSON.parse(v.substring(2));
+                                break;
+                        }
+                    }
+                }
+            }
+            catch (err) {
+                alert("Corrupted cookies: " + err.message);
+            }
+        }
+
     }
 }

@@ -28,7 +28,7 @@
             let p = JSON.parse(input);
             let ps: Piece[] = [];
             for (let i of p) {
-                ps.push(new Piece(i[0], i[1], i[2], Number("0x" + i[3]), 0));
+                ps.push(new Piece(i._name, i._shape,i._offset, i._color));
             }
             return ps;
         }

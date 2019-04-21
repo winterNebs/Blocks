@@ -16,18 +16,18 @@
 
     }
     export function startGame(config?: ASC.Config, static: boolean = false, queue: number[] = [], map: number[] = []) {
-        try {
+        //try {
             if (config !== undefined) {
                 game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, static, queue, map, config._delay, config._repeat);
             }
             else {
                 game = new ASC.Game();
             }
-        }
-        catch (err) {
-            alert("Error in config: " + err);
-            game = new ASC.Game();
-        }
+       // }
+        //catch (err) {
+          //  alert("Error in config: " + err);
+         //   game = new ASC.Game();
+        //}
         app.view.focus();
     }
 

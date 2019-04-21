@@ -11,16 +11,10 @@ var RUN;
     }
     RUN.init = init;
     function startGame(config, static = false, queue = [], map = []) {
-        try {
-            if (config !== undefined) {
-                RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, static, queue, map, config._delay, config._repeat);
-            }
-            else {
-                RUN.game = new ASC.Game();
-            }
+        if (config !== undefined) {
+            RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, static, queue, map, config._delay, config._repeat);
         }
-        catch (err) {
-            alert("Error in config: " + err);
+        else {
             RUN.game = new ASC.Game();
         }
         RUN.app.view.focus();
@@ -78,7 +72,7 @@ var ASC;
             let p = JSON.parse(input);
             let ps = [];
             for (let i of p) {
-                ps.push(new ASC.Piece(i[0], i[1], i[2], Number("0x" + i[3]), 0));
+                ps.push(new ASC.Piece(i._name, i._shape, i._offset, i._color));
             }
             return ps;
         }
@@ -1194,6 +1188,14 @@ var P;
             this._addPiece.disabled = state;
             this._removePiece.disabled = state;
         }
+        setPieces(p) {
+            this._pieces = p;
+            for (let i of this._pieces) {
+                i.validateOffset(this._width);
+            }
+            this.updateList();
+            this.displayPiece();
+        }
     }
     P.PieceEditor = PieceEditor;
 })(P || (P = {}));
@@ -1468,6 +1470,7 @@ var SETTINGS;
         settings.appendChild(controlsTitle);
         let controlTable = document.createElement("table");
         const labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop"];
+        let controlsBox = [];
         let row;
         for (let i = 0; i < labels.length; ++i) {
             if (i % 4 === 0) {
@@ -1488,6 +1491,7 @@ var SETTINGS;
                 numberbox.blur();
             };
             item.appendChild(numberbox);
+            controlsBox.push(numberbox);
             row.appendChild(item);
         }
         settings.appendChild(controlTable);
@@ -1537,9 +1541,17 @@ var SETTINGS;
         apply.onclick = function () {
             config._pieces = pieceEditor.getPieces();
             RUN.startGame(config, map, staticQueue, mapShape);
+            saveCookie();
         };
         settings.appendChild(apply);
         document.body.appendChild(settings);
+        if (document.cookie !== "") {
+            readCookie();
+            for (let i = 0; i < controlsBox.length; ++i) {
+                controlsBox[i].setAttribute("value", config._controls[i].toString());
+            }
+            RUN.afterLoad = () => (RUN.startGame(config, map, staticQueue, mapShape));
+        }
         if (map) {
             widthSlider.disabled = true;
             pieceEditor.disable(true);
@@ -1579,6 +1591,53 @@ var SETTINGS;
             }
             mapShape = map;
             RUN.afterLoad = () => (RUN.startGame(config, true, staticQueue, mapShape));
+        }
+        function saveCookie() {
+            let c = "";
+            c += "ver=0.001;";
+            if (!map) {
+                c += "p=" + JSON.stringify(config._pieces) + ";";
+            }
+            c += "c=" + JSON.stringify(config._controls) + ";";
+            c += "r=" + JSON.stringify(config._repeat) + ";";
+            if (!map) {
+                c += "b=" + JSON.stringify(config._bagSize) + ";";
+            }
+            c += "Expires: 2147483647;";
+            document.cookie = encodeURIComponent(c);
+        }
+        function readCookie() {
+            let vals = decodeURIComponent(document.cookie).split(";");
+            vals = vals.filter(function (el) { return el; });
+            try {
+                for (let v of vals) {
+                    if (v != null && v.length > 2) {
+                        switch (v.charAt(0)) {
+                            case 'p':
+                                if (!map) {
+                                    let p = ASC.Config.pieceFromText(v.substring(2));
+                                    config._pieces = p;
+                                    pieceEditor.setPieces(p);
+                                }
+                                break;
+                            case 'b':
+                                if (!map) {
+                                    config._bagSize = JSON.parse(v.substring(2));
+                                }
+                                break;
+                            case 'c':
+                                config._controls = JSON.parse(v.substring(2));
+                                break;
+                            case 'r':
+                                config._repeat = JSON.parse(v.substring(2));
+                                break;
+                        }
+                    }
+                }
+            }
+            catch (err) {
+                alert("Corrupted cookies: " + err.message);
+            }
         }
     }
     SETTINGS.init = init;
