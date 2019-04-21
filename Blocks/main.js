@@ -45,294 +45,6 @@ var RUN;
         document.body.appendChild(newGameButton);
     }
 })(RUN || (RUN = {}));
-var D;
-(function (D) {
-    class Drag {
-        static init() {
-            document.body.onmousedown = function () {
-                Drag.mouseDown = true;
-            };
-            document.body.onmouseup = function () {
-                Drag.mouseDown = false;
-            };
-            document.body.onmouseleave = function () {
-                Drag.mouseDown = false;
-            };
-        }
-    }
-    Drag.mouseDown = false;
-    Drag.lastState = false;
-    D.Drag = Drag;
-})(D || (D = {}));
-var B;
-(function (B) {
-    const _Rixits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
-    function fromNumber(num) {
-        let rixit;
-        let residual = num;
-        let result = '';
-        while (true) {
-            rixit = residual % 64;
-            result = _Rixits.charAt(rixit) + result;
-            residual = Math.floor(residual / 64);
-            if (residual == 0) {
-                break;
-            }
-        }
-        return result;
-    }
-    B.fromNumber = fromNumber;
-    function toNumber(s) {
-        let result = 0;
-        let rix = s.split('');
-        for (let e = 0; e < rix.length; ++e) {
-            result = (result * 64) + _Rixits.indexOf(rix[e]);
-        }
-        return result;
-    }
-    B.toNumber = toNumber;
-    function binaryTo64(n) {
-        n = n.padStart(~~(n.length / 6) * 6, "0");
-        let s = "";
-        let bin = n.match(/.{1,6}/g);
-        for (let b of bin) {
-            s += fromNumber(parseInt(b, 2));
-        }
-        return s;
-    }
-    B.binaryTo64 = binaryTo64;
-    function binaryFrom64(n) {
-        let s = "";
-        for (let b of n.split('')) {
-            s += toNumber(b).toString(2).padStart(6, '0');
-        }
-        return s;
-    }
-    B.binaryFrom64 = binaryFrom64;
-    function hexTo64(n) {
-        let bin = parseInt(n, 16);
-        return fromNumber(bin);
-    }
-    B.hexTo64 = hexTo64;
-    function hexFrom64(n) {
-        let b = toNumber(n);
-        return b.toString(16);
-    }
-    B.hexFrom64 = hexFrom64;
-    function pad(toPad, padChar, padnum) {
-        let p = "";
-        for (let i = 0; i < padnum; ++i) {
-            p += padChar;
-        }
-        p += toPad;
-        return p.slice(-padnum);
-    }
-    B.pad = pad;
-})(B || (B = {}));
-var P;
-(function (P) {
-    class PieceEditor {
-        constructor(width = 12, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
-            new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]) {
-            this._pieceDiv = document.createElement("div");
-            this._pieces = [];
-            this._width = 12;
-            this._pieceSelect = document.createElement("select");
-            this._checks = [];
-            this._pieceNameInput = document.createElement("input");
-            this._pieceColor = document.createElement("input");
-            this._offsetSlider = document.createElement("input");
-            this._offsetText = document.createElement("label");
-            this._addPiece = document.createElement("button");
-            this._removePiece = document.createElement("button");
-            this._width = width;
-            this._pieces = pieces;
-            this._pieceSelect.onchange = this.displayPiece.bind(this);
-            this._pieceDiv.appendChild(this._pieceSelect);
-            this._addPiece.innerText = "Apply Piece Settings";
-            this._addPiece.onclick = this.addPieceClick.bind(this);
-            this._pieceDiv.appendChild(this._addPiece);
-            this._removePiece.innerText = "Remove Piece";
-            this._removePiece.onclick = this.removePieceClick.bind(this);
-            this._pieceDiv.appendChild(this._removePiece);
-            let editorTable = document.createElement("table");
-            let row1;
-            for (let i = 0; i < 25; ++i) {
-                if (i % 5 === 0) {
-                    row1 = document.createElement("tr");
-                    editorTable.appendChild(row1);
-                }
-                let check = document.createElement("input");
-                check.setAttribute("type", "checkbox");
-                check.onmouseenter = function () {
-                    if (D.Drag.mouseDown) {
-                        check.checked = D.Drag.lastState;
-                    }
-                };
-                check.onmousedown = function (ev) {
-                    D.Drag.lastState = !check.checked;
-                    D.Drag.lastSelected = check;
-                    check.checked = D.Drag.lastState;
-                    ev.preventDefault();
-                };
-                check.onmouseup = function (ev) {
-                    if (D.Drag.lastSelected == check) {
-                        check.checked = !check.checked;
-                    }
-                    ev.preventDefault();
-                };
-                check.ondragover = function (ev) {
-                    ev.preventDefault();
-                };
-                this._checks.push(check);
-                row1.appendChild(check);
-            }
-            this._pieceDiv.appendChild(editorTable);
-            let pieceNameText = document.createElement("label");
-            pieceNameText.innerText = "Piece Name: ";
-            this._pieceDiv.appendChild(pieceNameText);
-            this._pieceNameInput.setAttribute("type", "text");
-            this._pieceDiv.appendChild(this._pieceNameInput);
-            this._pieceDiv.appendChild(document.createElement("br"));
-            let pieceColorText = document.createElement("label");
-            pieceColorText.innerText = "Piece Color (Chrome and Firefox will have color picker, other browsers enter in form #FFF000): ";
-            this._pieceDiv.appendChild(pieceColorText);
-            this._pieceColor.setAttribute("type", "color");
-            this._pieceColor.setAttribute("value", "#FFFFFF");
-            this._pieceDiv.appendChild(this._pieceColor);
-            this._pieceDiv.appendChild(document.createElement("br"));
-            this._offsetText.innerText = "Offset (where piece spawns): 0";
-            this._pieceDiv.appendChild(this._offsetText);
-            this._offsetSlider.setAttribute("type", "range");
-            this._offsetSlider.setAttribute("min", "0");
-            this._offsetSlider.setAttribute("max", this._width.toString());
-            this._offsetSlider.setAttribute("value", "0");
-            this._offsetSlider.oninput = this.offsetUpdate.bind(this);
-            this._pieceDiv.appendChild(document.createElement("br"));
-            this._pieceDiv.appendChild(this._offsetSlider);
-            this.updateList();
-            this.displayPiece();
-        }
-        removePieceClick() {
-            if (this._pieces.length > 1) {
-                this._pieces.splice(Number(this._pieceSelect.value), 1);
-            }
-            else {
-                alert("Need at least one piece");
-            }
-            this.updateList();
-            this.displayPiece();
-        }
-        addPieceClick() {
-            let indices = [];
-            for (let i = 0; i < this._checks.length; ++i) {
-                if (this._checks[i].checked) {
-                    indices.push(i);
-                }
-            }
-            if (indices.length > 0) {
-                try {
-                    let val = this._pieceSelect.selectedIndex;
-                    if (val == this._pieceSelect.childElementCount - 1) {
-                        this._pieces.push(new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1))));
-                    }
-                    else {
-                        this._pieces[val] = new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1)));
-                    }
-                    this.updateList();
-                    this.displayPiece();
-                }
-                catch (err) {
-                    alert("Invalid Piece: " + err);
-                }
-            }
-            else {
-                alert("Need at least 1 block");
-            }
-        }
-        offsetUpdate() {
-            this._offsetText.innerText = "Offset (where piece spawns): " + this._offsetSlider.value;
-        }
-        updateList() {
-            while (this._pieceSelect.firstChild) {
-                this._pieceSelect.removeChild(this._pieceSelect.lastChild);
-            }
-            for (let i = 0; i < this._pieces.length; ++i) {
-                let p = document.createElement("option");
-                p.value = i.toString();
-                p.innerText = i.toString() + ". \"" + this._pieces[i].name + "\"";
-                this._pieceSelect.appendChild(p);
-            }
-            let n = document.createElement("option");
-            n.value = this._pieceSelect.childElementCount.toString();
-            n.innerText = "New Piece";
-            this._pieceSelect.appendChild(n);
-        }
-        displayPiece() {
-            let val = this._pieceSelect.selectedIndex;
-            if (val !== this._pieceSelect.childElementCount - 1) {
-                let shape = this._pieces[val].getRenderShape();
-                for (let i = 0; i < 25; i++) {
-                    this._checks[i].checked = (shape[i] !== -1);
-                }
-                this._pieceNameInput.value = this._pieces[val].name;
-                this._pieceColor.value = this.cth(this._pieces[val].color);
-                this._offsetSlider.value = this._pieces[val].offset.toString();
-                this.offsetUpdate();
-            }
-        }
-        cth(i) {
-            let hex = '000000';
-            hex += i.toString(16);
-            hex = hex.substring(hex.length - 6, hex.length);
-            return "#" + hex;
-        }
-        getDiv() {
-            return this._pieceDiv;
-        }
-        setWidth(width) {
-            for (let i of this._pieces) {
-                i.validateOffset(width);
-            }
-            this._width = width;
-        }
-        getPieces() {
-            return this._pieces;
-        }
-        disable(state) {
-            this._pieceSelect.disabled = state;
-            this._pieceNameInput.disabled = state;
-            this._offsetSlider.disabled = state;
-            this._pieceColor.disabled = state;
-            for (let c of this._checks) {
-                c.disabled = state;
-            }
-            this._addPiece.disabled = state;
-            this._removePiece.disabled = state;
-        }
-    }
-    P.PieceEditor = PieceEditor;
-})(P || (P = {}));
-var ASC;
-(function (ASC) {
-    class Block {
-        constructor(color = 0x000000, solid = false, clearable = false) {
-            this._color = color;
-            this._solid = solid;
-            this._clearable = clearable;
-        }
-        get color() {
-            return this._color;
-        }
-        get solid() {
-            return this._solid;
-        }
-        get clearable() {
-            return this._clearable;
-        }
-    }
-    ASC.Block = Block;
-})(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
     class Config {
@@ -364,135 +76,6 @@ var ASC;
         }
     }
     ASC.Config = Config;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    let Keys;
-    (function (Keys) {
-        Keys[Keys["LEFT"] = 37] = "LEFT";
-        Keys[Keys["UP"] = 38] = "UP";
-        Keys[Keys["RIGHT"] = 39] = "RIGHT";
-        Keys[Keys["DOWN"] = 40] = "DOWN";
-        Keys[Keys["S"] = 83] = "S";
-        Keys[Keys["D"] = 68] = "D";
-        Keys[Keys["SPACE"] = 32] = "SPACE";
-        Keys[Keys["SHIFT"] = 16] = "SHIFT";
-    })(Keys = ASC.Keys || (ASC.Keys = {}));
-    class Key {
-        constructor(code, delay = 100, rate = 20) {
-            this._pressed = false;
-            this._listeners = [];
-            this._code = code;
-            this._delay = delay;
-            this._rate = rate;
-        }
-        onPress() {
-            this._pressed = true;
-            this._timeout = window.setTimeout(this.activate.bind(this), this._delay);
-        }
-        activate() {
-            this._interval = window.setInterval(this.repeat.bind(this), this._rate);
-        }
-        repeat() {
-            for (let l of this._listeners) {
-                l.Triggered(this._code);
-            }
-        }
-        onRelease() {
-            this._pressed = false;
-            clearTimeout(this._timeout);
-            clearInterval(this._interval);
-        }
-        registerTrigger(t) {
-            this._listeners.push(t);
-        }
-        get code() {
-            return this._code;
-        }
-    }
-    class InputManager {
-        constructor() { }
-        static setFocus(f) {
-            InputManager._focus = f;
-        }
-        static initialize() {
-            for (let i = 0; i < 255; ++i) {
-                InputManager._keyCodes[i] = false;
-            }
-            window.addEventListener("keydown", InputManager.onKeyDown);
-            window.addEventListener("keyup", InputManager.onKeyUp);
-        }
-        static onKeyDown(event) {
-            if (InputManager._focus) {
-                if (InputManager._keyCodes[event.keyCode] !== true) {
-                    InputManager.NotifyObservers(event.keyCode);
-                    InputManager._keyCodes[event.keyCode] = true;
-                    if (InputManager._keys.length > 0) {
-                        for (let k of InputManager._keys) {
-                            if (k.code === event.keyCode) {
-                                k.onPress();
-                            }
-                        }
-                    }
-                }
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            return false;
-        }
-        static onKeyUp(event) {
-            if (InputManager._focus) {
-                InputManager._keyCodes[event.keyCode] = false;
-                if (InputManager._keys.length > 0) {
-                    for (let k of InputManager._keys) {
-                        if (k.code === event.keyCode) {
-                            k.onRelease();
-                        }
-                    }
-                }
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            return false;
-        }
-        static RegisterKeys(Observer, keyCodes, delay, repeat) {
-            for (let i of keyCodes) {
-                InputManager._keys.push(new Key(i, delay, repeat));
-                InputManager._keys[InputManager._keys.length - 1].registerTrigger(Observer);
-            }
-        }
-        static RegisterObserver(Observer) {
-            InputManager._observers.push(Observer);
-        }
-        static UnregisterObserver(Observer) {
-            let index = InputManager._observers.indexOf(Observer);
-            if (index !== -1) {
-                InputManager._observers.splice(index, 1);
-            }
-            else {
-                console.warn("Cannot unregister observer.");
-            }
-        }
-        static NotifyObservers(keyevent) {
-            for (let o of InputManager._observers) {
-                o.Triggered(keyevent);
-            }
-        }
-        static cancelRepeat(keycode) {
-            if (InputManager._keys.length > 0) {
-                for (let k of InputManager._keys) {
-                    if (k.code === keycode) {
-                        k.onRelease();
-                    }
-                }
-            }
-        }
-    }
-    InputManager._keys = [];
-    InputManager._keyCodes = [];
-    InputManager._observers = [];
-    InputManager._focus = true;
-    ASC.InputManager = InputManager;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -861,6 +444,162 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
+    let Keys;
+    (function (Keys) {
+        Keys[Keys["LEFT"] = 37] = "LEFT";
+        Keys[Keys["UP"] = 38] = "UP";
+        Keys[Keys["RIGHT"] = 39] = "RIGHT";
+        Keys[Keys["DOWN"] = 40] = "DOWN";
+        Keys[Keys["S"] = 83] = "S";
+        Keys[Keys["D"] = 68] = "D";
+        Keys[Keys["SPACE"] = 32] = "SPACE";
+        Keys[Keys["SHIFT"] = 16] = "SHIFT";
+    })(Keys = ASC.Keys || (ASC.Keys = {}));
+    class Key {
+        constructor(code, delay = 100, rate = 20) {
+            this._pressed = false;
+            this._listeners = [];
+            this._code = code;
+            this._delay = delay;
+            this._rate = rate;
+        }
+        onPress() {
+            this._pressed = true;
+            this._timeout = window.setTimeout(this.activate.bind(this), this._delay);
+        }
+        activate() {
+            this._interval = window.setInterval(this.repeat.bind(this), this._rate);
+        }
+        repeat() {
+            for (let l of this._listeners) {
+                l.Triggered(this._code);
+            }
+        }
+        onRelease() {
+            this._pressed = false;
+            clearTimeout(this._timeout);
+            clearInterval(this._interval);
+        }
+        registerTrigger(t) {
+            this._listeners.push(t);
+        }
+        get code() {
+            return this._code;
+        }
+    }
+    class InputManager {
+        constructor() { }
+        static setFocus(f) {
+            InputManager._focus = f;
+        }
+        static initialize() {
+            for (let i = 0; i < 255; ++i) {
+                InputManager._keyCodes[i] = false;
+            }
+            window.addEventListener("keydown", InputManager.onKeyDown);
+            window.addEventListener("keyup", InputManager.onKeyUp);
+        }
+        static onKeyDown(event) {
+            if (InputManager._focus) {
+                if (InputManager._keyCodes[event.keyCode] !== true) {
+                    InputManager.NotifyObservers(event.keyCode);
+                    InputManager._keyCodes[event.keyCode] = true;
+                    if (InputManager._keys.length > 0) {
+                        for (let k of InputManager._keys) {
+                            if (k.code === event.keyCode) {
+                                k.onPress();
+                            }
+                        }
+                    }
+                }
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            return false;
+        }
+        static onKeyUp(event) {
+            if (InputManager._focus) {
+                InputManager._keyCodes[event.keyCode] = false;
+                if (InputManager._keys.length > 0) {
+                    for (let k of InputManager._keys) {
+                        if (k.code === event.keyCode) {
+                            k.onRelease();
+                        }
+                    }
+                }
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            return false;
+        }
+        static RegisterKeys(Observer, keyCodes, delay, repeat) {
+            for (let i of keyCodes) {
+                InputManager._keys.push(new Key(i, delay, repeat));
+                InputManager._keys[InputManager._keys.length - 1].registerTrigger(Observer);
+            }
+        }
+        static RegisterObserver(Observer) {
+            InputManager._observers.push(Observer);
+        }
+        static UnregisterObserver(Observer) {
+            let index = InputManager._observers.indexOf(Observer);
+            if (index !== -1) {
+                InputManager._observers.splice(index, 1);
+            }
+            else {
+                console.warn("Cannot unregister observer.");
+            }
+        }
+        static NotifyObservers(keyevent) {
+            for (let o of InputManager._observers) {
+                o.Triggered(keyevent);
+            }
+        }
+        static cancelRepeat(keycode) {
+            if (InputManager._keys.length > 0) {
+                for (let k of InputManager._keys) {
+                    if (k.code === keycode) {
+                        k.onRelease();
+                    }
+                }
+            }
+        }
+    }
+    InputManager._keys = [];
+    InputManager._keyCodes = [];
+    InputManager._observers = [];
+    InputManager._focus = true;
+    ASC.InputManager = InputManager;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Block {
+        constructor(color = 0x000000, solid = false, clearable = false) {
+            this._color = color;
+            this._solid = solid;
+            this._clearable = clearable;
+        }
+        get color() {
+            return this._color;
+        }
+        get solid() {
+            return this._solid;
+        }
+        get clearable() {
+            return this._clearable;
+        }
+    }
+    ASC.Block = Block;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    ASC.NUM_PREVIEWS = 6;
+    class IQueue {
+    }
+    ASC.IQueue = IQueue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
     class Piece {
         constructor(name, shape, offset = 0, color = 0xFFFFFF, initOrient = 0) {
             this._shape = [];
@@ -1008,13 +747,6 @@ var ASC;
         }
     }
     ASC.PRNG = PRNG;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    ASC.NUM_PREVIEWS = 6;
-    class IQueue {
-    }
-    ASC.IQueue = IQueue;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -1221,6 +953,209 @@ var ASC;
     }
     ASC.Timer = Timer;
 })(ASC || (ASC = {}));
+var D;
+(function (D) {
+    class Drag {
+        static init() {
+            document.body.onmousedown = function () {
+                Drag.mouseDown = true;
+            };
+            document.body.onmouseup = function () {
+                Drag.mouseDown = false;
+            };
+            document.body.onmouseleave = function () {
+                Drag.mouseDown = false;
+            };
+        }
+    }
+    Drag.mouseDown = false;
+    Drag.lastState = false;
+    D.Drag = Drag;
+})(D || (D = {}));
+var P;
+(function (P) {
+    class PieceEditor {
+        constructor(width = 12, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
+            new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]) {
+            this._pieceDiv = document.createElement("div");
+            this._pieces = [];
+            this._width = 12;
+            this._pieceSelect = document.createElement("select");
+            this._checks = [];
+            this._pieceNameInput = document.createElement("input");
+            this._pieceColor = document.createElement("input");
+            this._offsetSlider = document.createElement("input");
+            this._offsetText = document.createElement("label");
+            this._addPiece = document.createElement("button");
+            this._removePiece = document.createElement("button");
+            this._width = width;
+            this._pieces = pieces;
+            this._pieceSelect.onchange = this.displayPiece.bind(this);
+            this._pieceDiv.appendChild(this._pieceSelect);
+            this._addPiece.innerText = "Apply Piece Settings";
+            this._addPiece.onclick = this.addPieceClick.bind(this);
+            this._pieceDiv.appendChild(this._addPiece);
+            this._removePiece.innerText = "Remove Piece";
+            this._removePiece.onclick = this.removePieceClick.bind(this);
+            this._pieceDiv.appendChild(this._removePiece);
+            let editorTable = document.createElement("table");
+            let row1;
+            for (let i = 0; i < 25; ++i) {
+                if (i % 5 === 0) {
+                    row1 = document.createElement("tr");
+                    editorTable.appendChild(row1);
+                }
+                let check = document.createElement("input");
+                check.setAttribute("type", "checkbox");
+                check.onmouseenter = function () {
+                    if (D.Drag.mouseDown) {
+                        check.checked = D.Drag.lastState;
+                    }
+                };
+                check.onmousedown = function (ev) {
+                    D.Drag.lastState = !check.checked;
+                    D.Drag.lastSelected = check;
+                    check.checked = D.Drag.lastState;
+                    ev.preventDefault();
+                };
+                check.onmouseup = function (ev) {
+                    if (D.Drag.lastSelected == check) {
+                        check.checked = !check.checked;
+                    }
+                    ev.preventDefault();
+                };
+                check.ondragover = function (ev) {
+                    ev.preventDefault();
+                };
+                this._checks.push(check);
+                row1.appendChild(check);
+            }
+            this._pieceDiv.appendChild(editorTable);
+            let pieceNameText = document.createElement("label");
+            pieceNameText.innerText = "Piece Name: ";
+            this._pieceDiv.appendChild(pieceNameText);
+            this._pieceNameInput.setAttribute("type", "text");
+            this._pieceDiv.appendChild(this._pieceNameInput);
+            this._pieceDiv.appendChild(document.createElement("br"));
+            let pieceColorText = document.createElement("label");
+            pieceColorText.innerText = "Piece Color (Chrome and Firefox will have color picker, other browsers enter in form #FFF000): ";
+            this._pieceDiv.appendChild(pieceColorText);
+            this._pieceColor.setAttribute("type", "color");
+            this._pieceColor.setAttribute("value", "#FFFFFF");
+            this._pieceDiv.appendChild(this._pieceColor);
+            this._pieceDiv.appendChild(document.createElement("br"));
+            this._offsetText.innerText = "Offset (where piece spawns): 0";
+            this._pieceDiv.appendChild(this._offsetText);
+            this._offsetSlider.setAttribute("type", "range");
+            this._offsetSlider.setAttribute("min", "0");
+            this._offsetSlider.setAttribute("max", this._width.toString());
+            this._offsetSlider.setAttribute("value", "0");
+            this._offsetSlider.oninput = this.offsetUpdate.bind(this);
+            this._pieceDiv.appendChild(document.createElement("br"));
+            this._pieceDiv.appendChild(this._offsetSlider);
+            this.updateList();
+            this.displayPiece();
+        }
+        removePieceClick() {
+            if (this._pieces.length > 1) {
+                this._pieces.splice(Number(this._pieceSelect.value), 1);
+            }
+            else {
+                alert("Need at least one piece");
+            }
+            this.updateList();
+            this.displayPiece();
+        }
+        addPieceClick() {
+            let indices = [];
+            for (let i = 0; i < this._checks.length; ++i) {
+                if (this._checks[i].checked) {
+                    indices.push(i);
+                }
+            }
+            if (indices.length > 0) {
+                try {
+                    let val = this._pieceSelect.selectedIndex;
+                    if (val == this._pieceSelect.childElementCount - 1) {
+                        this._pieces.push(new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1))));
+                    }
+                    else {
+                        this._pieces[val] = new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1)));
+                    }
+                    this.updateList();
+                    this.displayPiece();
+                }
+                catch (err) {
+                    alert("Invalid Piece: " + err);
+                }
+            }
+            else {
+                alert("Need at least 1 block");
+            }
+        }
+        offsetUpdate() {
+            this._offsetText.innerText = "Offset (where piece spawns): " + this._offsetSlider.value;
+        }
+        updateList() {
+            while (this._pieceSelect.firstChild) {
+                this._pieceSelect.removeChild(this._pieceSelect.lastChild);
+            }
+            for (let i = 0; i < this._pieces.length; ++i) {
+                let p = document.createElement("option");
+                p.value = i.toString();
+                p.innerText = i.toString() + ". \"" + this._pieces[i].name + "\"";
+                this._pieceSelect.appendChild(p);
+            }
+            let n = document.createElement("option");
+            n.value = this._pieceSelect.childElementCount.toString();
+            n.innerText = "New Piece";
+            this._pieceSelect.appendChild(n);
+        }
+        displayPiece() {
+            let val = this._pieceSelect.selectedIndex;
+            if (val !== this._pieceSelect.childElementCount - 1) {
+                let shape = this._pieces[val].getRenderShape();
+                for (let i = 0; i < 25; i++) {
+                    this._checks[i].checked = (shape[i] !== -1);
+                }
+                this._pieceNameInput.value = this._pieces[val].name;
+                this._pieceColor.value = this.cth(this._pieces[val].color);
+                this._offsetSlider.value = this._pieces[val].offset.toString();
+                this.offsetUpdate();
+            }
+        }
+        cth(i) {
+            let hex = '000000';
+            hex += i.toString(16);
+            hex = hex.substring(hex.length - 6, hex.length);
+            return "#" + hex;
+        }
+        getDiv() {
+            return this._pieceDiv;
+        }
+        setWidth(width) {
+            for (let i of this._pieces) {
+                i.validateOffset(width);
+            }
+            this._width = width;
+        }
+        getPieces() {
+            return this._pieces;
+        }
+        disable(state) {
+            this._pieceSelect.disabled = state;
+            this._pieceNameInput.disabled = state;
+            this._offsetSlider.disabled = state;
+            this._pieceColor.disabled = state;
+            for (let c of this._checks) {
+                c.disabled = state;
+            }
+            this._addPiece.disabled = state;
+            this._removePiece.disabled = state;
+        }
+    }
+    P.PieceEditor = PieceEditor;
+})(P || (P = {}));
 var M;
 (function (M) {
     class MapEditor {
@@ -1394,6 +1329,71 @@ var M;
     }
     M.init = init;
 })(M || (M = {}));
+var B;
+(function (B) {
+    const _Rixits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
+    function fromNumber(num) {
+        let rixit;
+        let residual = num;
+        let result = '';
+        while (true) {
+            rixit = residual % 64;
+            result = _Rixits.charAt(rixit) + result;
+            residual = Math.floor(residual / 64);
+            if (residual == 0) {
+                break;
+            }
+        }
+        return result;
+    }
+    B.fromNumber = fromNumber;
+    function toNumber(s) {
+        let result = 0;
+        let rix = s.split('');
+        for (let e = 0; e < rix.length; ++e) {
+            result = (result * 64) + _Rixits.indexOf(rix[e]);
+        }
+        return result;
+    }
+    B.toNumber = toNumber;
+    function binaryTo64(n) {
+        n = n.padStart(Math.ceil(n.length / 6) * 6, "0");
+        let s = "";
+        let bin = n.match(/.{1,6}/g);
+        for (let b of bin) {
+            s += fromNumber(parseInt(b, 2));
+        }
+        return s;
+    }
+    B.binaryTo64 = binaryTo64;
+    function binaryFrom64(n) {
+        let s = "";
+        for (let b of n.split('')) {
+            s += toNumber(b).toString(2).padStart(6, '0');
+        }
+        return s;
+    }
+    B.binaryFrom64 = binaryFrom64;
+    function hexTo64(n) {
+        let bin = parseInt(n, 16);
+        return fromNumber(bin);
+    }
+    B.hexTo64 = hexTo64;
+    function hexFrom64(n) {
+        let b = toNumber(n);
+        return b.toString(16);
+    }
+    B.hexFrom64 = hexFrom64;
+    function pad(toPad, padChar, padnum) {
+        let p = "";
+        for (let i = 0; i < padnum; ++i) {
+            p += padChar;
+        }
+        p += toPad;
+        return p.slice(-padnum);
+    }
+    B.pad = pad;
+})(B || (B = {}));
 var SETTINGS;
 (function (SETTINGS) {
     function init(map = false) {
@@ -1538,7 +1538,7 @@ var SETTINGS;
             staticQueue = queue;
             let map = [];
             let rawmap = B.binaryFrom64(cfg[3]);
-            rawmap = rawmap.substring(0, 2 * rawmap.length - config._width * ASC.FIELD_HEIGHT);
+            rawmap = rawmap.substring(0, config._width * ASC.FIELD_HEIGHT);
             let i = 0;
             for (let r of rawmap.split('')) {
                 if (Number(r) == 1) {

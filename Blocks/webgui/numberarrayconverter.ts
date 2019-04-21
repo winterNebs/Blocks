@@ -25,7 +25,7 @@
     }
 
     export function binaryTo64(n: string): string {
-        n = n.padStart(~~(n.length / 6) * 6, "0");
+        n = n.padStart(Math.ceil(n.length / 6) * 6, "0");
 
         let s = "";
         let bin: string[] = n.match(/.{1,6}/g);
