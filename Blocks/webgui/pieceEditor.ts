@@ -10,6 +10,8 @@ namespace P {
         private _pieceColor: HTMLInputElement = <HTMLInputElement>document.createElement("input");
         private _offsetSlider: HTMLInputElement = <HTMLInputElement>document.createElement("input");
         private _offsetText: HTMLElement = document.createElement("label");
+        private _addPiece: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
+        private _removePiece: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
 
 
         public constructor(width: number = 12, pieces: ASC.Piece[] = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
@@ -22,16 +24,14 @@ namespace P {
             this._pieceDiv.appendChild(this._pieceSelect);
 
 
-            let addPiece: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
-            addPiece.innerText = "Apply Piece Settings"
-            addPiece.onclick = this.addPieceClick.bind(this);
-            this._pieceDiv.appendChild(addPiece);
+            this._addPiece.innerText = "Apply Piece Settings"
+            this._addPiece.onclick = this.addPieceClick.bind(this);
+            this._pieceDiv.appendChild(this._addPiece);
 
-            let removePiece: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
-            removePiece.innerText = "Remove Piece"
-            removePiece.onclick = this.removePieceClick.bind(this);
+            this._removePiece.innerText = "Remove Piece"
+            this._removePiece.onclick = this.removePieceClick.bind(this);
 
-            this._pieceDiv.appendChild(removePiece);
+            this._pieceDiv.appendChild(this._removePiece);
 
 
             let editorTable: HTMLElement = document.createElement("table")
@@ -207,6 +207,17 @@ namespace P {
 
         public getPieces(): ASC.Piece[] {
             return this._pieces;
+        }
+        public disable(state: boolean): void {
+            this._pieceSelect.disabled = state;
+            this._pieceNameInput.disabled = state;
+            this._offsetSlider.disabled = state;
+            this._pieceColor.disabled = state;
+            for (let c of this._checks) {
+                c.disabled = state;
+            }
+            this._addPiece.disabled = state;
+            this._removePiece.disabled = state;
         }
     }
 }

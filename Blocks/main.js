@@ -1,16 +1,3 @@
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    }
-    return function (d, b) {
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 var RUN;
 (function (RUN) {
     function init() {
@@ -23,9 +10,14 @@ var RUN;
         document.body.appendChild(RUN.app.view);
     }
     RUN.init = init;
-    function startGame(config) {
+    function startGame(config, static = false, queue = [], map = []) {
         try {
-            RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, false, [], [], config._delay, config._repeat);
+            if (config !== undefined) {
+                RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, static, queue, map, config._delay, config._repeat);
+            }
+            else {
+                RUN.game = new ASC.Game();
+            }
         }
         catch (err) {
             alert("Error in config: " + err);
@@ -35,23 +27,316 @@ var RUN;
     }
     RUN.startGame = startGame;
     function load() {
-        RUN.game = new ASC.Game();
+        if (RUN.afterLoad == undefined) {
+            startGame();
+        }
+        else {
+            RUN.afterLoad();
+        }
         RUN.app.view.focus();
         ASC.InputManager.initialize();
-        var discord = document.createElement("a");
+        let discord = document.createElement("a");
         discord.setAttribute("href", "https://discord.gg/GjScWEh");
         discord.innerText = "discord";
         document.body.appendChild(discord);
-        var newGameButton = document.createElement("button");
+        let newGameButton = document.createElement("button");
         newGameButton.innerText = "New Game";
-        newGameButton.onclick = function () { return (RUN.game.resetGame()); };
+        newGameButton.onclick = () => (RUN.game.resetGame());
         document.body.appendChild(newGameButton);
     }
 })(RUN || (RUN = {}));
+var D;
+(function (D) {
+    class Drag {
+        static init() {
+            document.body.onmousedown = function () {
+                Drag.mouseDown = true;
+            };
+            document.body.onmouseup = function () {
+                Drag.mouseDown = false;
+            };
+            document.body.onmouseleave = function () {
+                Drag.mouseDown = false;
+            };
+        }
+    }
+    Drag.mouseDown = false;
+    Drag.lastState = false;
+    D.Drag = Drag;
+})(D || (D = {}));
+var B;
+(function (B) {
+    const _Rixits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
+    function fromNumber(num) {
+        let rixit;
+        let residual = num;
+        let result = '';
+        while (true) {
+            rixit = residual % 64;
+            result = _Rixits.charAt(rixit) + result;
+            residual = Math.floor(residual / 64);
+            if (residual == 0) {
+                break;
+            }
+        }
+        return result;
+    }
+    B.fromNumber = fromNumber;
+    function toNumber(s) {
+        let result = 0;
+        let rix = s.split('');
+        for (let e = 0; e < rix.length; ++e) {
+            result = (result * 64) + _Rixits.indexOf(rix[e]);
+        }
+        return result;
+    }
+    B.toNumber = toNumber;
+    function binaryTo64(n) {
+        n = n.padStart(~~(n.length / 6) * 6, "0");
+        let s = "";
+        let bin = n.match(/.{1,6}/g);
+        for (let b of bin) {
+            s += fromNumber(parseInt(b, 2));
+        }
+        return s;
+    }
+    B.binaryTo64 = binaryTo64;
+    function binaryFrom64(n) {
+        let s = "";
+        for (let b of n.split('')) {
+            s += toNumber(b).toString(2).padStart(6, '0');
+        }
+        return s;
+    }
+    B.binaryFrom64 = binaryFrom64;
+    function hexTo64(n) {
+        let bin = parseInt(n, 16);
+        return fromNumber(bin);
+    }
+    B.hexTo64 = hexTo64;
+    function hexFrom64(n) {
+        let b = toNumber(n);
+        return b.toString(16);
+    }
+    B.hexFrom64 = hexFrom64;
+    function pad(toPad, padChar, padnum) {
+        let p = "";
+        for (let i = 0; i < padnum; ++i) {
+            p += padChar;
+        }
+        p += toPad;
+        return p.slice(-padnum);
+    }
+    B.pad = pad;
+})(B || (B = {}));
+var P;
+(function (P) {
+    class PieceEditor {
+        constructor(width = 12, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
+            new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]) {
+            this._pieceDiv = document.createElement("div");
+            this._pieces = [];
+            this._width = 12;
+            this._pieceSelect = document.createElement("select");
+            this._checks = [];
+            this._pieceNameInput = document.createElement("input");
+            this._pieceColor = document.createElement("input");
+            this._offsetSlider = document.createElement("input");
+            this._offsetText = document.createElement("label");
+            this._addPiece = document.createElement("button");
+            this._removePiece = document.createElement("button");
+            this._width = width;
+            this._pieces = pieces;
+            this._pieceSelect.onchange = this.displayPiece.bind(this);
+            this._pieceDiv.appendChild(this._pieceSelect);
+            this._addPiece.innerText = "Apply Piece Settings";
+            this._addPiece.onclick = this.addPieceClick.bind(this);
+            this._pieceDiv.appendChild(this._addPiece);
+            this._removePiece.innerText = "Remove Piece";
+            this._removePiece.onclick = this.removePieceClick.bind(this);
+            this._pieceDiv.appendChild(this._removePiece);
+            let editorTable = document.createElement("table");
+            let row1;
+            for (let i = 0; i < 25; ++i) {
+                if (i % 5 === 0) {
+                    row1 = document.createElement("tr");
+                    editorTable.appendChild(row1);
+                }
+                let check = document.createElement("input");
+                check.setAttribute("type", "checkbox");
+                check.onmouseenter = function () {
+                    if (D.Drag.mouseDown) {
+                        check.checked = D.Drag.lastState;
+                    }
+                };
+                check.onmousedown = function (ev) {
+                    D.Drag.lastState = !check.checked;
+                    D.Drag.lastSelected = check;
+                    check.checked = D.Drag.lastState;
+                    ev.preventDefault();
+                };
+                check.onmouseup = function (ev) {
+                    if (D.Drag.lastSelected == check) {
+                        check.checked = !check.checked;
+                    }
+                    ev.preventDefault();
+                };
+                check.ondragover = function (ev) {
+                    ev.preventDefault();
+                };
+                this._checks.push(check);
+                row1.appendChild(check);
+            }
+            this._pieceDiv.appendChild(editorTable);
+            let pieceNameText = document.createElement("label");
+            pieceNameText.innerText = "Piece Name: ";
+            this._pieceDiv.appendChild(pieceNameText);
+            this._pieceNameInput.setAttribute("type", "text");
+            this._pieceDiv.appendChild(this._pieceNameInput);
+            this._pieceDiv.appendChild(document.createElement("br"));
+            let pieceColorText = document.createElement("label");
+            pieceColorText.innerText = "Piece Color (Chrome and Firefox will have color picker, other browsers enter in form #FFF000): ";
+            this._pieceDiv.appendChild(pieceColorText);
+            this._pieceColor.setAttribute("type", "color");
+            this._pieceColor.setAttribute("value", "#FFFFFF");
+            this._pieceDiv.appendChild(this._pieceColor);
+            this._pieceDiv.appendChild(document.createElement("br"));
+            this._offsetText.innerText = "Offset (where piece spawns): 0";
+            this._pieceDiv.appendChild(this._offsetText);
+            this._offsetSlider.setAttribute("type", "range");
+            this._offsetSlider.setAttribute("min", "0");
+            this._offsetSlider.setAttribute("max", this._width.toString());
+            this._offsetSlider.setAttribute("value", "0");
+            this._offsetSlider.oninput = this.offsetUpdate.bind(this);
+            this._pieceDiv.appendChild(document.createElement("br"));
+            this._pieceDiv.appendChild(this._offsetSlider);
+            this.updateList();
+            this.displayPiece();
+        }
+        removePieceClick() {
+            if (this._pieces.length > 1) {
+                this._pieces.splice(Number(this._pieceSelect.value), 1);
+            }
+            else {
+                alert("Need at least one piece");
+            }
+            this.updateList();
+            this.displayPiece();
+        }
+        addPieceClick() {
+            let indices = [];
+            for (let i = 0; i < this._checks.length; ++i) {
+                if (this._checks[i].checked) {
+                    indices.push(i);
+                }
+            }
+            if (indices.length > 0) {
+                try {
+                    let val = this._pieceSelect.selectedIndex;
+                    if (val == this._pieceSelect.childElementCount - 1) {
+                        this._pieces.push(new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1))));
+                    }
+                    else {
+                        this._pieces[val] = new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1)));
+                    }
+                    this.updateList();
+                    this.displayPiece();
+                }
+                catch (err) {
+                    alert("Invalid Piece: " + err);
+                }
+            }
+            else {
+                alert("Need at least 1 block");
+            }
+        }
+        offsetUpdate() {
+            this._offsetText.innerText = "Offset (where piece spawns): " + this._offsetSlider.value;
+        }
+        updateList() {
+            while (this._pieceSelect.firstChild) {
+                this._pieceSelect.removeChild(this._pieceSelect.lastChild);
+            }
+            for (let i = 0; i < this._pieces.length; ++i) {
+                let p = document.createElement("option");
+                p.value = i.toString();
+                p.innerText = i.toString() + ". \"" + this._pieces[i].name + "\"";
+                this._pieceSelect.appendChild(p);
+            }
+            let n = document.createElement("option");
+            n.value = this._pieceSelect.childElementCount.toString();
+            n.innerText = "New Piece";
+            this._pieceSelect.appendChild(n);
+        }
+        displayPiece() {
+            let val = this._pieceSelect.selectedIndex;
+            if (val !== this._pieceSelect.childElementCount - 1) {
+                let shape = this._pieces[val].getRenderShape();
+                for (let i = 0; i < 25; i++) {
+                    this._checks[i].checked = (shape[i] !== -1);
+                }
+                this._pieceNameInput.value = this._pieces[val].name;
+                this._pieceColor.value = this.cth(this._pieces[val].color);
+                this._offsetSlider.value = this._pieces[val].offset.toString();
+                this.offsetUpdate();
+            }
+        }
+        cth(i) {
+            let hex = '000000';
+            hex += i.toString(16);
+            hex = hex.substring(hex.length - 6, hex.length);
+            return "#" + hex;
+        }
+        getDiv() {
+            return this._pieceDiv;
+        }
+        setWidth(width) {
+            for (let i of this._pieces) {
+                i.validateOffset(width);
+            }
+            this._width = width;
+        }
+        getPieces() {
+            return this._pieces;
+        }
+        disable(state) {
+            this._pieceSelect.disabled = state;
+            this._pieceNameInput.disabled = state;
+            this._offsetSlider.disabled = state;
+            this._pieceColor.disabled = state;
+            for (let c of this._checks) {
+                c.disabled = state;
+            }
+            this._addPiece.disabled = state;
+            this._removePiece.disabled = state;
+        }
+    }
+    P.PieceEditor = PieceEditor;
+})(P || (P = {}));
 var ASC;
 (function (ASC) {
-    var Config = (function () {
-        function Config(w, p, c, d, r, b) {
+    class Block {
+        constructor(color = 0x000000, solid = false, clearable = false) {
+            this._color = color;
+            this._solid = solid;
+            this._clearable = clearable;
+        }
+        get color() {
+            return this._color;
+        }
+        get solid() {
+            return this._solid;
+        }
+        get clearable() {
+            return this._clearable;
+        }
+    }
+    ASC.Block = Block;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Config {
+        constructor(w, p, c, d, r, b) {
             this._controls = [];
             this._width = w;
             this._bagSize = b;
@@ -60,39 +345,165 @@ var ASC;
             this._delay = d;
             this._repeat = r;
         }
-        Config.fromText = function (input) {
-            var cfg = JSON.parse(input);
-            var ps = [];
-            for (var _i = 0, _a = cfg.pieces; _i < _a.length; _i++) {
-                var i = _a[_i];
+        static fromText(input) {
+            let cfg = JSON.parse(input);
+            let ps = [];
+            for (let i of cfg.pieces) {
                 ps.push(new ASC.Piece(i[0], i[1], i[2], Number("0x" + i[3]), 0));
             }
-            var config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.bagSize);
+            let config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.bagSize);
             return config;
-        };
-        Config.pieceFromText = function (input) {
-            var p = JSON.parse(input);
-            var ps = [];
-            for (var _i = 0, p_1 = p; _i < p_1.length; _i++) {
-                var i = p_1[_i];
+        }
+        static pieceFromText(input) {
+            let p = JSON.parse(input);
+            let ps = [];
+            for (let i of p) {
                 ps.push(new ASC.Piece(i[0], i[1], i[2], Number("0x" + i[3]), 0));
             }
             return ps;
-        };
-        return Config;
-    }());
+        }
+    }
     ASC.Config = Config;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var Rotations;
+    let Keys;
+    (function (Keys) {
+        Keys[Keys["LEFT"] = 37] = "LEFT";
+        Keys[Keys["UP"] = 38] = "UP";
+        Keys[Keys["RIGHT"] = 39] = "RIGHT";
+        Keys[Keys["DOWN"] = 40] = "DOWN";
+        Keys[Keys["S"] = 83] = "S";
+        Keys[Keys["D"] = 68] = "D";
+        Keys[Keys["SPACE"] = 32] = "SPACE";
+        Keys[Keys["SHIFT"] = 16] = "SHIFT";
+    })(Keys = ASC.Keys || (ASC.Keys = {}));
+    class Key {
+        constructor(code, delay = 100, rate = 20) {
+            this._pressed = false;
+            this._listeners = [];
+            this._code = code;
+            this._delay = delay;
+            this._rate = rate;
+        }
+        onPress() {
+            this._pressed = true;
+            this._timeout = window.setTimeout(this.activate.bind(this), this._delay);
+        }
+        activate() {
+            this._interval = window.setInterval(this.repeat.bind(this), this._rate);
+        }
+        repeat() {
+            for (let l of this._listeners) {
+                l.Triggered(this._code);
+            }
+        }
+        onRelease() {
+            this._pressed = false;
+            clearTimeout(this._timeout);
+            clearInterval(this._interval);
+        }
+        registerTrigger(t) {
+            this._listeners.push(t);
+        }
+        get code() {
+            return this._code;
+        }
+    }
+    class InputManager {
+        constructor() { }
+        static setFocus(f) {
+            InputManager._focus = f;
+        }
+        static initialize() {
+            for (let i = 0; i < 255; ++i) {
+                InputManager._keyCodes[i] = false;
+            }
+            window.addEventListener("keydown", InputManager.onKeyDown);
+            window.addEventListener("keyup", InputManager.onKeyUp);
+        }
+        static onKeyDown(event) {
+            if (InputManager._focus) {
+                if (InputManager._keyCodes[event.keyCode] !== true) {
+                    InputManager.NotifyObservers(event.keyCode);
+                    InputManager._keyCodes[event.keyCode] = true;
+                    if (InputManager._keys.length > 0) {
+                        for (let k of InputManager._keys) {
+                            if (k.code === event.keyCode) {
+                                k.onPress();
+                            }
+                        }
+                    }
+                }
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            return false;
+        }
+        static onKeyUp(event) {
+            if (InputManager._focus) {
+                InputManager._keyCodes[event.keyCode] = false;
+                if (InputManager._keys.length > 0) {
+                    for (let k of InputManager._keys) {
+                        if (k.code === event.keyCode) {
+                            k.onRelease();
+                        }
+                    }
+                }
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            return false;
+        }
+        static RegisterKeys(Observer, keyCodes, delay, repeat) {
+            for (let i of keyCodes) {
+                InputManager._keys.push(new Key(i, delay, repeat));
+                InputManager._keys[InputManager._keys.length - 1].registerTrigger(Observer);
+            }
+        }
+        static RegisterObserver(Observer) {
+            InputManager._observers.push(Observer);
+        }
+        static UnregisterObserver(Observer) {
+            let index = InputManager._observers.indexOf(Observer);
+            if (index !== -1) {
+                InputManager._observers.splice(index, 1);
+            }
+            else {
+                console.warn("Cannot unregister observer.");
+            }
+        }
+        static NotifyObservers(keyevent) {
+            for (let o of InputManager._observers) {
+                o.Triggered(keyevent);
+            }
+        }
+        static cancelRepeat(keycode) {
+            if (InputManager._keys.length > 0) {
+                for (let k of InputManager._keys) {
+                    if (k.code === keycode) {
+                        k.onRelease();
+                    }
+                }
+            }
+        }
+    }
+    InputManager._keys = [];
+    InputManager._keyCodes = [];
+    InputManager._observers = [];
+    InputManager._focus = true;
+    ASC.InputManager = InputManager;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    let Rotations;
     (function (Rotations) {
         Rotations[Rotations["NONE"] = 0] = "NONE";
         Rotations[Rotations["CW"] = 1] = "CW";
         Rotations[Rotations["CWCW"] = 2] = "CWCW";
         Rotations[Rotations["CCW"] = 3] = "CCW";
     })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
-    var Directions;
+    let Directions;
     (function (Directions) {
         Directions[Directions["UP"] = 0] = "UP";
         Directions[Directions["RIGHT"] = 1] = "RIGHT";
@@ -102,48 +513,45 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var Field = (function () {
-        function Field(width) {
+    class Field {
+        constructor(width) {
             this._array = [];
             this._width = width;
             this.initialize();
         }
-        Field.prototype.initialize = function () {
-            for (var i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
+        initialize() {
+            for (let i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
                 this._array.push(new ASC.Block());
             }
-        };
-        Field.prototype.shift = function (lines) {
+        }
+        shift(lines) {
             this._array.splice(0, lines * this._width);
-            for (var i = 0; i < lines * this._width; ++i) {
+            for (let i = 0; i < lines * this._width; ++i) {
                 this._array.push(new ASC.Block());
             }
-        };
-        Field.prototype.getAt = function (index) {
+        }
+        getAt(index) {
             return this._array[index];
-        };
-        Field.prototype.getColors = function () {
-            var c = [];
-            for (var _i = 0, _a = this._array; _i < _a.length; _i++) {
-                var i = _a[_i];
+        }
+        getColors() {
+            let c = [];
+            for (let i of this._array) {
                 c.push(i.color);
             }
             return c;
-        };
-        Field.prototype.setBlocks = function (indices, block) {
-            for (var _i = 0, indices_1 = indices; _i < indices_1.length; _i++) {
-                var i = indices_1[_i];
+        }
+        setBlocks(indices, block) {
+            for (let i of indices) {
                 this._array[i] = block;
             }
-        };
-        Field.prototype.clearLineAt = function (yval) {
+        }
+        clearLineAt(yval) {
             this._array.splice(yval * this._width, this._width);
-            for (var i = 0; i < this._width; ++i) {
+            for (let i = 0; i < this._width; ++i) {
                 this._array.unshift(new ASC.Block());
             }
-        };
-        return Field;
-    }());
+        }
+    }
     ASC.Field = Field;
 })(ASC || (ASC = {}));
 var ASC;
@@ -151,8 +559,8 @@ var ASC;
     ASC.MAX_FIELD_WIDTH = 20;
     ASC.MIN_FIELD_WIDTH = 5;
     ASC.FIELD_HEIGHT = 25;
-    var TIMELIMIT = 60;
-    var Inputs;
+    const TIMELIMIT = 60;
+    let Inputs;
     (function (Inputs) {
         Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
         Inputs[Inputs["SD"] = 1] = "SD";
@@ -163,19 +571,10 @@ var ASC;
         Inputs[Inputs["HOLD"] = 6] = "HOLD";
         Inputs[Inputs["HD"] = 7] = "HD";
     })(Inputs || (Inputs = {}));
-    var Game = (function () {
-        function Game(width, bagSize, pieces, controls, staticQueue, order, clearable, delay, repeat) {
-            if (width === void 0) { width = 12; }
-            if (bagSize === void 0) { bagSize = 6; }
-            if (pieces === void 0) { pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
-                new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
-                new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]; }
-            if (controls === void 0) { controls = [39, 40, 37, 38, 83, 68, 16, 32]; }
-            if (staticQueue === void 0) { staticQueue = false; }
-            if (order === void 0) { order = null; }
-            if (clearable === void 0) { clearable = []; }
-            if (delay === void 0) { delay = 100; }
-            if (repeat === void 0) { repeat = 10; }
+    class Game {
+        constructor(width = 12, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32], staticQueue = false, order = null, clearable = [], delay = 100, repeat = 10) {
             this._pieces = [];
             this._active = false;
             this._progress = 0;
@@ -201,17 +600,16 @@ var ASC;
             this._static = staticQueue;
             this._map = clearable;
             this._renderer = new ASC.Renderer(this._width, "Attack");
-            for (var _i = 0, pieces_1 = pieces; _i < pieces_1.length; _i++) {
-                var p = pieces_1[_i];
+            for (let p of pieces) {
                 p.validateOffset(this._width);
             }
             this._pieces = pieces;
-            this._pieces.forEach(function (i) { return (i.initRotations()); });
+            this._pieces.forEach((i) => (i.initRotations()));
             this._attack = new ASC.AttackTable(this._width);
             this.resetGame();
             RUN.app.stage.addChild(this._renderer);
         }
-        Game.prototype.resetGame = function () {
+        resetGame() {
             this._field = new ASC.Field(this._width);
             this._hold = undefined;
             if (this._static) {
@@ -225,44 +623,44 @@ var ASC;
             this._active = true;
             this._progress = 0;
             this.update();
-        };
-        Game.prototype.tick = function () {
+        }
+        tick() {
             this.updateTime();
-        };
-        Game.prototype.gameOver = function () {
+        }
+        gameOver() {
             this._active = false;
             this.updateTime();
-        };
-        Game.prototype.next = function () {
+        }
+        next() {
             this._currentPiece = this._queue.getNext();
-            if (!this.checkShift(0, 0)) {
+            if (this._currentPiece == undefined || !this.checkShift(0, 0)) {
                 this.gameOver();
-                console.log("Game end");
+                this._renderer.updateTime("Game end");
             }
-        };
-        Game.prototype.hold = function () {
+        }
+        hold() {
             this._currentPiece.reset();
             if (this._hold === undefined) {
                 this._hold = this._currentPiece;
                 this.next();
                 return;
             }
-            var temp = this._hold;
+            let temp = this._hold;
             this._hold = this._currentPiece;
             this._currentPiece = temp;
-        };
-        Game.prototype.hardDrop = function () {
+        }
+        hardDrop() {
             this.sonicDrop();
             this.lock();
-        };
-        Game.prototype.sonicDrop = function () {
-            var i = 0;
+        }
+        sonicDrop() {
+            let i = 0;
             while (this.checkShift(0, i)) {
                 ++i;
             }
             this._currentPiece.move(0, i - 1);
-        };
-        Game.prototype.move = function (dir) {
+        }
+        move(dir) {
             switch (dir) {
                 case ASC.Directions.LEFT:
                     if (this.checkShift(-1, 0)) {
@@ -280,12 +678,12 @@ var ASC;
                     }
                     break;
             }
-        };
-        Game.prototype.checkShift = function (x, y) {
-            var coords = this._currentPiece.getCoords(this._width);
-            var yvals = this._currentPiece.getYVals();
-            for (var i = 0; i < coords.length; ++i) {
-                var block = this._field.getAt(coords[i] + x + y * this._width);
+        }
+        checkShift(x, y) {
+            let coords = this._currentPiece.getCoords(this._width);
+            let yvals = this._currentPiece.getYVals();
+            for (let i = 0; i < coords.length; ++i) {
+                let block = this._field.getAt(coords[i] + x + y * this._width);
                 if (block == null ||
                     yvals[i] != ~~((coords[i] + x) / this._width) ||
                     block.solid) {
@@ -293,19 +691,19 @@ var ASC;
                 }
             }
             return true;
-        };
-        Game.prototype.rotate = function (dir) {
+        }
+        rotate(dir) {
             this._currentPiece.rotate(dir);
             if (this.checkShift(0, 0)) {
                 return;
             }
             if (dir !== ASC.Rotations.CWCW) {
-                var sign = -(dir - 2);
+                let sign = -(dir - 2);
                 console.log("Trying to kick:");
-                for (var x = 0; x < 8; ++x) {
-                    var xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
-                    for (var i = 0; i < (x + 1) * 2; ++i) {
-                        var ykicks = (Math.pow(-1, i) * ~~(i / 2) + ~~(i / 4));
+                for (let x = 0; x < 8; ++x) {
+                    let xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
+                    for (let i = 0; i < (x + 1) * 2; ++i) {
+                        let ykicks = (Math.pow(-1, i) * ~~(i / 2) + ~~(i / 4));
                         console.log(xkicks, ykicks);
                         if (this.checkShift(xkicks, ykicks)) {
                             this._currentPiece.move(xkicks, ykicks);
@@ -316,25 +714,25 @@ var ASC;
             }
             console.log("Failed Kick.");
             this._currentPiece.rotate(4 - dir);
-        };
-        Game.prototype.checkPC = function () {
-            for (var i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
+        }
+        checkPC() {
+            for (let i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
                 if (this._field.getAt(i).clearable && this._field.getAt(i).solid) {
                     return false;
                 }
             }
             return true;
-        };
-        Game.prototype.checkImmobile = function () {
+        }
+        checkImmobile() {
             return !(this.checkShift(0, 1) ||
                 this.checkShift(0, -1) ||
                 this.checkShift(1, 0) ||
                 this.checkShift(-1, 0));
-        };
-        Game.prototype.lock = function () {
-            var spin = this.checkImmobile();
+        }
+        lock() {
+            let spin = this.checkImmobile();
             this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(this._currentPiece.color, true, true));
-            var cleared = this.clearLines(this._currentPiece.getYVals());
+            let cleared = this.clearLines(this._currentPiece.getYVals());
             if (cleared > 0) {
                 if (spin) {
                     this._progress += this._attack.spin(cleared);
@@ -344,65 +742,73 @@ var ASC;
                 }
                 if (this.checkPC()) {
                     this._progress += this._attack.perfectClear(cleared);
+                    if (this._static) {
+                        this.gameOver();
+                        this._renderer.updateTime("You Win");
+                    }
                 }
             }
             this.next();
-        };
-        Game.prototype.update = function () {
+        }
+        update() {
             this.updateField();
             this.updateQueue();
             this.updateHold();
             this.updateProgress();
-        };
-        Game.prototype.updateHold = function () {
+        }
+        updateHold() {
             if (this._hold === undefined) {
-                var temp = [];
-                for (var i = 0; i < 25; ++i) {
+                let temp = [];
+                for (let i = 0; i < 25; ++i) {
                     temp.push(0x000000);
                 }
                 this._renderer.updateHold(temp);
                 return;
             }
             this._renderer.updateHold(this._hold.getRenderShape());
-        };
-        Game.prototype.updateField = function () {
-            var temp = this._field.getColors();
-            var copyCurrent = this._currentPiece.getCopy();
+        }
+        updateField() {
+            let temp = this._field.getColors();
+            let copyCurrent = this._currentPiece.getCopy();
             this.sonicDrop();
-            for (var _i = 0, _a = this._currentPiece.getCoords(this._width); _i < _a.length; _i++) {
-                var point = _a[_i];
+            for (let point of this._currentPiece.getCoords(this._width)) {
                 temp[point] = (this._currentPiece.color & 0xfefefe) >> 1;
                 ;
             }
             this._currentPiece = copyCurrent;
-            for (var _b = 0, _c = this._currentPiece.getCoords(this._width); _b < _c.length; _b++) {
-                var point = _c[_b];
+            for (let point of this._currentPiece.getCoords(this._width)) {
                 temp[point] = this._currentPiece.color;
             }
             this._renderer.updateField(temp);
-        };
-        Game.prototype.updateQueue = function () {
-            var queue = this._queue.getQueue();
-            var q = [];
-            for (var _i = 0, queue_1 = queue; _i < queue_1.length; _i++) {
-                var p = queue_1[_i];
-                q.push(p.getRenderShape());
+        }
+        updateQueue() {
+            let queue = this._queue.getQueue();
+            while (queue.length < ASC.NUM_PREVIEWS) {
+                queue.push(undefined);
+            }
+            let q = [];
+            for (let p of queue) {
+                if (p == undefined) {
+                    q.push(new Array(25).fill(0));
+                }
+                else {
+                    q.push(p.getRenderShape());
+                }
             }
             this._renderer.updateQueue(q);
-        };
-        Game.prototype.updateProgress = function () {
+        }
+        updateProgress() {
             this._renderer.updateProgress(this._progress.toString());
-        };
-        Game.prototype.updateTime = function () {
+        }
+        updateTime() {
             this._renderer.updateTime("Timer off for now :)");
-        };
-        Game.prototype.clearLines = function (yvals) {
-            var lines = 0;
+        }
+        clearLines(yvals) {
+            let lines = 0;
             yvals.sort(function (a, b) { return a - b; });
-            for (var _i = 0, yvals_1 = yvals; _i < yvals_1.length; _i++) {
-                var y = yvals_1[_i];
-                for (var i = 0; i < this._width; i++) {
-                    var block = this._field.getAt(y * this._width + i);
+            for (let y of yvals) {
+                for (let i = 0; i < this._width; i++) {
+                    let block = this._field.getAt(y * this._width + i);
                     if (!block.solid || !block.clearable) {
                         break;
                     }
@@ -413,8 +819,8 @@ var ASC;
                 }
             }
             return lines;
-        };
-        Game.prototype.Triggered = function (keyCode) {
+        }
+        Triggered(keyCode) {
             if (this._active) {
                 switch (keyCode) {
                     case this._controls[Inputs.CW]:
@@ -449,208 +855,14 @@ var ASC;
             if (keyCode === 115) {
                 this.resetGame();
             }
-        };
-        return Game;
-    }());
+        }
+    }
     ASC.Game = Game;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var Keys;
-    (function (Keys) {
-        Keys[Keys["LEFT"] = 37] = "LEFT";
-        Keys[Keys["UP"] = 38] = "UP";
-        Keys[Keys["RIGHT"] = 39] = "RIGHT";
-        Keys[Keys["DOWN"] = 40] = "DOWN";
-        Keys[Keys["S"] = 83] = "S";
-        Keys[Keys["D"] = 68] = "D";
-        Keys[Keys["SPACE"] = 32] = "SPACE";
-        Keys[Keys["SHIFT"] = 16] = "SHIFT";
-    })(Keys = ASC.Keys || (ASC.Keys = {}));
-    var Key = (function () {
-        function Key(code, delay, rate) {
-            if (delay === void 0) { delay = 100; }
-            if (rate === void 0) { rate = 20; }
-            this._pressed = false;
-            this._listeners = [];
-            this._code = code;
-            this._delay = delay;
-            this._rate = rate;
-        }
-        Key.prototype.onPress = function () {
-            this._pressed = true;
-            this._timeout = window.setTimeout(this.activate.bind(this), this._delay);
-        };
-        Key.prototype.activate = function () {
-            this._interval = window.setInterval(this.repeat.bind(this), this._rate);
-        };
-        Key.prototype.repeat = function () {
-            for (var _i = 0, _a = this._listeners; _i < _a.length; _i++) {
-                var l = _a[_i];
-                l.Triggered(this._code);
-            }
-        };
-        Key.prototype.onRelease = function () {
-            this._pressed = false;
-            clearTimeout(this._timeout);
-            clearInterval(this._interval);
-        };
-        Key.prototype.registerTrigger = function (t) {
-            this._listeners.push(t);
-        };
-        Object.defineProperty(Key.prototype, "code", {
-            get: function () {
-                return this._code;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return Key;
-    }());
-    var InputManager = (function () {
-        function InputManager() {
-        }
-        InputManager.setFocus = function (f) {
-            InputManager._focus = f;
-        };
-        InputManager.initialize = function () {
-            for (var i = 0; i < 255; ++i) {
-                InputManager._keyCodes[i] = false;
-            }
-            window.addEventListener("keydown", InputManager.onKeyDown);
-            window.addEventListener("keyup", InputManager.onKeyUp);
-        };
-        InputManager.onKeyDown = function (event) {
-            if (InputManager._focus) {
-                if (InputManager._keyCodes[event.keyCode] !== true) {
-                    InputManager.NotifyObservers(event.keyCode);
-                    InputManager._keyCodes[event.keyCode] = true;
-                    if (InputManager._keys.length > 0) {
-                        for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
-                            var k = _a[_i];
-                            if (k.code === event.keyCode) {
-                                k.onPress();
-                            }
-                        }
-                    }
-                }
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            return false;
-        };
-        InputManager.onKeyUp = function (event) {
-            if (InputManager._focus) {
-                InputManager._keyCodes[event.keyCode] = false;
-                if (InputManager._keys.length > 0) {
-                    for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
-                        var k = _a[_i];
-                        if (k.code === event.keyCode) {
-                            k.onRelease();
-                        }
-                    }
-                }
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            return false;
-        };
-        InputManager.RegisterKeys = function (Observer, keyCodes, delay, repeat) {
-            for (var _i = 0, keyCodes_1 = keyCodes; _i < keyCodes_1.length; _i++) {
-                var i = keyCodes_1[_i];
-                InputManager._keys.push(new Key(i, delay, repeat));
-                InputManager._keys[InputManager._keys.length - 1].registerTrigger(Observer);
-            }
-        };
-        InputManager.RegisterObserver = function (Observer) {
-            InputManager._observers.push(Observer);
-        };
-        InputManager.UnregisterObserver = function (Observer) {
-            var index = InputManager._observers.indexOf(Observer);
-            if (index !== -1) {
-                InputManager._observers.splice(index, 1);
-            }
-            else {
-                console.warn("Cannot unregister observer.");
-            }
-        };
-        InputManager.NotifyObservers = function (keyevent) {
-            for (var _i = 0, _a = InputManager._observers; _i < _a.length; _i++) {
-                var o = _a[_i];
-                o.Triggered(keyevent);
-            }
-        };
-        InputManager.cancelRepeat = function (keycode) {
-            if (InputManager._keys.length > 0) {
-                for (var _i = 0, _a = InputManager._keys; _i < _a.length; _i++) {
-                    var k = _a[_i];
-                    if (k.code === keycode) {
-                        k.onRelease();
-                    }
-                }
-            }
-        };
-        InputManager._keys = [];
-        InputManager._keyCodes = [];
-        InputManager._observers = [];
-        InputManager._focus = true;
-        return InputManager;
-    }());
-    ASC.InputManager = InputManager;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    var Block = (function () {
-        function Block(color, solid, clearable) {
-            if (color === void 0) { color = 0x000000; }
-            if (solid === void 0) { solid = false; }
-            if (clearable === void 0) { clearable = false; }
-            this._color = color;
-            this._solid = solid;
-            this._clearable = clearable;
-        }
-        Object.defineProperty(Block.prototype, "color", {
-            get: function () {
-                return this._color;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Block.prototype, "solid", {
-            get: function () {
-                return this._solid;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Block.prototype, "clearable", {
-            get: function () {
-                return this._clearable;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return Block;
-    }());
-    ASC.Block = Block;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    ASC.NUM_PREVIEWS = 6;
-    var IQueue = (function () {
-        function IQueue() {
-        }
-        return IQueue;
-    }());
-    ASC.IQueue = IQueue;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    var Piece = (function () {
-        function Piece(name, shape, offset, color, initOrient) {
-            if (offset === void 0) { offset = 0; }
-            if (color === void 0) { color = 0xFFFFFF; }
-            if (initOrient === void 0) { initOrient = 0; }
+    class Piece {
+        constructor(name, shape, offset = 0, color = 0xFFFFFF, initOrient = 0) {
             this._shape = [];
             this._orientations = [];
             this._currentOrientation = 0;
@@ -663,43 +875,38 @@ var ASC;
             this._color = color;
             this.reset();
         }
-        Piece.prototype.validateOffset = function (width) {
-            for (var _i = 0, _a = this._orientations[this._initialOrientation]; _i < _a.length; _i++) {
-                var i = _a[_i];
+        validateOffset(width) {
+            for (let i of this._orientations[this._initialOrientation]) {
                 if (~~(i / 5) !== ~~(((i % 5) + ~~(i / 5) * width + this._offset) / width)) {
                     throw new Error("Invalid offset! Piece will spawn out of bounds:" + this._name + " offset: " + this._offset);
                 }
             }
             return true;
-        };
-        Piece.prototype.initRotations = function () {
+        }
+        initRotations() {
             this._orientations.push(this._shape);
-            var temp = [];
-            for (var _i = 0, _a = this._shape; _i < _a.length; _i++) {
-                var i = _a[_i];
+            let temp = [];
+            for (let i of this._shape) {
                 temp.push(20 - 5 * (i % 5) + ~~(i / 5));
             }
             this._orientations.push(temp);
             temp = [];
-            for (var _b = 0, _c = this._shape; _b < _c.length; _b++) {
-                var i = _c[_b];
+            for (let i of this._shape) {
                 temp.push(24 - i);
             }
             this._orientations.push(temp);
             temp = [];
-            for (var _d = 0, _e = this._shape; _d < _e.length; _d++) {
-                var i = _e[_d];
+            for (let i of this._shape) {
                 temp.push(4 + 5 * (i % 5) - ~~(i / 5));
             }
             this._orientations.push(temp);
-        };
-        Piece.prototype.setShape = function (shape) {
+        }
+        setShape(shape) {
             if (shape.length > 25 || shape.length < 1) {
                 throw new Error("Invalid number of blocks");
             }
             this._blockCount = shape.length;
-            for (var _i = 0, shape_1 = shape; _i < shape_1.length; _i++) {
-                var i = shape_1[_i];
+            for (let i of shape) {
                 if (i > 24 || i < 0) {
                     throw new Error("Block out of bounds");
                 }
@@ -707,11 +914,10 @@ var ASC;
             this._blockCount = shape.length;
             this._shape = shape;
             this._orientations.push(shape);
-            var cw = [];
-            var ccw = [];
-            var cwcw = [];
-            for (var _a = 0, shape_2 = shape; _a < shape_2.length; _a++) {
-                var i = shape_2[_a];
+            let cw = [];
+            let ccw = [];
+            let cwcw = [];
+            for (let i of shape) {
                 cw.push(4 + 5 * (i % 5) - (i / 5 << 0));
                 ccw.push(20 - 5 * (i % 5) + (i / 5 << 0));
                 cwcw.push(24 - i);
@@ -719,247 +925,215 @@ var ASC;
             this._orientations.push(cw);
             this._orientations.push(cwcw);
             this._orientations.push(ccw);
-        };
-        Piece.prototype.rotate = function (dir) {
+        }
+        rotate(dir) {
             this._currentOrientation = (this._currentOrientation + dir) % 4;
-        };
-        Piece.prototype.move = function (x, y) {
+        }
+        move(x, y) {
             this._x += x;
             this._y += y;
-        };
-        Piece.prototype.getCoords = function (width) {
-            var c = [];
-            for (var _i = 0, _a = this._orientations[this._currentOrientation]; _i < _a.length; _i++) {
-                var i = _a[_i];
-                var newI = (i % 5) + ~~(i / 5) * width;
+        }
+        getCoords(width) {
+            let c = [];
+            for (let i of this._orientations[this._currentOrientation]) {
+                let newI = (i % 5) + ~~(i / 5) * width;
                 c.push(newI + this._x + this._y * width);
             }
             return c;
-        };
-        Piece.prototype.getYVals = function () {
-            var c = [];
-            for (var _i = 0, _a = this._orientations[this._currentOrientation]; _i < _a.length; _i++) {
-                var i = _a[_i];
-                var y = ~~(i / 5) + this._y;
+        }
+        getYVals() {
+            let c = [];
+            for (let i of this._orientations[this._currentOrientation]) {
+                let y = ~~(i / 5) + this._y;
                 c.push(y);
             }
             return c;
-        };
-        Piece.prototype.reset = function () {
+        }
+        reset() {
             this._currentOrientation = this._initialOrientation;
             this._x = this._offset;
             this._y = 0;
-        };
-        Piece.prototype.getCopy = function () {
-            var copy = new Piece(this._name, this._shape, this._offset, this._color, this._initialOrientation);
+        }
+        getCopy() {
+            let copy = new Piece(this._name, this._shape, this._offset, this._color, this._initialOrientation);
             copy._orientations = this._orientations;
             copy._x = this._x;
             copy._y = this._y;
             copy._currentOrientation = this._currentOrientation;
             copy._color = this._color;
             return copy;
-        };
-        Piece.prototype.getRenderShape = function () {
-            var temp = [];
-            for (var i = 0; i < 25; ++i) {
+        }
+        getRenderShape() {
+            let temp = [];
+            for (let i = 0; i < 25; ++i) {
                 temp.push(-1);
             }
-            for (var _i = 0, _a = this._shape; _i < _a.length; _i++) {
-                var i = _a[_i];
+            for (let i of this._shape) {
                 temp[i] = this._color;
             }
             return temp;
-        };
-        Object.defineProperty(Piece.prototype, "name", {
-            get: function () {
-                return this._name;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Piece.prototype, "color", {
-            get: function () {
-                return this._color;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Piece.prototype, "offset", {
-            get: function () {
-                return this._offset;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return Piece;
-    }());
+        }
+        get name() {
+            return this._name;
+        }
+        get color() {
+            return this._color;
+        }
+        get offset() {
+            return this._offset;
+        }
+    }
     ASC.Piece = Piece;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var PRNG = (function () {
-        function PRNG(seed) {
+    class PRNG {
+        constructor(seed) {
             this._seed = Math.round(seed) % 2147483647;
             if (this._seed <= 0) {
                 this._seed += 2147483646;
             }
         }
-        PRNG.prototype.next = function () {
+        next() {
             return this._seed = this._seed * 16807 % 2147483647;
-        };
-        PRNG.prototype.nextFloat = function () {
+        }
+        nextFloat() {
             return (this.next() - 1) / 2147483646;
-        };
-        PRNG.prototype.shuffleArray = function (array) {
-            var _a;
-            for (var i = array.length - 1; i > 0; i--) {
-                var j = Math.floor(this.nextFloat() * (i + 1));
-                _a = [array[j], array[i]], array[i] = _a[0], array[j] = _a[1];
+        }
+        shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(this.nextFloat() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
             }
-        };
-        return PRNG;
-    }());
+        }
+    }
     ASC.PRNG = PRNG;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var Queue = (function (_super) {
-        __extends(Queue, _super);
-        function Queue(seed, pieces, size) {
-            if (size === void 0) { size = pieces.length; }
-            var _this = _super.call(this) || this;
-            _this._queue = [];
-            _this._rng = new ASC.PRNG(seed);
-            _this._bag = pieces;
-            _this._bagSize = size;
-            _this.generateQueue();
-            return _this;
+    ASC.NUM_PREVIEWS = 6;
+    class IQueue {
+    }
+    ASC.IQueue = IQueue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Queue extends ASC.IQueue {
+        constructor(seed, pieces, size = pieces.length) {
+            super();
+            this._queue = [];
+            this._rng = new ASC.PRNG(seed);
+            this._bag = pieces;
+            this._bagSize = size;
+            this.generateQueue();
         }
-        Queue.prototype.generateQueue = function () {
-            var _loop_1 = function () {
-                var tempBag = [];
-                while (tempBag.length < this_1._bagSize) {
-                    this_1._bag.forEach(function (i) { return tempBag.push(i.getCopy()); });
-                }
-                this_1._rng.shuffleArray(tempBag);
-                for (var _i = 0, _a = tempBag.slice(0, this_1._bagSize + 1); _i < _a.length; _i++) {
-                    var i = _a[_i];
-                    this_1._queue.push(i);
-                }
-            };
-            var this_1 = this;
+        generateQueue() {
             while (this._queue.length < ASC.NUM_PREVIEWS) {
-                _loop_1();
+                let tempBag = [];
+                while (tempBag.length < this._bagSize) {
+                    this._bag.forEach((i) => tempBag.push(i.getCopy()));
+                }
+                this._rng.shuffleArray(tempBag);
+                for (let i of tempBag.slice(0, this._bagSize + 1)) {
+                    this._queue.push(i);
+                }
             }
-        };
-        Queue.prototype.getQueue = function () {
+        }
+        getQueue() {
             return this._queue.slice(0, ASC.NUM_PREVIEWS);
-        };
-        Queue.prototype.getNext = function () {
-            var temp = this._queue.splice(0, 1)[0];
+        }
+        getNext() {
+            let temp = this._queue.splice(0, 1)[0];
             this.generateQueue();
             return temp;
-        };
-        return Queue;
-    }(ASC.IQueue));
+        }
+    }
     ASC.Queue = Queue;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var StaticQueue = (function (_super) {
-        __extends(StaticQueue, _super);
-        function StaticQueue(pieces, order) {
-            var _this = _super.call(this) || this;
-            _this._queue = [];
-            _this._bag = pieces;
-            for (var _i = 0, order_1 = order; _i < order_1.length; _i++) {
-                var i = order_1[_i];
-                _this._queue.push(_this._bag[i].getCopy());
+    class StaticQueue extends ASC.IQueue {
+        constructor(pieces, order) {
+            super();
+            this._queue = [];
+            this._bag = pieces;
+            for (let i of order) {
+                this._queue.push(this._bag[i].getCopy());
             }
-            return _this;
         }
-        StaticQueue.prototype.getQueue = function () {
+        getQueue() {
             return this._queue.slice(0, ASC.NUM_PREVIEWS);
-        };
-        StaticQueue.prototype.getNext = function () {
-            var temp = this._queue.splice(0, 1)[0];
+        }
+        getNext() {
+            let temp = this._queue.splice(0, 1)[0];
             return temp;
-        };
-        return StaticQueue;
-    }(ASC.IQueue));
+        }
+    }
     ASC.StaticQueue = StaticQueue;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var FIELD_SIZE = 24;
-    var SMALL_SIZE = 16;
-    var Renderer = (function (_super) {
-        __extends(Renderer, _super);
-        function Renderer(width, progress) {
-            var _this = _super.call(this) || this;
-            _this._queue = [];
-            _this._field = new ASC.RenderGrid(width, ASC.FIELD_HEIGHT, FIELD_SIZE, SMALL_SIZE * 5);
-            _this.addChild(_this._field);
-            for (var i = 0; i < ASC.NUM_PREVIEWS; ++i) {
-                _this._queue.push(new ASC.RenderGrid(5, 5, SMALL_SIZE, width * FIELD_SIZE + SMALL_SIZE * 5, SMALL_SIZE * 5 * i));
-                _this.addChild(_this._queue[i]);
+    const FIELD_SIZE = 24;
+    const SMALL_SIZE = 16;
+    class Renderer extends PIXI.Container {
+        constructor(width, progress) {
+            super();
+            this._queue = [];
+            this._field = new ASC.RenderGrid(width, ASC.FIELD_HEIGHT, FIELD_SIZE, SMALL_SIZE * 5);
+            this.addChild(this._field);
+            for (let i = 0; i < ASC.NUM_PREVIEWS; ++i) {
+                this._queue.push(new ASC.RenderGrid(5, 5, SMALL_SIZE, width * FIELD_SIZE + SMALL_SIZE * 5, SMALL_SIZE * 5 * i));
+                this.addChild(this._queue[i]);
             }
-            _this._hold = new ASC.RenderGrid(5, 5, SMALL_SIZE);
-            _this.addChild(_this._hold);
-            _this._progressText = progress;
-            _this._progress = new PIXI.Text(progress + "\n", { fontFamily: 'Arial', fontSize: 24, fill: 0x000000, align: 'center' });
-            _this._progress.x = width * FIELD_SIZE + SMALL_SIZE * 5 + 10;
-            _this._progress.y = SMALL_SIZE * 5 * ASC.NUM_PREVIEWS + 10;
-            _this.addChild(_this._progress);
-            _this._time = new PIXI.Text("\n\nhi", { fontFamily: 'Arial', fontSize: 24, fill: 0x000000, align: 'center' });
-            _this._time.x = width * FIELD_SIZE + SMALL_SIZE * 5 + 10;
-            _this._time.y = SMALL_SIZE * 5 * ASC.NUM_PREVIEWS + 10;
-            _this.addChild(_this._time);
-            return _this;
+            this._hold = new ASC.RenderGrid(5, 5, SMALL_SIZE);
+            this.addChild(this._hold);
+            this._progressText = progress;
+            this._progress = new PIXI.Text(progress + "\n", { fontFamily: 'Arial', fontSize: 24, fill: 0x000000, align: 'center' });
+            this._progress.x = width * FIELD_SIZE + SMALL_SIZE * 5 + 10;
+            this._progress.y = SMALL_SIZE * 5 * ASC.NUM_PREVIEWS + 10;
+            this.addChild(this._progress);
+            this._time = new PIXI.Text("\n\nhi", { fontFamily: 'Arial', fontSize: 24, fill: 0x000000, align: 'center' });
+            this._time.x = width * FIELD_SIZE + SMALL_SIZE * 5 + 10;
+            this._time.y = SMALL_SIZE * 5 * ASC.NUM_PREVIEWS + 10;
+            this.addChild(this._time);
         }
-        Renderer.prototype.updateField = function (Field) {
+        updateField(Field) {
             this._field.updateGrid(Field);
-        };
-        Renderer.prototype.updateQueue = function (q) {
-            for (var i = 0; i < q.length; ++i) {
+        }
+        updateQueue(q) {
+            for (let i = 0; i < q.length; ++i) {
                 this._queue[i].updateGrid(q[i]);
             }
-        };
-        Renderer.prototype.updateHold = function (p) {
+        }
+        updateHold(p) {
             this._hold.updateGrid(p);
-        };
-        Renderer.prototype.updateProgress = function (t) {
+        }
+        updateProgress(t) {
             this._progress.text = this._progressText + "\n" + t;
-        };
-        Renderer.prototype.updateTime = function (t) {
+        }
+        updateTime(t) {
             this._time.text = "\n\nTime:" + t;
-        };
-        return Renderer;
-    }(PIXI.Container));
+        }
+    }
     ASC.Renderer = Renderer;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var RenderGrid = (function (_super) {
-        __extends(RenderGrid, _super);
-        function RenderGrid(width, height, size, x, y) {
-            if (size === void 0) { size = 24; }
-            if (x === void 0) { x = 0; }
-            if (y === void 0) { y = 0; }
-            var _this = _super.call(this) || this;
-            _this._width = width;
-            _this._height = height;
-            _this._size = size;
-            _this._x = x;
-            _this._y = y;
-            _this._texture = PIXI.loader.resources["assets/textures/b.png"].texture;
-            _this.initalizeSprites();
-            return _this;
+    class RenderGrid extends PIXI.Container {
+        constructor(width, height, size = 24, x = 0, y = 0) {
+            super();
+            this._width = width;
+            this._height = height;
+            this._size = size;
+            this._x = x;
+            this._y = y;
+            this._texture = PIXI.loader.resources["assets/textures/b.png"].texture;
+            this.initalizeSprites();
         }
-        RenderGrid.prototype.initalizeSprites = function () {
+        initalizeSprites() {
             this._sprites = [];
-            for (var i = 0; i < this._width * this._height; ++i) {
-                var s = new PIXI.Sprite(this._texture);
+            for (let i = 0; i < this._width * this._height; ++i) {
+                let s = new PIXI.Sprite(this._texture);
                 s.height = this._size;
                 s.width = this._size;
                 s.x = i % this._width * this._size + this._x;
@@ -968,70 +1142,68 @@ var ASC;
                 this.addChild(s);
                 this._sprites.push(s);
             }
-        };
-        RenderGrid.prototype.updateColor = function (index, color) {
+        }
+        updateColor(index, color) {
             if (color < 0) {
                 this._sprites[index].tint = 0x000000;
             }
             else {
                 this._sprites[index].tint = color;
             }
-        };
-        RenderGrid.prototype.updateGrid = function (Field) {
-            for (var i = 0; i < Field.length; ++i) {
+        }
+        updateGrid(Field) {
+            for (let i = 0; i < Field.length; ++i) {
                 this.updateColor(i, Field[i]);
             }
-        };
-        return RenderGrid;
-    }(PIXI.Container));
+        }
+    }
     ASC.RenderGrid = RenderGrid;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var CLEAR = -1;
-    var SPIN = 2;
-    var PC = 6;
-    var AttackTable = (function () {
-        function AttackTable(width) {
+    const CLEAR = -1;
+    const SPIN = 2;
+    const PC = 6;
+    class AttackTable {
+        constructor(width) {
             this._width = width;
         }
-        AttackTable.prototype.clear = function (num) {
+        clear(num) {
             return this.widthMultiplier(num + CLEAR);
-        };
-        AttackTable.prototype.spin = function (num) {
+        }
+        spin(num) {
             return this.widthMultiplier(num * SPIN);
-        };
-        AttackTable.prototype.perfectClear = function (num) {
+        }
+        perfectClear(num) {
             return this.widthMultiplier(PC);
-        };
-        AttackTable.prototype.widthMultiplier = function (num) {
+        }
+        widthMultiplier(num) {
             return num + ~~(num * (this._width - 10) / 4);
-        };
-        return AttackTable;
-    }());
+        }
+    }
     ASC.AttackTable = AttackTable;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    var Timer = (function () {
-        function Timer(tick, finish, interval, end) {
+    class Timer {
+        constructor(tick, finish, interval, end) {
             this._elapsed = 0;
             this._finish = finish;
             this._interval = interval;
             this._tick = tick;
             this._end = end;
         }
-        Timer.prototype.start = function () {
+        start() {
             this.stop();
             this._elapsed = 0;
             this._expectedEnd = Date.now() + this._end;
             this._expected = Date.now() + this._interval;
             this._timeout = window.setTimeout(this.step.bind(this), this._interval);
-        };
-        Timer.prototype.stop = function () {
+        }
+        stop() {
             clearTimeout(this._timeout);
-        };
-        Timer.prototype.step = function () {
+        }
+        step() {
             this._elapsed += this._interval;
             if (Date.now() >= this._expectedEnd) {
                 this.stop();
@@ -1042,225 +1214,17 @@ var ASC;
             this._tick();
             this._expected += this._interval;
             this._timeout = window.setTimeout(this.step.bind(this), Math.max(0, this._interval - drift));
-        };
-        Object.defineProperty(Timer.prototype, "elapsed", {
-            get: function () {
-                return this._elapsed;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return Timer;
-    }());
+        }
+        get elapsed() {
+            return this._elapsed;
+        }
+    }
     ASC.Timer = Timer;
 })(ASC || (ASC = {}));
-var D;
-(function (D) {
-    var Drag = (function () {
-        function Drag() {
-        }
-        Drag.init = function () {
-            document.body.onmousedown = function () {
-                Drag.mouseDown = true;
-            };
-            document.body.onmouseup = function () {
-                Drag.mouseDown = false;
-            };
-            document.body.onmouseleave = function () {
-                Drag.mouseDown = false;
-            };
-        };
-        Drag.mouseDown = false;
-        Drag.lastState = false;
-        return Drag;
-    }());
-    D.Drag = Drag;
-})(D || (D = {}));
-var P;
-(function (P) {
-    var PieceEditor = (function () {
-        function PieceEditor(width, pieces) {
-            if (width === void 0) { width = 12; }
-            if (pieces === void 0) { pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
-                new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]; }
-            this._pieceDiv = document.createElement("div");
-            this._pieces = [];
-            this._width = 12;
-            this._pieceSelect = document.createElement("select");
-            this._checks = [];
-            this._pieceNameInput = document.createElement("input");
-            this._pieceColor = document.createElement("input");
-            this._offsetSlider = document.createElement("input");
-            this._offsetText = document.createElement("label");
-            this._width = width;
-            this._pieces = pieces;
-            this._pieceSelect.onchange = this.displayPiece.bind(this);
-            this._pieceDiv.appendChild(this._pieceSelect);
-            var addPiece = document.createElement("button");
-            addPiece.innerText = "Apply Piece Settings";
-            addPiece.onclick = this.addPieceClick.bind(this);
-            this._pieceDiv.appendChild(addPiece);
-            var removePiece = document.createElement("button");
-            removePiece.innerText = "Remove Piece";
-            removePiece.onclick = this.removePieceClick.bind(this);
-            this._pieceDiv.appendChild(removePiece);
-            var editorTable = document.createElement("table");
-            var row1;
-            var _loop_2 = function (i) {
-                if (i % 5 === 0) {
-                    row1 = document.createElement("tr");
-                    editorTable.appendChild(row1);
-                }
-                var check = document.createElement("input");
-                check.setAttribute("type", "checkbox");
-                check.onmouseenter = function () {
-                    if (D.Drag.mouseDown) {
-                        check.checked = D.Drag.lastState;
-                    }
-                };
-                check.onmousedown = function (ev) {
-                    D.Drag.lastState = !check.checked;
-                    D.Drag.lastSelected = check;
-                    check.checked = D.Drag.lastState;
-                    ev.preventDefault();
-                };
-                check.onmouseup = function (ev) {
-                    if (D.Drag.lastSelected == check) {
-                        check.checked = !check.checked;
-                    }
-                    ev.preventDefault();
-                };
-                check.ondragover = function (ev) {
-                    ev.preventDefault();
-                };
-                this_2._checks.push(check);
-                row1.appendChild(check);
-            };
-            var this_2 = this;
-            for (var i = 0; i < 25; ++i) {
-                _loop_2(i);
-            }
-            this._pieceDiv.appendChild(editorTable);
-            var pieceNameText = document.createElement("label");
-            pieceNameText.innerText = "Piece Name: ";
-            this._pieceDiv.appendChild(pieceNameText);
-            this._pieceNameInput.setAttribute("type", "text");
-            this._pieceDiv.appendChild(this._pieceNameInput);
-            this._pieceDiv.appendChild(document.createElement("br"));
-            var pieceColorText = document.createElement("label");
-            pieceColorText.innerText = "Piece Color (Chrome and Firefox will have color picker, other browsers enter in form #FFF000): ";
-            this._pieceDiv.appendChild(pieceColorText);
-            this._pieceColor.setAttribute("type", "color");
-            this._pieceColor.setAttribute("value", "#FFFFFF");
-            this._pieceDiv.appendChild(this._pieceColor);
-            this._pieceDiv.appendChild(document.createElement("br"));
-            this._offsetText.innerText = "Offset (where piece spawns): 0";
-            this._pieceDiv.appendChild(this._offsetText);
-            this._offsetSlider.setAttribute("type", "range");
-            this._offsetSlider.setAttribute("min", "0");
-            this._offsetSlider.setAttribute("max", this._width.toString());
-            this._offsetSlider.setAttribute("value", "0");
-            this._offsetSlider.oninput = this.offsetUpdate.bind(this);
-            this._pieceDiv.appendChild(document.createElement("br"));
-            this._pieceDiv.appendChild(this._offsetSlider);
-            this.updateList();
-            this.displayPiece();
-        }
-        PieceEditor.prototype.removePieceClick = function () {
-            if (this._pieces.length > 1) {
-                this._pieces.splice(Number(this._pieceSelect.value), 1);
-            }
-            else {
-                alert("Need at least one piece");
-            }
-            this.updateList();
-            this.displayPiece();
-        };
-        PieceEditor.prototype.addPieceClick = function () {
-            var indices = [];
-            for (var i = 0; i < this._checks.length; ++i) {
-                if (this._checks[i].checked) {
-                    indices.push(i);
-                }
-            }
-            if (indices.length > 0) {
-                try {
-                    var val = this._pieceSelect.selectedIndex;
-                    if (val == this._pieceSelect.childElementCount - 1) {
-                        this._pieces.push(new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1))));
-                    }
-                    else {
-                        this._pieces[val] = new ASC.Piece(this._pieceNameInput.value, indices, this._offsetSlider.valueAsNumber, Number("0x" + this._pieceColor.value.substring(1)));
-                    }
-                    this.updateList();
-                    this.displayPiece();
-                }
-                catch (err) {
-                    alert("Invalid Piece: " + err);
-                }
-            }
-            else {
-                alert("Need at least 1 block");
-            }
-        };
-        PieceEditor.prototype.offsetUpdate = function () {
-            this._offsetText.innerText = "Offset (where piece spawns): " + this._offsetSlider.value;
-        };
-        PieceEditor.prototype.updateList = function () {
-            while (this._pieceSelect.firstChild) {
-                this._pieceSelect.removeChild(this._pieceSelect.lastChild);
-            }
-            for (var i = 0; i < this._pieces.length; ++i) {
-                var p = document.createElement("option");
-                p.value = i.toString();
-                p.innerText = i.toString() + ". \"" + this._pieces[i].name + "\"";
-                this._pieceSelect.appendChild(p);
-            }
-            var n = document.createElement("option");
-            n.value = this._pieceSelect.childElementCount.toString();
-            n.innerText = "New Piece";
-            this._pieceSelect.appendChild(n);
-        };
-        PieceEditor.prototype.displayPiece = function () {
-            var val = this._pieceSelect.selectedIndex;
-            if (val !== this._pieceSelect.childElementCount - 1) {
-                var shape = this._pieces[val].getRenderShape();
-                for (var i = 0; i < 25; i++) {
-                    this._checks[i].checked = (shape[i] !== -1);
-                }
-                this._pieceNameInput.value = this._pieces[val].name;
-                this._pieceColor.value = this.cth(this._pieces[val].color);
-                this._offsetSlider.value = this._pieces[val].offset.toString();
-                this.offsetUpdate();
-            }
-        };
-        PieceEditor.prototype.cth = function (i) {
-            var hex = '000000';
-            hex += i.toString(16);
-            hex = hex.substring(hex.length - 6, hex.length);
-            return "#" + hex;
-        };
-        PieceEditor.prototype.getDiv = function () {
-            return this._pieceDiv;
-        };
-        PieceEditor.prototype.setWidth = function (width) {
-            for (var _i = 0, _a = this._pieces; _i < _a.length; _i++) {
-                var i = _a[_i];
-                i.validateOffset(width);
-            }
-            this._width = width;
-        };
-        PieceEditor.prototype.getPieces = function () {
-            return this._pieces;
-        };
-        return PieceEditor;
-    }());
-    P.PieceEditor = PieceEditor;
-})(P || (P = {}));
 var M;
 (function (M) {
-    var MapEditor = (function () {
-        function MapEditor() {
+    class MapEditor {
+        constructor() {
             this._mapDiv = document.createElement("div");
             this._mapTable = document.createElement("table");
             this._blocks = [];
@@ -1269,11 +1233,11 @@ var M;
             this._widthText = document.createElement("label");
             this._widthSlider = document.createElement("input");
             this._queueInput = document.createElement("input");
-            var table = document.createElement("table");
-            var row = document.createElement("tr");
-            var rights = document.createElement("td");
+            let table = document.createElement("table");
+            let row = document.createElement("tr");
+            let rights = document.createElement("td");
             table.style.border = "1px solid black";
-            var title = document.createElement("H1");
+            let title = document.createElement("H1");
             title.innerText = "Settings";
             rights.appendChild(title);
             this._widthText.innerText = "Width: " + this._width.toString();
@@ -1287,17 +1251,17 @@ var M;
             rights.appendChild(this._widthSlider);
             this._pieceEditor = new P.PieceEditor(this._width);
             rights.appendChild(this._pieceEditor.getDiv());
-            var queueText = document.createElement("label");
+            let queueText = document.createElement("label");
             queueText.innerText = "Enter Queue Using Piece Number (ie. \"1,2,0,1,3,3,3,3,3\"): ";
             rights.appendChild(queueText);
             this._queueInput.setAttribute("type", "text");
             rights.appendChild(this._queueInput);
             rights.appendChild(document.createElement("br"));
-            var generateMap = document.createElement("button");
+            let generateMap = document.createElement("button");
             generateMap.innerText = "Generate Map";
             generateMap.onclick = this.genMap.bind(this);
             rights.appendChild(generateMap);
-            var resetField = document.createElement("button");
+            let resetField = document.createElement("button");
             resetField.innerText = "Reset Field";
             resetField.onclick = this.drawTable.bind(this);
             rights.appendChild(resetField);
@@ -1307,49 +1271,74 @@ var M;
             this._mapDiv.appendChild(table);
             this.drawTable();
         }
-        MapEditor.prototype.getDiv = function () {
+        getDiv() {
             return this._mapDiv;
-        };
-        MapEditor.prototype.genMap = function () {
+        }
+        genMap() {
             if (this._pieceEditor.getPieces.length > 64) {
                 alert("Too many pieces: Max 64");
-                throw Error("Too many pieces: Max 64");
+                return;
             }
-            var output = "";
+            if (!isNaN(Number(this._widthSlider.value))) {
+                let temp = this._width;
+                this._width = Number(this._widthSlider.value);
+                try {
+                    this._pieceEditor.setWidth(this._width);
+                }
+                catch (err) {
+                    alert(err);
+                    this._width = temp;
+                }
+            }
+            let output = "";
             output += B.fromNumber(this._width) + "&";
-            for (var _i = 0, _a = this._pieceEditor.getPieces(); _i < _a.length; _i++) {
-                var p = _a[_i];
+            for (let p of this._pieceEditor.getPieces()) {
                 output += B.pad(p.name, ' ', 1);
-                var b = "";
-                for (var _b = 0, _c = p.getRenderShape(); _b < _c.length; _b++) {
-                    var i = _c[_b];
+                let b = "";
+                for (let i of p.getRenderShape()) {
                     b += Number(i !== -1);
                 }
                 output += B.pad(B.binaryTo64(b), '0', 5);
                 output += B.fromNumber(p.offset);
-                output += B.pad(B.hexTo64(p.color.toString().substr(2)), '0', 4);
+                output += B.pad(B.hexTo64(p.color.toString(16)), '0', 4);
             }
             output += "&";
-            var queue = this._queueInput.value.split(',').map(Number);
-            for (var _d = 0, queue_2 = queue; _d < queue_2.length; _d++) {
-                var i = queue_2[_d];
-                output += B.fromNumber(i);
+            let queue = [];
+            try {
+                queue = this._queueInput.value.split(',').map(Number);
+                if (queue.length < 2) {
+                    throw new Error("Not enough pieces in the queue!");
+                }
+                for (let i of queue) {
+                    if (i >= this._pieceEditor.getPieces().length || i < 0) {
+                        throw new Error("Invalid Queue");
+                    }
+                    output += B.fromNumber(i);
+                    ;
+                }
+            }
+            catch (err) {
+                alert(err.message);
+                return;
             }
             output += "&";
-            var map = "";
-            for (var i = 0; i < this._blocks.length; ++i) {
+            let map = "";
+            for (let i = 0; i < this._blocks.length; ++i) {
                 map += (Number(this._blocks[i].checked));
             }
-            output += B.pad(B.binaryTo64(map), '0', Math.ceil((this._width * ASC.FIELD_HEIGHT) / 6));
-            console.log(output);
-        };
-        MapEditor.prototype.widthInput = function () {
+            output += B.binaryTo64(map);
+            output += "&";
+            if (confirm("Go to map? (Yes to go, No outputs url)")) {
+                window.open('/map.html?' + output);
+            }
+        }
+        widthInput() {
             if (!isNaN(Number(this._widthSlider.value))) {
                 this._widthText.innerText = "Width: " + Number(this._widthSlider.value);
             }
-        };
-        MapEditor.prototype.drawTable = function () {
-            var temp = this._width;
+        }
+        drawTable() {
+            let temp = this._width;
             this._width = Number(this._widthSlider.value);
             try {
                 this._pieceEditor.setWidth(this._width);
@@ -1362,13 +1351,13 @@ var M;
                 this._mapTable.removeChild(this._mapTable.children[i]);
             }
             this._blocks = [];
-            var mapR;
-            var _loop_3 = function (i_1) {
-                if (i_1 % this_3._width === 0) {
+            let mapR;
+            for (let i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
+                if (i % this._width === 0) {
                     mapR = document.createElement("tr");
-                    this_3._mapTable.appendChild(mapR);
+                    this._mapTable.appendChild(mapR);
                 }
-                var b = document.createElement("input");
+                let b = document.createElement("input");
                 b.setAttribute("type", "checkbox");
                 b.onmouseenter = function () {
                     if (D.Drag.mouseDown) {
@@ -1391,116 +1380,47 @@ var M;
                     ev.preventDefault();
                     ev.preventDefault();
                 };
-                this_3._blocks.push(b);
+                this._blocks.push(b);
                 mapR.appendChild(b);
-            };
-            var this_3 = this;
-            for (var i_1 = 0; i_1 < this._width * ASC.FIELD_HEIGHT; ++i_1) {
-                _loop_3(i_1);
             }
             this._lefts.appendChild(this._mapTable);
-        };
-        return MapEditor;
-    }());
+        }
+    }
     M.MapEditor = MapEditor;
     function init() {
         D.Drag.init();
-        var map = new MapEditor();
+        let map = new MapEditor();
         document.body.appendChild(map.getDiv());
     }
     M.init = init;
 })(M || (M = {}));
-var B;
-(function (B) {
-    function B64SafeEncode(s) {
-        return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/\=+$/, '');
-    }
-    B.B64SafeEncode = B64SafeEncode;
-    function B64SafeDecode(s) {
-        s = (s + '===').slice(0, s.length + (s.length % 4));
-        return atob(s.replace(/-/g, '+').replace(/_/g, '/'));
-    }
-    B.B64SafeDecode = B64SafeDecode;
-    var _Rixits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/";
-    function fromNumber(num) {
-        var rixit;
-        var residual = Math.floor(num);
-        var result = '';
-        while (true) {
-            rixit = residual % 64;
-            result = _Rixits.charAt(rixit) + result;
-            residual = Math.floor(residual / 64);
-            if (residual == 0) {
-                break;
-            }
-        }
-        return result;
-    }
-    B.fromNumber = fromNumber;
-    function toNumber(s) {
-        var result = 0;
-        var rix = s.split('');
-        for (var e = 0; e < rix.length; ++e) {
-            result = (result * 64) + _Rixits.indexOf(rix[e]);
-        }
-        return result;
-    }
-    B.toNumber = toNumber;
-    function binaryTo64(n) {
-        var bin = parseInt(n, 2);
-        return fromNumber(bin);
-    }
-    B.binaryTo64 = binaryTo64;
-    function binaryFrom64(n) {
-        var b = toNumber(n);
-        return b.toString(2);
-    }
-    B.binaryFrom64 = binaryFrom64;
-    function hexTo64(n) {
-        var bin = parseInt(n, 16);
-        return fromNumber(bin);
-    }
-    B.hexTo64 = hexTo64;
-    function hexFrom64(n) {
-        var b = toNumber(n);
-        return b.toString(16);
-    }
-    B.hexFrom64 = hexFrom64;
-    function pad(toPad, padChar, padnum) {
-        var p = "";
-        for (var i = 0; i < padnum; ++i) {
-            p += padChar;
-        }
-        p += toPad;
-        return p.slice(-padnum);
-    }
-    B.pad = pad;
-})(B || (B = {}));
 var SETTINGS;
 (function (SETTINGS) {
-    function init() {
-        var pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
+    function init(map = false) {
+        let staticQueue = [];
+        let mapShape = [];
+        let pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
             new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
-        var config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32], 100, 10, 7);
-        var pieceEditor = new P.PieceEditor(config._width, pieces);
+        let config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32], 100, 10, 7);
+        let pieceEditor = new P.PieceEditor(config._width, pieces);
         D.Drag.init();
-        var settings = document.createElement("div");
+        let settings = document.createElement("div");
         settings.style.border = "1px solid black";
-        var title = document.createElement("H1");
+        let title = document.createElement("H1");
         title.innerText = "Settings";
         settings.appendChild(title);
-        var widthText = document.createElement("label");
+        let widthText = document.createElement("label");
         widthText.innerText = "Width: " + config._width.toString();
         settings.appendChild(widthText);
         settings.appendChild(document.createElement("br"));
-        var widthSlider = document.createElement("input");
+        let widthSlider = document.createElement("input");
         widthSlider.setAttribute("type", "range");
         widthSlider.setAttribute("min", ASC.MIN_FIELD_WIDTH.toString());
         widthSlider.setAttribute("max", ASC.MAX_FIELD_WIDTH.toString());
         widthSlider.setAttribute("value", "10");
         widthSlider.oninput = function () {
             if (!isNaN(Number(widthSlider.value))) {
-                var temp = config._width;
+                let temp = config._width;
                 config._width = Number(widthSlider.value);
                 try {
                     pieceEditor.setWidth(config._width);
@@ -1513,20 +1433,20 @@ var SETTINGS;
             }
         };
         settings.appendChild(widthSlider);
-        var controlsTitle = document.createElement("H2");
+        let controlsTitle = document.createElement("H2");
         controlsTitle.innerText = "Controls:";
         settings.appendChild(controlsTitle);
-        var controlTable = document.createElement("table");
-        var labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop"];
-        var row;
-        var _loop_4 = function (i) {
+        let controlTable = document.createElement("table");
+        const labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop"];
+        let row;
+        for (let i = 0; i < labels.length; ++i) {
             if (i % 4 === 0) {
                 row = document.createElement("tr");
                 controlTable.appendChild(row);
             }
-            var item = document.createElement("th");
+            let item = document.createElement("th");
             item.innerText = labels[i] + ": ";
-            var numberbox = document.createElement("input");
+            let numberbox = document.createElement("input");
             numberbox.setAttribute("type", "number");
             numberbox.readOnly = true;
             numberbox.setAttribute("value", config._controls[i].toString());
@@ -1539,15 +1459,12 @@ var SETTINGS;
             };
             item.appendChild(numberbox);
             row.appendChild(item);
-        };
-        for (var i = 0; i < labels.length; ++i) {
-            _loop_4(i);
         }
         settings.appendChild(controlTable);
-        var delayText = document.createElement("label");
+        let delayText = document.createElement("label");
         delayText.innerText = "Delay: ";
         settings.appendChild(delayText);
-        var delay = document.createElement("input");
+        let delay = document.createElement("input");
         delay.setAttribute("type", "number");
         delay.setAttribute("min", "1");
         delay.setAttribute("value", config._delay.toString());
@@ -1557,10 +1474,10 @@ var SETTINGS;
             }
         };
         settings.appendChild(delay);
-        var repeatText = document.createElement("label");
+        let repeatText = document.createElement("label");
         repeatText.innerText = "Repeat: ";
         settings.appendChild(repeatText);
-        var repeat = document.createElement("input");
+        let repeat = document.createElement("input");
         repeat.setAttribute("type", "number");
         repeat.setAttribute("min", "1");
         repeat.setAttribute("value", config._repeat.toString());
@@ -1570,10 +1487,10 @@ var SETTINGS;
             }
         };
         settings.appendChild(repeat);
-        var bagText = document.createElement("label");
+        let bagText = document.createElement("label");
         bagText.innerText = "Bag: ";
         settings.appendChild(bagText);
-        var bag = document.createElement("input");
+        let bag = document.createElement("input");
         bag.setAttribute("type", "number");
         bag.setAttribute("min", "0");
         bag.setAttribute("value", config._bagSize.toString());
@@ -1585,14 +1502,53 @@ var SETTINGS;
         settings.appendChild(bag);
         settings.appendChild(document.createElement("hr"));
         settings.appendChild(pieceEditor.getDiv());
-        var apply = document.createElement("button");
+        let apply = document.createElement("button");
         apply.innerText = "Apply Settings";
         apply.onclick = function () {
             config._pieces = pieceEditor.getPieces();
-            RUN.startGame(config);
+            RUN.startGame(config, map, staticQueue, mapShape);
         };
         settings.appendChild(apply);
         document.body.appendChild(settings);
+        if (map) {
+            widthSlider.disabled = true;
+            pieceEditor.disable(true);
+            let m = window.location.search.substring(1);
+            let cfg = m.split("&");
+            config._width = B.toNumber(cfg[0]);
+            let pc = [];
+            let rawp = cfg[1].match(/.{1,11}/g);
+            for (let r of rawp) {
+                let shape = [];
+                let i = 0;
+                let sss = B.binaryFrom64(r.substring(1, 6));
+                for (let s of sss.substring(0, 2 * sss.length - 25).split('')) {
+                    if (Number(s) == 1) {
+                        shape.push(i);
+                    }
+                    i++;
+                }
+                pc.push(new ASC.Piece(r.substring(0, 1), shape, B.toNumber(r.substring(6, 7)), Number("0x" + B.hexFrom64(r.substring(7)).padStart(6, '0'))));
+            }
+            config._pieces = pc;
+            let queue = [];
+            for (let q of cfg[2].split('')) {
+                queue.push(B.toNumber(q));
+            }
+            staticQueue = queue;
+            let map = [];
+            let rawmap = B.binaryFrom64(cfg[3]);
+            rawmap = rawmap.substring(0, 2 * rawmap.length - config._width * ASC.FIELD_HEIGHT);
+            let i = 0;
+            for (let r of rawmap.split('')) {
+                if (Number(r) == 1) {
+                    map.push(i);
+                }
+                i++;
+            }
+            mapShape = map;
+            RUN.afterLoad = () => (RUN.startGame(config, true, staticQueue, mapShape));
+        }
     }
     SETTINGS.init = init;
 })(SETTINGS || (SETTINGS = {}));

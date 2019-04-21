@@ -2,10 +2,16 @@
   "compileOnSave": true,
   "compilerOptions": {
     "moduleResolution": "node",
+	
 "sourceMap": false,
     "typeRoots": [
       "node_modules/@types"
     ]
       "types": [],
+	  
+    // leave imports as they are
+    "module": "esnext",
+    // do not transpile stuff like classes, async/await, ...
+    "target": "esnext"
   }
 }

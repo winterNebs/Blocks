@@ -1,19 +1,9 @@
 ﻿namespace B {
-    export function B64SafeEncode(s: string): string {
-        //Replace '+' and '/' with '-' and '_' and remove '='
-
-        //Should also remove any not websafe chars like chinese or whatever
-        return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/\=+$/, '');
-    }
-    export function B64SafeDecode(s: string): string {
-        s = (s + '===').slice(0, s.length + (s.length % 4));
-        return atob(s.replace(/-/g, '+').replace(/_/g, '/'));
-    }
-
-    const _Rixits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/";
+    //Convert numbers chunks at a time
+    const _Rixits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
     export function fromNumber(num: number): string {
         let rixit;
-        let residual = Math.floor(num);
+        let residual = num;
         let result = '';
         while (true) {
             rixit = residual % 64;
@@ -35,12 +25,22 @@
     }
 
     export function binaryTo64(n: string): string {
-        let bin = parseInt(n, 2);
-        return fromNumber(bin);
+        n = n.padStart(~~(n.length / 6) * 6, "0");
+
+        let s = "";
+        let bin: string[] = n.match(/.{1,6}/g);
+        
+        for (let b of bin) {
+            s += fromNumber(parseInt(b,2));
+        }
+        return s;
     }
     export function binaryFrom64(n: string): string {
-        let b = toNumber(n);
-        return b.toString(2);
+        let s = "";
+        for (let b of n.split('')) {
+            s += toNumber(b).toString(2).padStart(6,'0');
+        }
+        return s;
     }
     export function hexTo64(n: string): string {
         let bin = parseInt(n, 16);
@@ -50,7 +50,7 @@
         let b = toNumber(n);
         return b.toString(16);
     }
-    export function pad(toPad:string, padChar: string, padnum: number): string {
+    export function pad(toPad: string, padChar: string, padnum: number): string {
         let p = "";
         for (let i = 0; i < padnum; ++i) {
             p += padChar;

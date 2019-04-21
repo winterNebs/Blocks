@@ -1,5 +1,7 @@
 ﻿/// <reference path="iqueue.ts" />
 namespace ASC {
+
+    //TODO: Change queue from a bunch of copies to just indicies of to the piece hten copy when needed
     export class StaticQueue extends IQueue {
         private _bag: Piece[];      //Static bag for reference
         private _queue: Piece[] = []; //Numbers for which piece

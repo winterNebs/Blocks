@@ -35,9 +35,8 @@
             new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
             new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)],
             controls: number[] = [39, 40, 37, 38, 83, 68, 16, 32],
-            staticQueue: boolean = false, order: number[] = null, clearable:number[]=[],
+            staticQueue: boolean = false, order: number[] = null, clearable: number[] = [],
             delay: number = 100, repeat: number = 10) {
-
             for (var i = RUN.app.stage.children.length - 1; i >= 0; --i) {
                 RUN.app.stage.removeChild(RUN.app.stage.children[i]);
             };
@@ -99,9 +98,9 @@
 
         private next(): void {
             this._currentPiece = this._queue.getNext();
-            if (!this.checkShift(0, 0)) {
+            if (this._currentPiece == undefined || !this.checkShift(0, 0)) {
                 this.gameOver();
-                console.log("Game end");
+                this._renderer.updateTime("Game end");
             }
         }
         private hold(): void {
@@ -217,6 +216,10 @@
                 }
                 if (this.checkPC()) {
                     this._progress += this._attack.perfectClear(cleared);
+                    if (this._static) {
+                        this.gameOver();
+                        this._renderer.updateTime("You Win");
+                    }
                 }
             }
             this.next();
@@ -256,9 +259,17 @@
         private updateQueue(): void {
             //Update queue
             let queue: Piece[] = this._queue.getQueue();
+            while (queue.length < NUM_PREVIEWS) {
+                queue.push(undefined);
+            }
             let q: number[][] = [];
             for (let p of queue) {
-                q.push(p.getRenderShape());
+                if (p == undefined) {
+                    q.push(new Array(25).fill(0));
+                }
+                else {
+                    q.push(p.getRenderShape());
+                }
             }
             this._renderer.updateQueue(q);
         }

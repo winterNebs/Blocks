@@ -1,7 +1,9 @@
 ﻿/// <reference path="pieceeditor.ts" />
 namespace SETTINGS {
 
-    export function init() {
+    export function init(map: boolean = false) {
+        let staticQueue: number[] = [];
+        let mapShape: number[] = [];
         let pieces: ASC.Piece[] = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
         new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
 
@@ -143,11 +145,50 @@ namespace SETTINGS {
         apply.innerText = "Apply Settings"
         apply.onclick = function () {
             config._pieces = pieceEditor.getPieces();
-            RUN.startGame(config);
+            RUN.startGame(config, map, staticQueue, mapShape);
         }
 
         settings.appendChild(apply);
 
         document.body.appendChild(settings);
+        if (map) {
+            widthSlider.disabled = true;
+            pieceEditor.disable(true);
+            let m = window.location.search.substring(1);
+            let cfg: string[] = m.split("&");
+            config._width = B.toNumber(cfg[0]);
+            let pc: ASC.Piece[] = [];
+            let rawp: string[] = cfg[1].match(/.{1,11}/g);
+            for (let r of rawp) {
+                let shape: number[] = [];
+                let i = 0;
+                let sss = B.binaryFrom64(r.substring(1, 6));
+                for (let s of sss.substring(0,2*sss.length-25).split('')) {
+                    if (Number(s) == 1) {
+                        shape.push(i);
+                    }
+                    i++;
+                }
+                pc.push(new ASC.Piece(r.substring(0, 1), shape, B.toNumber(r.substring(6, 7)), Number("0x" + B.hexFrom64(r.substring(7)).padStart(6,'0'))));
+            }
+            config._pieces = pc;
+            let queue: number[] = [];
+            for (let q of cfg[2].split('')) {
+                queue.push(B.toNumber(q));
+            }
+            staticQueue = queue;
+            let map: number[] = [];
+            let rawmap: string = B.binaryFrom64(cfg[3]);
+            rawmap = rawmap.substring(0,2*rawmap.length - config._width * ASC.FIELD_HEIGHT);
+            let i = 0;
+            for (let r of rawmap.split('')) {
+                if (Number(r) == 1) {
+                    map.push(i);
+                }
+                i++;
+            }
+            mapShape = map;
+            RUN.afterLoad = () => (RUN.startGame(config, true, staticQueue, mapShape));
+        }
     }
 }

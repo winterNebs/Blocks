@@ -83,9 +83,19 @@ namespace M {
 
             if (this._pieceEditor.getPieces.length > 64) {
                 alert("Too many pieces: Max 64");
-                throw Error("Too many pieces: Max 64");
+                return;
             }
-
+            if (!isNaN(Number(this._widthSlider.value))) {
+                let temp = this._width
+                this._width = Number(this._widthSlider.value);
+                try {
+                    this._pieceEditor.setWidth(this._width);
+                }
+                catch (err) {
+                    alert(err);
+                    this._width = temp;
+                }
+            }
             let output = "";
             // Store map info in the following format:
             //Width |&|Pieces <- ouch|&|Queue|&| Map
@@ -107,14 +117,27 @@ namespace M {
                 }
                 output += B.pad(B.binaryTo64(b), '0', 5); // 5 //PAD 
                 output += B.fromNumber(p.offset); // 1
-                output += B.pad(B.hexTo64(p.color.toString().substr(2)), '0', 4); //4 //PAD
+                output += B.pad(B.hexTo64(p.color.toString(16)), '0', 4); //4 //PAD (change these to pad start smh)
 
             }
             output += "&";
             //1 * n
-            let queue: number[] = this._queueInput.value.split(',').map(Number);
-            for (let i of queue) {
-                output += B.fromNumber(i);
+            let queue: number[] = []
+            try {
+                queue = this._queueInput.value.split(',').map(Number);
+                if (queue.length < 2) {
+                    throw new Error("Not enough pieces in the queue!");
+                }
+                for (let i of queue) {
+                    if (i >= this._pieceEditor.getPieces().length || i < 0) {
+                        throw new Error("Invalid Queue");
+                    }
+                    output += B.fromNumber(i);;
+                }
+            }
+            catch (err) {
+                alert(err.message);
+                return;
             }
             output += "&"
 
@@ -122,9 +145,12 @@ namespace M {
             for (let i = 0; i < this._blocks.length; ++i) {
                 map += (Number(this._blocks[i].checked));
             }
-
-            output += B.pad(B.binaryTo64(map), '0', Math.ceil((this._width * ASC.FIELD_HEIGHT)/6));
-            console.log(output);
+            //output += B.pad(B.binaryTo64(map), '0', Math.ceil((this._width * ASC.FIELD_HEIGHT) / 6));
+            output += B.binaryTo64(map);
+            output += "&"
+            if (confirm("Go to map? (Yes to go, No outputs url)")) {
+                window.open('/map.html?' + output);
+            }
         }
 
         private widthInput() {
