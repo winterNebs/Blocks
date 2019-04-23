@@ -20,5 +20,8 @@ namespace ASC {
             let temp = this._queue.splice(0, 1)[0];
             return temp;
         }
+        public hasNext(): boolean {
+            return this._queue.length > 0;
+        }
     }
 }

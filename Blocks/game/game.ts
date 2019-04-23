@@ -99,13 +99,20 @@
         }
 
         private next(): void {
-            this._currentPiece = this._queue.getNext();
-            if (this._currentPiece == undefined || !this.checkShift(0, 0)) {
+            if (this._queue.hasNext()) {
+                this._currentPiece = this._queue.getNext();
+                if (!this.checkShift(0, 0)) {
+                    this.gameOver();
+                    this._renderer.updateTime("Game end");
+                }
+            }
+            else {
                 this.gameOver();
                 this._renderer.updateTime("Game end");
             }
         }
         private hold(): void {
+            if(this._currentPiece)
             this._currentPiece.reset();
             if (this._hold === undefined) {
                 this._hold = this._currentPiece;
@@ -247,14 +254,17 @@
         private updateField(): void {
             //Update field
             let temp = this._field.getColors();
-            let copyCurrent = this._currentPiece.getCopy();
-            this.sonicDrop();
-            for (let point of this._currentPiece.getCoords(this._width)) {
-                temp[point] = (this._currentPiece.color & 0xfefefe) >> 1;; /// for now
-            }
-            this._currentPiece = copyCurrent;
-            for (let point of this._currentPiece.getCoords(this._width)) {
-                temp[point] = this._currentPiece.color; /// for now
+            if (this._currentPiece != undefined) {
+                let copyCurrent = this._currentPiece.getCopy();
+                this.sonicDrop();
+                for (let point of this._currentPiece.getCoords(this._width)) {
+                    temp[point] = (this._currentPiece.color & 0xfefefe) >> 1;; /// for now
+                }
+                this._currentPiece = copyCurrent;
+                for (let point of this._currentPiece.getCoords(this._width)) {
+                    temp[point] = this._currentPiece.color; /// for now
+                }
+
             }
             this._renderer.updateField(temp);
         }

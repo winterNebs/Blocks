@@ -39,5 +39,8 @@ namespace ASC {
             this.generateQueue();
             return temp;
         }
+        public hasNext(): boolean {
+            return true;
+        }
     }
 }

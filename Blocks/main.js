@@ -218,14 +218,21 @@ var ASC;
             this.updateTime();
         }
         next() {
-            this._currentPiece = this._queue.getNext();
-            if (this._currentPiece == undefined || !this.checkShift(0, 0)) {
+            if (this._queue.hasNext()) {
+                this._currentPiece = this._queue.getNext();
+                if (!this.checkShift(0, 0)) {
+                    this.gameOver();
+                    this._renderer.updateTime("Game end");
+                }
+            }
+            else {
                 this.gameOver();
                 this._renderer.updateTime("Game end");
             }
         }
         hold() {
-            this._currentPiece.reset();
+            if (this._currentPiece)
+                this._currentPiece.reset();
             if (this._hold === undefined) {
                 this._hold = this._currentPiece;
                 this.next();
@@ -355,15 +362,17 @@ var ASC;
         }
         updateField() {
             let temp = this._field.getColors();
-            let copyCurrent = this._currentPiece.getCopy();
-            this.sonicDrop();
-            for (let point of this._currentPiece.getCoords(this._width)) {
-                temp[point] = (this._currentPiece.color & 0xfefefe) >> 1;
-                ;
-            }
-            this._currentPiece = copyCurrent;
-            for (let point of this._currentPiece.getCoords(this._width)) {
-                temp[point] = this._currentPiece.color;
+            if (this._currentPiece != undefined) {
+                let copyCurrent = this._currentPiece.getCopy();
+                this.sonicDrop();
+                for (let point of this._currentPiece.getCoords(this._width)) {
+                    temp[point] = (this._currentPiece.color & 0xfefefe) >> 1;
+                    ;
+                }
+                this._currentPiece = copyCurrent;
+                for (let point of this._currentPiece.getCoords(this._width)) {
+                    temp[point] = this._currentPiece.color;
+                }
             }
             this._renderer.updateField(temp);
         }
@@ -815,6 +824,9 @@ var ASC;
             this.generateQueue();
             return temp;
         }
+        hasNext() {
+            return true;
+        }
     }
     ASC.Queue = Queue;
 })(ASC || (ASC = {}));
@@ -835,6 +847,9 @@ var ASC;
         getNext() {
             let temp = this._queue.splice(0, 1)[0];
             return temp;
+        }
+        hasNext() {
+            return this._queue.length > 0;
         }
     }
     ASC.StaticQueue = StaticQueue;
@@ -1567,7 +1582,6 @@ var SETTINGS;
                 let shape = [];
                 let i = 0;
                 let sss = B.binaryFrom64(r.substring(1, 6));
-                console.log(sss);
                 for (let s of sss.substring(5).split('')) {
                     if (Number(s) == 1) {
                         shape.push(i);

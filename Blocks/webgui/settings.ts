@@ -2,7 +2,11 @@
 namespace SETTINGS {
 
     export function init(map: boolean = false) {
-
+        //Can't change controls/ game breaks on apply ( for only one map specifically?? -> doesnt' seem to be issue with cookie since can save settings and load broken map)
+        //Add rebindable restart
+        //Add sonic drop
+        //Fix last piece bug
+        // ?? 
 
         let staticQueue: number[] = [];
         let mapShape: number[] = [];
@@ -185,7 +189,6 @@ namespace SETTINGS {
                 let shape: number[] = [];
                 let i = 0;
                 let sss = B.binaryFrom64(r.substring(1, 6));
-                console.log(sss)
                 for (let s of sss.substring(5).split('')) {
                     if (Number(s) == 1) {
                         shape.push(i);
