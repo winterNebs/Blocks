@@ -1,188 +1,263 @@
 ﻿/// <reference path="pieceeditor.ts" />
 namespace SETTINGS {
 
-    export function init(map: boolean = false) {
-        //Can't change controls/ game breaks on apply ( for only one map specifically?? -> doesnt' seem to be issue with cookie since can save settings and load broken map)
-        //Add rebindable restart
-        //Add sonic drop
-        //Fix last piece bug
-        // ?? 
+    export class Settings {
+        private static _staticQueue: number[] = [];
+        private static _mapShape: number[] = [];
+        private static _config: ASC.Config;
+        private static _pieceEditor: P.PieceEditor;
+        private static _widthSlider: HTMLInputElement;
+        private static _map: boolean = false;
 
-        let staticQueue: number[] = [];
-        let mapShape: number[] = [];
-        let pieces: ASC.Piece[] = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
-        new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
+        public static init(map: boolean = false) {
+            //Add rebindable restart
+            //Add sonic drop
+            //Fix last piece bug
+            // ?? 
+            Settings._map = map;
 
-        let config: ASC.Config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32], 100, 10, 7);
-        let pieceEditor = new P.PieceEditor(config._width, pieces);
-        D.Drag.init();
-        let settings: HTMLElement = document.createElement("div");
-        settings.style.border = "1px solid black";
+            let pieces: ASC.Piece[] = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
+            new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
 
-        let title: HTMLElement = document.createElement("H1");
-        title.innerText = "Settings";
+            Settings._config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32], 100, 10, 7);
+            Settings._pieceEditor = new P.PieceEditor(Settings._config._width, pieces);
 
-        settings.appendChild(title);
+            D.Drag.init();
 
-        let widthText: HTMLElement = document.createElement("label");
-        widthText.innerText = "Width: " + config._width.toString();
+            let settings: HTMLElement = document.createElement("div");
+            settings.style.border = "1px solid black";
 
-        settings.appendChild(widthText);
+            let title: HTMLElement = document.createElement("H1");
+            title.innerText = "Settings";
 
-        settings.appendChild(document.createElement("br"));
+            settings.appendChild(title);
 
-        let widthSlider: HTMLInputElement = <HTMLInputElement>document.createElement("input");
-        widthSlider.setAttribute("type", "range");
-        widthSlider.setAttribute("min", ASC.MIN_FIELD_WIDTH.toString());
-        widthSlider.setAttribute("max", ASC.MAX_FIELD_WIDTH.toString());
-        widthSlider.setAttribute("value", "10");
+            let widthText: HTMLElement = document.createElement("label");
+            widthText.innerText = "Width: " + Settings._config._width.toString();
 
-        widthSlider.oninput = function () {
-            if (!isNaN(Number(widthSlider.value))) {
-                let temp = config._width
-                config._width = Number(widthSlider.value);
-                try {
-                    pieceEditor.setWidth(config._width);
+            settings.appendChild(widthText);
+
+            settings.appendChild(document.createElement("br"));
+
+            Settings._widthSlider = <HTMLInputElement>document.createElement("input");
+            Settings._widthSlider.setAttribute("type", "range");
+            Settings._widthSlider.setAttribute("min", ASC.MIN_FIELD_WIDTH.toString());
+            Settings._widthSlider.setAttribute("max", ASC.MAX_FIELD_WIDTH.toString());
+            Settings._widthSlider.setAttribute("value", "10");
+
+            Settings._widthSlider.oninput = function () {
+                if (!isNaN(Number(Settings._widthSlider.value))) {
+                    let temp = Settings._config._width
+                    Settings._config._width = Number(Settings._widthSlider.value);
+                    try {
+                        Settings._pieceEditor.setWidth(Settings._config._width);
+                    }
+                    catch (err) {
+                        alert(err);
+                        Settings._config._width = temp;
+                    }
+                    widthText.innerText = "Width: " + Settings._config._width.toString();
                 }
-                catch (err) {
-                    alert(err);
-                    config._width = temp;
+            }
+
+            settings.appendChild(Settings._widthSlider);
+
+            let controlsTitle: HTMLElement = document.createElement("H2");
+            controlsTitle.innerText = "Controls:";
+
+            settings.appendChild(controlsTitle);
+
+            let controlTable: HTMLElement = document.createElement("table")
+            const labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop"];
+            let controlsBox: HTMLElement[] = [];
+            let row: HTMLElement;
+            for (let i = 0; i < labels.length; ++i) {
+                if (i % 4 === 0) {
+                    row = document.createElement("tr");
+                    controlTable.appendChild(row);
                 }
-                widthText.innerText = "Width: " + config._width.toString();
-            }
-        }
-
-        settings.appendChild(widthSlider);
-
-        let controlsTitle: HTMLElement = document.createElement("H2");
-        controlsTitle.innerText = "Controls:";
-
-        settings.appendChild(controlsTitle);
-
-        let controlTable: HTMLElement = document.createElement("table")
-        const labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop"];
-        let controlsBox: HTMLElement[] = [];
-        let row: HTMLElement;
-        for (let i = 0; i < labels.length; ++i) {
-            if (i % 4 === 0) {
-                row = document.createElement("tr");
-                controlTable.appendChild(row);
-            }
-            let item: HTMLElement = document.createElement("th");
-            item.innerText = labels[i] + ": ";
-            let numberbox: HTMLInputElement = <HTMLInputElement>document.createElement("input");
-            numberbox.setAttribute("type", "number");
-            numberbox.readOnly = true;
-            numberbox.setAttribute("value", config._controls[i].toString());
-            numberbox.onkeydown = function (event) {
-                if (event.keyCode !== 27) {
-                    numberbox.value = event.keyCode.toString();
-                    config._controls[i] = event.keyCode;
+                let item: HTMLElement = document.createElement("th");
+                item.innerText = labels[i] + ": ";
+                let numberbox: HTMLInputElement = <HTMLInputElement>document.createElement("input");
+                numberbox.setAttribute("type", "number");
+                numberbox.readOnly = true;
+                numberbox.setAttribute("value", Settings._config._controls[i].toString());
+                numberbox.onkeydown = function (event) {
+                    if (event.keyCode !== 27) {
+                        numberbox.value = event.keyCode.toString();
+                        Settings._config._controls[i] = event.keyCode;
+                    }
+                    numberbox.blur();
                 }
-                numberbox.blur();
+                item.appendChild(numberbox);
+                controlsBox.push(numberbox);
+                row.appendChild(item);
             }
-            item.appendChild(numberbox);
-            controlsBox.push(numberbox);
-            row.appendChild(item);
-        }
 
-        settings.appendChild(controlTable);
+            settings.appendChild(controlTable);
 
 
-        let delayText: HTMLElement = document.createElement("label");
-        delayText.innerText = "Delay: ";
+            let delayText: HTMLElement = document.createElement("label");
+            delayText.innerText = "Delay: ";
 
-        settings.appendChild(delayText);
+            settings.appendChild(delayText);
 
-        let delay: HTMLInputElement = <HTMLInputElement>document.createElement("input");
-        delay.setAttribute("type", "number");
-        delay.setAttribute("min", "1");
-        delay.setAttribute("value", config._delay.toString());
+            let delay: HTMLInputElement = <HTMLInputElement>document.createElement("input");
+            delay.setAttribute("type", "number");
+            delay.setAttribute("min", "1");
+            delay.setAttribute("value", Settings._config._delay.toString());
 
-        delay.oninput = function () {
-            if (!isNaN(Number(delay.value))) {
-                config._delay = Number(delay.value);
+            delay.oninput = function () {
+                if (!isNaN(Number(delay.value))) {
+                    Settings._config._delay = Number(delay.value);
+                }
             }
-        }
 
-        settings.appendChild(delay);
+            settings.appendChild(delay);
 
-        let repeatText: HTMLElement = document.createElement("label");
-        repeatText.innerText = "Repeat: ";
+            let repeatText: HTMLElement = document.createElement("label");
+            repeatText.innerText = "Repeat: ";
 
-        settings.appendChild(repeatText);
+            settings.appendChild(repeatText);
 
-        let repeat: HTMLInputElement = <HTMLInputElement>document.createElement("input");
-        repeat.setAttribute("type", "number");
-        repeat.setAttribute("min", "1");
-        repeat.setAttribute("value", config._repeat.toString());
+            let repeat: HTMLInputElement = <HTMLInputElement>document.createElement("input");
+            repeat.setAttribute("type", "number");
+            repeat.setAttribute("min", "1");
+            repeat.setAttribute("value", Settings._config._repeat.toString());
 
 
-        repeat.oninput = function () {
-            if (!isNaN(Number(repeat.value))) {
-                config._repeat = Number(repeat.value);
+            repeat.oninput = function () {
+                if (!isNaN(Number(repeat.value))) {
+                    Settings._config._repeat = Number(repeat.value);
+                }
             }
-        }
 
-        settings.appendChild(repeat);
+            settings.appendChild(repeat);
 
-        let bagText: HTMLElement = document.createElement("label");
-        bagText.innerText = "Bag: ";
+            let bagText: HTMLElement = document.createElement("label");
+            bagText.innerText = "Bag: ";
 
-        settings.appendChild(bagText);
+            settings.appendChild(bagText);
 
-        let bag: HTMLInputElement = <HTMLInputElement>document.createElement("input");
-        bag.setAttribute("type", "number");
-        bag.setAttribute("min", "0");
-        bag.setAttribute("value", config._bagSize.toString());
+            let bag: HTMLInputElement = <HTMLInputElement>document.createElement("input");
+            bag.setAttribute("type", "number");
+            bag.setAttribute("min", "0");
+            bag.setAttribute("value", Settings._config._bagSize.toString());
 
-        bag.oninput = function () {
-            if (!isNaN(Number(repeat.value))) {
-                config._bagSize = Number(bag.value);
+            bag.oninput = function () {
+                if (!isNaN(Number(repeat.value))) {
+                    Settings._config._bagSize = Number(bag.value);
+                }
             }
-        }
 
-        settings.appendChild(bag);
+            settings.appendChild(bag);
 
-        settings.appendChild(document.createElement("hr"));
-
-
-
-        settings.appendChild(pieceEditor.getDiv());
+            settings.appendChild(document.createElement("hr"));
 
 
 
-        let apply: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
-        apply.innerText = "Apply Settings"
-        apply.onclick = function () {
-            config._pieces = pieceEditor.getPieces();
-            RUN.startGame(config, map, staticQueue, mapShape);
-            saveCookie();
-        }
-
-        settings.appendChild(apply);
-
-        document.body.appendChild(settings);
+            settings.appendChild(Settings._pieceEditor.getDiv());
 
 
-        if (document.cookie !== "") {
-            readCookie();
 
-            for (let i = 0; i < controlsBox.length; ++i) {
-                controlsBox[i].setAttribute("value", config._controls[i].toString());
+            let apply: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
+            apply.innerText = "Apply Settings"
+            apply.onclick = function () {
+                Settings._config._pieces = Settings._pieceEditor.getPieces();
+                console.log(Settings._mapShape);
+                Settings.restartGame();
+                Settings.saveCookie();
             }
-            delay.setAttribute("value", config._delay.toString());
-            repeat.setAttribute("value", config._repeat.toString());
-            RUN.afterLoad = () => (RUN.startGame(config, map, staticQueue, mapShape));
+
+            settings.appendChild(apply);
+
+            document.body.appendChild(settings);
+
+            if (map) {
+                Settings.loadMap();
+            }
+
+            if (document.cookie !== "") {
+                Settings.readCookie();
+
+                for (let i = 0; i < controlsBox.length; ++i) {
+                    controlsBox[i].setAttribute("value", Settings._config._controls[i].toString());
+                }
+                delay.setAttribute("value", Settings._config._delay.toString());
+                repeat.setAttribute("value", Settings._config._repeat.toString());
+                RUN.afterLoad = () => (Settings.restartGame());
+            }
+
         }
 
+        private static restartGame() {
+            RUN.startGame(Settings._config, Settings._map, Settings._staticQueue, Settings._mapShape);
+        }
 
-        if (map) {
-            widthSlider.disabled = true;
-            pieceEditor.disable(true);
+        private static readCookie() {
+            let vals = decodeURIComponent(document.cookie).split(";");
+
+            vals = vals.filter(function (el) { return el; });
+            //Check verison
+            try {
+                for (let v of vals) {
+                    if (v != null && v.length > 2) {
+                        switch (v.charAt(0)) {
+                            case 'p':
+                                if (!Settings._map) {
+                                    let p = ASC.Config.pieceFromText(v.substring(2));
+                                    Settings._config._pieces = p;
+                                    Settings._pieceEditor.setPieces(p);
+                                }
+                                break;
+                            case 'b':
+                                if (!Settings._map) {
+                                    Settings._config._bagSize = JSON.parse(v.substring(2));
+                                }
+                                break;
+                            case 'c':
+                                Settings._config._controls = JSON.parse(v.substring(2));
+                                break;
+                            case 'r':
+                                Settings._config._repeat = JSON.parse(v.substring(2));
+                                break;
+                            case 'd':
+                                Settings._config._delay = JSON.parse(v.substring(2));
+                                break;
+                        }
+                    }
+                }
+            }
+            catch (err) {
+                alert("Corrupted cookies: " + err.message);
+            }
+
+        }
+        private static saveCookie() { //If no cookie
+            let c = "";
+            //Cookie format:
+            //Version: ?; pieces; controls; delay; rate; bagsize;
+            c += "ver=0.001;";
+            if (!Settings._map) {
+                c += "p=" + JSON.stringify(Settings._config._pieces) + ";";
+
+            }
+            c += "c=" + JSON.stringify(Settings._config._controls) + ";";
+            c += "r=" + JSON.stringify(Settings._config._repeat) + ";";
+            c += "d=" + JSON.stringify(Settings._config._delay) + ';';
+            if (!Settings._map) {
+                c += "b=" + JSON.stringify(Settings._config._bagSize) + ";";
+            }
+            c += "Expires: 2147483647;"
+            document.cookie = encodeURIComponent(c);
+        }
+
+        private static loadMap(): void {
+            Settings._widthSlider.disabled = true;
+            Settings._pieceEditor.disable(true);
             let m = window.location.search.substring(1);
             let cfg: string[] = m.split("&");
-            config._width = B.toNumber(cfg[0]);
+            Settings._config._width = B.toNumber(cfg[0]);
             let pc: ASC.Piece[] = [];
             let rawp: string[] = cfg[1].match(/.{1,11}/g);
             for (let r of rawp) {
@@ -197,15 +272,16 @@ namespace SETTINGS {
                 }
                 pc.push(new ASC.Piece(r.substring(0, 1), shape, B.toNumber(r.substring(6, 7)), Number("0x" + B.hexFrom64(r.substring(7)).padStart(6, '0'))));
             }
-            config._pieces = pc;
+            Settings._pieceEditor.setPieces(pc);
+            Settings._config._pieces = pc;
             let queue: number[] = [];
             for (let q of cfg[2].split('')) {
                 queue.push(B.toNumber(q));
             }
-            staticQueue = queue;
+            Settings._staticQueue = queue;
             let map: number[] = [];
             let rawmap: string = B.binaryFrom64(cfg[3]);
-            rawmap = rawmap.substring(rawmap.length - config._width * ASC.FIELD_HEIGHT);
+            rawmap = rawmap.substring(rawmap.length - Settings._config._width * ASC.FIELD_HEIGHT);
             let i = 0;
             for (let r of rawmap.split('')) {
                 if (Number(r) == 1) {
@@ -213,66 +289,10 @@ namespace SETTINGS {
                 }
                 i++;
             }
-            mapShape = map;
-            RUN.afterLoad = () => (RUN.startGame(config, true, staticQueue, mapShape));
-
+            Settings._mapShape = map;
+            RUN.afterLoad = () => (Settings.restartGame());
         }
-        function saveCookie() { //If no cookie
-            let c = "";
-            //Cookie format:
-            //Version: ?; pieces; controls; delay; rate; bagsize;
-            c += "ver=0.001;";
-            if (!map) {
-                c += "p=" + JSON.stringify(config._pieces) + ";";
-
-            }
-            c += "c=" + JSON.stringify(config._controls) + ";";
-            c += "r=" + JSON.stringify(config._repeat) + ";";
-            c += "d=" + JSON.stringify(config._delay) + ';';
-            if (!map) {
-                c += "b=" + JSON.stringify(config._bagSize) + ";";
-            }
-            c += "Expires: 2147483647;"
-            document.cookie = encodeURIComponent(c);
-        }
-        function readCookie() {
-            let vals = decodeURIComponent(document.cookie).split(";");
-
-            vals = vals.filter(function (el) { return el; });
-            //Check verison
-            try {
-                for (let v of vals) {
-                    if (v != null && v.length > 2) {
-                        switch (v.charAt(0)) {
-                            case 'p':
-                                if (!map) {
-                                    let p = ASC.Config.pieceFromText(v.substring(2));
-                                    config._pieces = p;
-                                    pieceEditor.setPieces(p);
-                                }
-                                break;
-                            case 'b':
-                                if (!map) {
-                                    config._bagSize = JSON.parse(v.substring(2));
-                                }
-                                break;
-                            case 'c':
-                                config._controls = JSON.parse(v.substring(2));
-                                break;
-                            case 'r':
-                                config._repeat = JSON.parse(v.substring(2));
-                                break;
-                            case 'd':
-                                config._delay = JSON.parse(v.substring(2));
-                                break;
-                        }
-                    }
-                }
-            }
-            catch (err) {
-                alert("Corrupted cookies: " + err.message);
-            }
-        }
-
     }
 }
+
+
