@@ -16,6 +16,8 @@ var ASC;
         Inputs[Inputs["CWCW"] = 5] = "CWCW";
         Inputs[Inputs["HOLD"] = 6] = "HOLD";
         Inputs[Inputs["HD"] = 7] = "HD";
+        Inputs[Inputs["SONIC"] = 8] = "SONIC";
+        Inputs[Inputs["RESTART"] = 9] = "RESTART";
     })(Inputs || (Inputs = {}));
     class Game {
         /**
@@ -24,7 +26,7 @@ var ASC;
          */
         constructor(width = 12, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
-            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32], staticQueue = false, order = null, clearable = [], delay = 100, repeat = 10) {
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], staticQueue = false, order = null, clearable = [], delay = 100, repeat = 10) {
             this._pieces = [];
             this._active = false;
             this._progress = 0;
@@ -350,10 +352,13 @@ var ASC;
                     case this._controls[Inputs.HOLD]:
                         this.hold();
                         break;
+                    case this._controls[Inputs.SONIC]:
+                        this.sonicDrop();
+                        break;
                 }
                 this.update(); //remove this and only update when needed
             }
-            if (keyCode === 115) { //f4
+            if (keyCode == this._controls[Inputs.RESTART]) { //f4
                 this.resetGame();
             }
         }

@@ -6,7 +6,7 @@
     export const FIELD_HEIGHT: number = 25;
     const TIMELIMIT: number = 60;
     enum Inputs {
-        RIGHT, SD, LEFT, CW, CCW, CWCW, HOLD, HD
+        RIGHT, SD, LEFT, CW, CCW, CWCW, HOLD, HD, SONIC, RESTART
     }
     export class Game implements ITriggerObserver {
         private _field: Field;
@@ -34,7 +34,7 @@
             pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
             new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)],
-            controls: number[] = [39, 40, 37, 38, 83, 68, 16, 32],
+            controls: number[] = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115],
             staticQueue: boolean = false, order: number[] = null, clearable: number[] = [],
             delay: number = 100, repeat: number = 10) {
             for (var i = RUN.app.stage.children.length - 1; i >= 0; --i) {
@@ -112,8 +112,8 @@
             }
         }
         private hold(): void {
-            if(this._currentPiece)
-            this._currentPiece.reset();
+            if (this._currentPiece)
+                this._currentPiece.reset();
             if (this._hold === undefined) {
                 this._hold = this._currentPiece;
                 this.next();
@@ -373,10 +373,13 @@
                     case this._controls[Inputs.HOLD]:
                         this.hold();
                         break;
+                    case this._controls[Inputs.SONIC]:
+                        this.sonicDrop();
+                        break;
                 }
                 this.update();//remove this and only update when needed
             }
-            if (keyCode === 115) { //f4
+            if (keyCode == this._controls[Inputs.RESTART]) { //f4
                 this.resetGame();
             }
         }

@@ -1,4 +1,5 @@
-﻿namespace RUN {
+﻿
+namespace RUN {
     export var app: PIXI.Application;
     export var game: ASC.Game;
     export var afterLoad;
@@ -48,7 +49,7 @@
         newGameButton.innerText = "New Game";
         newGameButton.onclick = () => (game.resetGame());
         document.body.appendChild(newGameButton);
-        let lables = ["Left", "Softdrop", "Right", "Clockwise", "180", "Counter Clockwise", "Hard Drop", "Hold"];
+        let lables = ["Left", "Softdrop", "Right", "Clockwise", "180", "Counter Clockwise", "Hard Drop", "Hold", "Instant Drop", "Restart"];
         for (let i = 0; i < lables.length; ++i) {
             let be: HTMLButtonElement = document.createElement("button");
             be.innerText = lables[i];

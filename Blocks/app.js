@@ -44,7 +44,7 @@ var RUN;
         newGameButton.innerText = "New Game";
         newGameButton.onclick = () => (RUN.game.resetGame());
         document.body.appendChild(newGameButton);
-        let lables = ["Left", "Softdrop", "Right", "Clockwise", "180", "Counter Clockwise", "Hard Drop", "Hold"];
+        let lables = ["Left", "Softdrop", "Right", "Clockwise", "180", "Counter Clockwise", "Hard Drop", "Hold", "Instant Drop", "Restart"];
         for (let i = 0; i < lables.length; ++i) {
             let be = document.createElement("button");
             be.innerText = lables[i];
