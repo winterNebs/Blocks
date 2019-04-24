@@ -1,6 +1,6 @@
 ﻿/// <reference path="pieceeditor.ts" />
 namespace SETTINGS {
-
+    const VERSION = 0.002;
     export class Settings {
         private static _staticQueue: number[] = [];
         private static _mapShape: number[] = [];
@@ -203,6 +203,12 @@ namespace SETTINGS {
                 for (let v of vals) {
                     if (v != null && v.length > 2) {
                         switch (v.charAt(0)) {
+                            case 'v':
+                                if (parseFloat(v.substring(2)) < VERSION) {
+                                    if (confirm("Outdated Config version: " + v.substring(2) + " Latest: " + VERSION + "\n Press OK to reset to new config, cancel to keep old config (may have unexpected results)")) {
+                                        this.saveCookie();
+                                    }
+                                }
                             case 'p':
                                 if (!Settings._map) {
                                     let p = ASC.Config.pieceFromText(v.substring(2));
@@ -237,7 +243,7 @@ namespace SETTINGS {
             let c = "";
             //Cookie format:
             //Version: ?; pieces; controls; delay; rate; bagsize;
-            c += "ver=0.001;";
+            c += "ver=" + VERSION.toString()+";";
             if (!Settings._map) {
                 c += "p=" + JSON.stringify(Settings._config._pieces) + ";";
 

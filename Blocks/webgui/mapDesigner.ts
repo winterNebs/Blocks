@@ -137,7 +137,7 @@ namespace M {
             //output += B.pad(B.binaryTo64(map), '0', Math.ceil((this._width * ASC.FIELD_HEIGHT) / 6));
             output += B.binaryTo64(map);
             output += "&"
-            if (confirm("Go to map? (Yes to go, No outputs url)")) {
+            if (confirm("Go to map?")) {
                 window.open('/map.html?' + output);
             }
         }
