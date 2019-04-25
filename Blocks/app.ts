@@ -43,10 +43,6 @@ namespace RUN {
         }
         app.view.focus();
         ASC.InputManager.initialize();
-        let discord = document.createElement("a");
-        discord.setAttribute("href", "https://discord.gg/GjScWEh");
-        discord.innerText = "discord";
-        document.body.appendChild(discord);
         let newGameButton: HTMLButtonElement = document.createElement("button");
         newGameButton.innerText = "New Game";
         newGameButton.onclick = () => (game.resetGame());

@@ -36,10 +36,6 @@ var RUN;
         }
         RUN.app.view.focus();
         ASC.InputManager.initialize();
-        let discord = document.createElement("a");
-        discord.setAttribute("href", "https://discord.gg/GjScWEh");
-        discord.innerText = "discord";
-        document.body.appendChild(discord);
         let newGameButton = document.createElement("button");
         newGameButton.innerText = "New Game";
         newGameButton.onclick = () => (RUN.game.resetGame());
@@ -1691,6 +1687,7 @@ var NAV;
   <a class="active" href="index.html">ASCENSION</a>
   <a href="game.html">Game</a>
   <a href="designer.html">Map Editor</a>
+    <a href="https://discord.gg/GjScWEh" style="float: right;">Discord</a>
     </div>`);
     }
     NAV.init = init;

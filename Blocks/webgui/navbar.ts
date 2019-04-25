@@ -36,6 +36,7 @@
   <a class="active" href="index.html">ASCENSION</a>
   <a href="game.html">Game</a>
   <a href="designer.html">Map Editor</a>
+    <a href="https://discord.gg/GjScWEh" style="float: right;">Discord</a>
     </div>`);
     }
 }
