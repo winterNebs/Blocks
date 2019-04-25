@@ -10,10 +10,6 @@ namespace SETTINGS {
         private static _map: boolean = false;
 
         public static init(map: boolean = false) {
-            //Add rebindable restart
-            //Add sonic drop
-            //Fix last piece bug
-            // ?? 
             Settings._map = map;
 
             let pieces: ASC.Piece[] = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
