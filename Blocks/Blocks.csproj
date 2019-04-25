@@ -122,6 +122,8 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
+    <TypeScriptCompile Include="game\Agame.ts" />
+    <TypeScriptCompile Include="game\mapgame.ts" />
     <TypeScriptCompile Include="webgui\bettercb.ts" />
     <TypeScriptCompile Include="webgui\dragutil.ts" />
     <TypeScriptCompile Include="webgui\navbar.ts" />
@@ -134,10 +136,9 @@
     <TypeScriptCompile Include="game\field.ts" />
     <TypeScriptCompile Include="game\game.ts" />
     <TypeScriptCompile Include="game\ITriggerObserver.ts" />
-    <TypeScriptCompile Include="game\logic\map.ts" />
     <TypeScriptCompile Include="game\logic\piece.ts" />
     <TypeScriptCompile Include="game\logic\prng.ts" />
-    <TypeScriptCompile Include="game\logic\Iqueue.ts" />
+    <TypeScriptCompile Include="game\logic\Aqueue.ts" />
     <TypeScriptCompile Include="game\logic\queue.ts" />
     <TypeScriptCompile Include="game\logic\staticQueue.ts" />
     <TypeScriptCompile Include="game\renderer\renderer.ts" />

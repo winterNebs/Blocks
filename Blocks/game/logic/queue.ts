@@ -1,6 +1,6 @@
-﻿/// <reference path="iqueue.ts" />
+﻿/// <reference path="Aqueue.ts" />
 namespace ASC {
-    export class Queue extends IQueue {
+    export class Queue extends AQueue {
         private _bag: Piece[];      //Bag for randomization
         private _bagSize: number;   //Size of memory (1 for memoryless)
         private _queue: Piece[] = [];

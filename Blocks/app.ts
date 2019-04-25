@@ -1,12 +1,12 @@
 ﻿
 namespace RUN {
     export var app: PIXI.Application;
-    export var game: ASC.Game;
+    export var game: ASC.AGame;
     export var afterLoad;
     export function init() {
         app = new PIXI.Application(800, 600, { backgroundColor: 0x333333 });
         app.view.setAttribute('tabindex', '0');
-        
+
         document.body.onclick = function () {
             ASC.InputManager.setFocus(document.activeElement == app.view);
         }
@@ -19,18 +19,24 @@ namespace RUN {
 
     }
     export function startGame(config?: ASC.Config, static: boolean = false, queue: number[] = [], map: number[] = []) {
-        try {
+       // try {
             if (config !== undefined) {
-                game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, static, queue, map, config._delay, config._repeat);
+                if (static) {
+                    game = new ASC.MapGame(config._width, config._bagSize, config._pieces, config._controls, queue, map, config._delay, config._repeat);
+                }
+                else {
+                    game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
+                }
             }
             else {
                 game = new ASC.Game();
             }
-        }
-        catch (err) {
-            alert("Error in config: " + err);
-            game = new ASC.Game();
-        }
+        //}
+       // catch (err) {
+       //     alert("Error in config: " + err);
+        //    game = new ASC.Game();
+       // }
+        game.resetGame();
         app.view.focus();
     }
 
@@ -51,7 +57,7 @@ namespace RUN {
         for (let i = 0; i < lables.length; ++i) {
             let be: HTMLButtonElement = document.createElement("button");
             be.innerText = lables[i];
-            be.onclick = function (ev) { game.touchControl(i); ev.preventDefault()};
+            be.onclick = function (ev) { game.touchControl(i); ev.preventDefault() };
             be.style.fontSize = "2em";
             document.body.appendChild(be);
         }

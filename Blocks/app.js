@@ -1,7 +1,7 @@
 var RUN;
 (function (RUN) {
     function init() {
-        RUN.app = new PIXI.Application(800, 600, { backgroundColor: 0x423c3e });
+        RUN.app = new PIXI.Application(800, 600, { backgroundColor: 0x333333 });
         RUN.app.view.setAttribute('tabindex', '0');
         document.body.onclick = function () {
             ASC.InputManager.setFocus(document.activeElement == RUN.app.view);
@@ -13,18 +13,24 @@ var RUN;
     }
     RUN.init = init;
     function startGame(config, static = false, queue = [], map = []) {
-        try {
-            if (config !== undefined) {
-                RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, static, queue, map, config._delay, config._repeat);
+        // try {
+        if (config !== undefined) {
+            if (static) {
+                RUN.game = new ASC.MapGame(config._width, config._bagSize, config._pieces, config._controls, queue, map, config._delay, config._repeat);
             }
             else {
-                RUN.game = new ASC.Game();
+                RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
             }
         }
-        catch (err) {
-            alert("Error in config: " + err);
+        else {
             RUN.game = new ASC.Game();
         }
+        //}
+        // catch (err) {
+        //     alert("Error in config: " + err);
+        //    game = new ASC.Game();
+        // }
+        RUN.game.resetGame();
         RUN.app.view.focus();
     }
     RUN.startGame = startGame;
@@ -37,10 +43,6 @@ var RUN;
         }
         RUN.app.view.focus();
         ASC.InputManager.initialize();
-        let discord = document.createElement("a");
-        discord.setAttribute("href", "https://discord.gg/GjScWEh");
-        discord.innerText = "discord";
-        document.body.appendChild(discord);
         let newGameButton = document.createElement("button");
         newGameButton.innerText = "New Game";
         newGameButton.onclick = () => (RUN.game.resetGame());

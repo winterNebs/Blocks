@@ -12,18 +12,18 @@ var RUN;
     }
     RUN.init = init;
     function startGame(config, static = false, queue = [], map = []) {
-        try {
-            if (config !== undefined) {
-                RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, static, queue, map, config._delay, config._repeat);
+        if (config !== undefined) {
+            if (static) {
+                RUN.game = new ASC.MapGame(config._width, config._bagSize, config._pieces, config._controls, queue, map, config._delay, config._repeat);
             }
             else {
-                RUN.game = new ASC.Game();
+                RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
             }
         }
-        catch (err) {
-            alert("Error in config: " + err);
+        else {
             RUN.game = new ASC.Game();
         }
+        RUN.game.resetGame();
         RUN.app.view.focus();
     }
     RUN.startGame = startGame;
@@ -50,6 +50,322 @@ var RUN;
         }
     }
 })(RUN || (RUN = {}));
+var ASC;
+(function (ASC) {
+    ASC.MAX_FIELD_WIDTH = 20;
+    ASC.MIN_FIELD_WIDTH = 5;
+    ASC.FIELD_HEIGHT = 25;
+    let Inputs;
+    (function (Inputs) {
+        Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
+        Inputs[Inputs["SD"] = 1] = "SD";
+        Inputs[Inputs["LEFT"] = 2] = "LEFT";
+        Inputs[Inputs["CW"] = 3] = "CW";
+        Inputs[Inputs["CCW"] = 4] = "CCW";
+        Inputs[Inputs["CWCW"] = 5] = "CWCW";
+        Inputs[Inputs["HOLD"] = 6] = "HOLD";
+        Inputs[Inputs["HD"] = 7] = "HD";
+        Inputs[Inputs["SONIC"] = 8] = "SONIC";
+        Inputs[Inputs["RESTART"] = 9] = "RESTART";
+    })(Inputs = ASC.Inputs || (ASC.Inputs = {}));
+    class AGame {
+        constructor(width = 12, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay = 100, repeat = 10) {
+            this._pieces = [];
+            this._active = false;
+            for (var i = RUN.app.stage.children.length - 1; i >= 0; --i) {
+                RUN.app.stage.removeChild(RUN.app.stage.children[i]);
+            }
+            ;
+            if (delay < 1) {
+                throw new Error("Invalid Delay");
+            }
+            if (repeat < 1) {
+                throw new Error("Invalid Repeat");
+            }
+            ASC.InputManager.RegisterObserver(this);
+            ASC.InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
+            this._controls = controls;
+            if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
+                throw new Error("Invalid width: " + width.toString());
+            }
+            this._width = width;
+            this._bagSize = bagSize;
+            this._renderer = new ASC.Renderer(this._width, "Attack");
+            for (let p of pieces) {
+                p.validateOffset(this._width);
+            }
+            this._pieces = pieces;
+            this._pieces.forEach((i) => (i.initRotations()));
+            RUN.app.stage.addChild(this._renderer);
+        }
+        resetGame() {
+            this._field = new ASC.Field(this._width);
+            this._hold = undefined;
+            this.next();
+            this._active = true;
+            this._renderer.updateTime("new game haha :)");
+            this.update();
+        }
+        gameOver() {
+            this._active = false;
+        }
+        next() {
+            if (this._queue.hasNext()) {
+                this._currentPiece = this._queue.getNext();
+                if (!this.checkShift(0, 0)) {
+                    this.gameOver();
+                    this._renderer.updateTime("Game end");
+                }
+            }
+            else {
+                this.gameOver();
+                this._renderer.updateTime("Game end");
+            }
+        }
+        hold() {
+            if (this._currentPiece)
+                this._currentPiece.reset();
+            if (this._hold === undefined) {
+                this._hold = this._currentPiece;
+                this.next();
+                return;
+            }
+            let temp = this._hold;
+            this._hold = this._currentPiece;
+            this._currentPiece = temp;
+        }
+        hardDrop() {
+            this.sonicDrop();
+            this.lock();
+        }
+        sonicDrop() {
+            let i = 0;
+            while (this.checkShift(0, i)) {
+                ++i;
+            }
+            this._currentPiece.move(0, i - 1);
+        }
+        move(dir) {
+            switch (dir) {
+                case ASC.Directions.LEFT:
+                    if (this.checkShift(-1, 0)) {
+                        this._currentPiece.move(-1, 0);
+                    }
+                    break;
+                case ASC.Directions.RIGHT:
+                    if (this.checkShift(1, 0)) {
+                        this._currentPiece.move(1, 0);
+                    }
+                    break;
+                case ASC.Directions.DOWN:
+                    if (this.checkShift(0, 1)) {
+                        this._currentPiece.move(0, 1);
+                    }
+                    break;
+            }
+        }
+        checkShift(x, y) {
+            let coords = this._currentPiece.getCoords(this._width);
+            let yvals = this._currentPiece.getYVals();
+            for (let i = 0; i < coords.length; ++i) {
+                let block = this._field.getAt(coords[i] + x + y * this._width);
+                if (block == null ||
+                    yvals[i] != ~~((coords[i] + x) / this._width) ||
+                    block.solid) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        checkPC() {
+            for (let i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
+                if (this._field.getAt(i).clearable && this._field.getAt(i).solid) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        checkImmobile() {
+            return !(this.checkShift(0, 1) ||
+                this.checkShift(0, -1) ||
+                this.checkShift(1, 0) ||
+                this.checkShift(-1, 0));
+        }
+        rotate(dir) {
+            this._currentPiece.rotate(dir);
+            if (this.checkShift(0, 0)) {
+                return;
+            }
+            if (dir !== ASC.Rotations.CWCW) {
+                let sign = -(dir - 2);
+                console.log("Trying to kick:");
+                for (let x = 0; x < 8; ++x) {
+                    let xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
+                    for (let i = 0; i < (x + 1) * 2; ++i) {
+                        let ykicks = (Math.pow(-1, i) * ~~(i / 2) + ~~(i / 4));
+                        console.log(xkicks, ykicks);
+                        if (this.checkShift(xkicks, ykicks)) {
+                            this._currentPiece.move(xkicks, ykicks);
+                            return;
+                        }
+                    }
+                }
+            }
+            console.log("Failed Kick.");
+            this._currentPiece.rotate(4 - dir);
+        }
+        lock() {
+            this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(this._currentPiece.color, true, true));
+            this.next();
+        }
+        update() {
+            this.updateField();
+            this.updateQueue();
+            this.updateHold();
+        }
+        updateHold() {
+            if (this._hold === undefined) {
+                let temp = [];
+                for (let i = 0; i < 25; ++i) {
+                    temp.push(0x000000);
+                }
+                this._renderer.updateHold(temp);
+                return;
+            }
+            this._renderer.updateHold(this._hold.getRenderShape());
+        }
+        updateField() {
+            let temp = this._field.getColors();
+            if (this._currentPiece != undefined) {
+                let copyCurrent = this._currentPiece.getCopy();
+                this.sonicDrop();
+                for (let point of this._currentPiece.getCoords(this._width)) {
+                    temp[point] = (this._currentPiece.color & 0xfefefe) >> 1;
+                    ;
+                }
+                this._currentPiece = copyCurrent;
+                for (let point of this._currentPiece.getCoords(this._width)) {
+                    temp[point] = this._currentPiece.color;
+                }
+            }
+            this._renderer.updateField(temp);
+        }
+        updateQueue() {
+            let queue = this._queue.getQueue();
+            while (queue.length < ASC.NUM_PREVIEWS) {
+                queue.push(undefined);
+            }
+            let q = [];
+            for (let p of queue) {
+                if (p == undefined) {
+                    q.push(new Array(25).fill(0));
+                }
+                else {
+                    q.push(p.getRenderShape());
+                }
+            }
+            this._renderer.updateQueue(q);
+        }
+        clearLines(yvals) {
+            let lines = 0;
+            yvals.sort(function (a, b) { return a - b; });
+            for (let y of yvals) {
+                for (let i = 0; i < this._width; i++) {
+                    let block = this._field.getAt(y * this._width + i);
+                    if (!block.solid || !block.clearable) {
+                        break;
+                    }
+                    if (i == this._width - 1) {
+                        ++lines;
+                        this._field.clearLineAt(y);
+                    }
+                }
+            }
+            return lines;
+        }
+        touchControl(code) {
+            if (this._active) {
+                switch (code) {
+                    case 0:
+                        ASC.InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
+                        this.move(ASC.Directions.LEFT);
+                        break;
+                    case 1:
+                        this.move(ASC.Directions.DOWN);
+                        break;
+                    case 2:
+                        this.move(ASC.Directions.RIGHT);
+                        ASC.InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
+                        break;
+                    case 3:
+                        this.rotate(ASC.Rotations.CW);
+                        break;
+                    case 4:
+                        this.rotate(ASC.Rotations.CWCW);
+                        break;
+                    case 5:
+                        this.rotate(ASC.Rotations.CCW);
+                        break;
+                    case 6:
+                        this.hardDrop();
+                        break;
+                    case 7:
+                        this.hold();
+                        break;
+                    case 8:
+                        this.sonicDrop();
+                        break;
+                }
+                this.update();
+            }
+            if (code == 9) {
+                this.resetGame();
+            }
+        }
+        Triggered(keyCode) {
+            if (this._active) {
+                switch (keyCode) {
+                    case this._controls[Inputs.CW]:
+                        this.rotate(ASC.Rotations.CW);
+                        break;
+                    case this._controls[Inputs.RIGHT]:
+                        this.move(ASC.Directions.RIGHT);
+                        ASC.InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
+                        break;
+                    case this._controls[Inputs.SD]:
+                        this.move(ASC.Directions.DOWN);
+                        break;
+                    case this._controls[Inputs.LEFT]:
+                        ASC.InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
+                        this.move(ASC.Directions.LEFT);
+                        break;
+                    case this._controls[Inputs.CCW]:
+                        this.rotate(ASC.Rotations.CCW);
+                        break;
+                    case this._controls[Inputs.CWCW]:
+                        this.rotate(ASC.Rotations.CWCW);
+                        break;
+                    case this._controls[Inputs.HD]:
+                        this.hardDrop();
+                        break;
+                    case this._controls[Inputs.HOLD]:
+                        this.hold();
+                        break;
+                    case this._controls[Inputs.SONIC]:
+                        this.sonicDrop();
+                        break;
+                }
+                this.update();
+            }
+            if (keyCode == this._controls[Inputs.RESTART]) {
+                this.resetGame();
+            }
+        }
+    }
+    ASC.AGame = AGame;
+})(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
     class Config {
@@ -144,193 +460,32 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    ASC.MAX_FIELD_WIDTH = 20;
-    ASC.MIN_FIELD_WIDTH = 5;
-    ASC.FIELD_HEIGHT = 25;
     const TIMELIMIT = 60;
-    let Inputs;
-    (function (Inputs) {
-        Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
-        Inputs[Inputs["SD"] = 1] = "SD";
-        Inputs[Inputs["LEFT"] = 2] = "LEFT";
-        Inputs[Inputs["CW"] = 3] = "CW";
-        Inputs[Inputs["CCW"] = 4] = "CCW";
-        Inputs[Inputs["CWCW"] = 5] = "CWCW";
-        Inputs[Inputs["HOLD"] = 6] = "HOLD";
-        Inputs[Inputs["HD"] = 7] = "HD";
-        Inputs[Inputs["SONIC"] = 8] = "SONIC";
-        Inputs[Inputs["RESTART"] = 9] = "RESTART";
-    })(Inputs || (Inputs = {}));
-    class Game {
+    class Game extends ASC.AGame {
         constructor(width = 12, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
-            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], staticQueue = false, order = null, clearable = [], delay = 100, repeat = 10) {
-            this._pieces = [];
-            this._active = false;
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay = 100, repeat = 10) {
+            super(width, bagSize, pieces, controls, delay, repeat);
             this._progress = 0;
-            for (var i = RUN.app.stage.children.length - 1; i >= 0; --i) {
-                RUN.app.stage.removeChild(RUN.app.stage.children[i]);
-            }
-            ;
-            if (delay < 1) {
-                throw new Error("Invalid Delay");
-            }
-            if (repeat < 1) {
-                throw new Error("Invalid Repeat");
-            }
-            ASC.InputManager.RegisterObserver(this);
-            ASC.InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
-            this._controls = controls;
-            if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
-                throw new Error("Invalid width: " + width.toString());
-            }
-            this._width = width;
-            this._bagSize = bagSize;
-            this._order = order;
-            this._static = staticQueue;
-            this._map = clearable;
-            this._renderer = new ASC.Renderer(this._width, "Attack");
-            for (let p of pieces) {
-                p.validateOffset(this._width);
-            }
-            this._pieces = pieces;
-            this._pieces.forEach((i) => (i.initRotations()));
             this._attack = new ASC.AttackTable(this._width);
-            this.resetGame();
-            RUN.app.stage.addChild(this._renderer);
         }
         resetGame() {
-            this._field = new ASC.Field(this._width);
-            this._hold = undefined;
-            if (this._static) {
-                this._field.setBlocks(this._map, new ASC.Block(0xDDDDDD, true, true));
-                this._queue = new ASC.StaticQueue(this._pieces, this._order);
-            }
-            else {
-                this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
-            }
-            this.next();
-            this._active = true;
             this._progress = 0;
-            this._renderer.updateTime("new game haha :)");
-            this.update();
+            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
+            super.resetGame();
         }
         tick() {
             this.updateTime();
         }
         gameOver() {
-            this._active = false;
+            super.gameOver();
             this.updateTime();
-        }
-        next() {
-            if (this._queue.hasNext()) {
-                this._currentPiece = this._queue.getNext();
-                if (!this.checkShift(0, 0)) {
-                    this.gameOver();
-                    this._renderer.updateTime("Game end");
-                }
-            }
-            else {
-                this.gameOver();
-                this._renderer.updateTime("Game end");
-            }
-        }
-        hold() {
-            if (this._currentPiece)
-                this._currentPiece.reset();
-            if (this._hold === undefined) {
-                this._hold = this._currentPiece;
-                this.next();
-                return;
-            }
-            let temp = this._hold;
-            this._hold = this._currentPiece;
-            this._currentPiece = temp;
-        }
-        hardDrop() {
-            this.sonicDrop();
-            this.lock();
-        }
-        sonicDrop() {
-            let i = 0;
-            while (this.checkShift(0, i)) {
-                ++i;
-            }
-            this._currentPiece.move(0, i - 1);
-        }
-        move(dir) {
-            switch (dir) {
-                case ASC.Directions.LEFT:
-                    if (this.checkShift(-1, 0)) {
-                        this._currentPiece.move(-1, 0);
-                    }
-                    break;
-                case ASC.Directions.RIGHT:
-                    if (this.checkShift(1, 0)) {
-                        this._currentPiece.move(1, 0);
-                    }
-                    break;
-                case ASC.Directions.DOWN:
-                    if (this.checkShift(0, 1)) {
-                        this._currentPiece.move(0, 1);
-                    }
-                    break;
-            }
-        }
-        checkShift(x, y) {
-            let coords = this._currentPiece.getCoords(this._width);
-            let yvals = this._currentPiece.getYVals();
-            for (let i = 0; i < coords.length; ++i) {
-                let block = this._field.getAt(coords[i] + x + y * this._width);
-                if (block == null ||
-                    yvals[i] != ~~((coords[i] + x) / this._width) ||
-                    block.solid) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        rotate(dir) {
-            this._currentPiece.rotate(dir);
-            if (this.checkShift(0, 0)) {
-                return;
-            }
-            if (dir !== ASC.Rotations.CWCW) {
-                let sign = -(dir - 2);
-                console.log("Trying to kick:");
-                for (let x = 0; x < 8; ++x) {
-                    let xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
-                    for (let i = 0; i < (x + 1) * 2; ++i) {
-                        let ykicks = (Math.pow(-1, i) * ~~(i / 2) + ~~(i / 4));
-                        console.log(xkicks, ykicks);
-                        if (this.checkShift(xkicks, ykicks)) {
-                            this._currentPiece.move(xkicks, ykicks);
-                            return;
-                        }
-                    }
-                }
-            }
-            console.log("Failed Kick.");
-            this._currentPiece.rotate(4 - dir);
-        }
-        checkPC() {
-            for (let i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
-                if (this._field.getAt(i).clearable && this._field.getAt(i).solid) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        checkImmobile() {
-            return !(this.checkShift(0, 1) ||
-                this.checkShift(0, -1) ||
-                this.checkShift(1, 0) ||
-                this.checkShift(-1, 0));
         }
         lock() {
             let spin = this.checkImmobile();
-            this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(this._currentPiece.color, true, true));
-            let cleared = this.clearLines(this._currentPiece.getYVals());
+            let yvals = this._currentPiece.getYVals();
+            super.lock();
+            let cleared = this.clearLines(yvals);
             if (cleared > 0) {
                 if (spin) {
                     this._progress += this._attack.spin(cleared);
@@ -340,157 +495,18 @@ var ASC;
                 }
                 if (this.checkPC()) {
                     this._progress += this._attack.perfectClear(cleared);
-                    if (this._static) {
-                        this.gameOver();
-                        this._renderer.updateTime("You Win");
-                    }
                 }
             }
-            this.next();
         }
         update() {
-            this.updateField();
-            this.updateQueue();
-            this.updateHold();
+            super.update();
             this.updateProgress();
-        }
-        updateHold() {
-            if (this._hold === undefined) {
-                let temp = [];
-                for (let i = 0; i < 25; ++i) {
-                    temp.push(0x000000);
-                }
-                this._renderer.updateHold(temp);
-                return;
-            }
-            this._renderer.updateHold(this._hold.getRenderShape());
-        }
-        updateField() {
-            let temp = this._field.getColors();
-            if (this._currentPiece != undefined) {
-                let copyCurrent = this._currentPiece.getCopy();
-                this.sonicDrop();
-                for (let point of this._currentPiece.getCoords(this._width)) {
-                    temp[point] = (this._currentPiece.color & 0xfefefe) >> 1;
-                    ;
-                }
-                this._currentPiece = copyCurrent;
-                for (let point of this._currentPiece.getCoords(this._width)) {
-                    temp[point] = this._currentPiece.color;
-                }
-            }
-            this._renderer.updateField(temp);
-        }
-        updateQueue() {
-            let queue = this._queue.getQueue();
-            while (queue.length < ASC.NUM_PREVIEWS) {
-                queue.push(undefined);
-            }
-            let q = [];
-            for (let p of queue) {
-                if (p == undefined) {
-                    q.push(new Array(25).fill(0));
-                }
-                else {
-                    q.push(p.getRenderShape());
-                }
-            }
-            this._renderer.updateQueue(q);
         }
         updateProgress() {
             this._renderer.updateProgress(this._progress.toString());
         }
         updateTime() {
             this._renderer.updateTime("Timer off for now :)");
-        }
-        clearLines(yvals) {
-            let lines = 0;
-            yvals.sort(function (a, b) { return a - b; });
-            for (let y of yvals) {
-                for (let i = 0; i < this._width; i++) {
-                    let block = this._field.getAt(y * this._width + i);
-                    if (!block.solid || !block.clearable) {
-                        break;
-                    }
-                    if (i == this._width - 1) {
-                        ++lines;
-                        this._field.clearLineAt(y);
-                    }
-                }
-            }
-            return lines;
-        }
-        touchControl(code) {
-            if (this._active) {
-                switch (code) {
-                    case 0:
-                        ASC.InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
-                        this.move(ASC.Directions.LEFT);
-                        break;
-                    case 1:
-                        this.move(ASC.Directions.DOWN);
-                        break;
-                    case 2:
-                        this.move(ASC.Directions.RIGHT);
-                        ASC.InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
-                        break;
-                    case 3:
-                        this.rotate(ASC.Rotations.CW);
-                        break;
-                    case 4:
-                        this.rotate(ASC.Rotations.CWCW);
-                        break;
-                    case 5:
-                        this.rotate(ASC.Rotations.CCW);
-                        break;
-                    case 6:
-                        this.hardDrop();
-                        break;
-                    case 7:
-                        this.hold();
-                        break;
-                }
-                this.update();
-            }
-        }
-        Triggered(keyCode) {
-            if (this._active) {
-                switch (keyCode) {
-                    case this._controls[Inputs.CW]:
-                        this.rotate(ASC.Rotations.CW);
-                        break;
-                    case this._controls[Inputs.RIGHT]:
-                        this.move(ASC.Directions.RIGHT);
-                        ASC.InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
-                        break;
-                    case this._controls[Inputs.SD]:
-                        this.move(ASC.Directions.DOWN);
-                        break;
-                    case this._controls[Inputs.LEFT]:
-                        ASC.InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
-                        this.move(ASC.Directions.LEFT);
-                        break;
-                    case this._controls[Inputs.CCW]:
-                        this.rotate(ASC.Rotations.CCW);
-                        break;
-                    case this._controls[Inputs.CWCW]:
-                        this.rotate(ASC.Rotations.CWCW);
-                        break;
-                    case this._controls[Inputs.HD]:
-                        this.hardDrop();
-                        break;
-                    case this._controls[Inputs.HOLD]:
-                        this.hold();
-                        break;
-                    case this._controls[Inputs.SONIC]:
-                        this.sonicDrop();
-                        break;
-                }
-                this.update();
-            }
-            if (keyCode == this._controls[Inputs.RESTART]) {
-                this.resetGame();
-            }
         }
     }
     ASC.Game = Game;
@@ -626,6 +642,13 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
+    ASC.NUM_PREVIEWS = 6;
+    class AQueue {
+    }
+    ASC.AQueue = AQueue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
     class Block {
         constructor(color = 0x000000, solid = false, clearable = false) {
             this._color = color;
@@ -643,13 +666,6 @@ var ASC;
         }
     }
     ASC.Block = Block;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    ASC.NUM_PREVIEWS = 6;
-    class IQueue {
-    }
-    ASC.IQueue = IQueue;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -803,7 +819,7 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    class Queue extends ASC.IQueue {
+    class Queue extends ASC.AQueue {
         constructor(seed, pieces, size = pieces.length) {
             super();
             this._queue = [];
@@ -840,7 +856,7 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    class StaticQueue extends ASC.IQueue {
+    class StaticQueue extends ASC.AQueue {
         constructor(pieces, order) {
             super();
             this._queue = [];
@@ -861,6 +877,65 @@ var ASC;
         }
     }
     ASC.StaticQueue = StaticQueue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    const TIMELIMIT = 60;
+    class MapGame extends ASC.AGame {
+        constructor(width = 12, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], order = [], clearable = [], delay = 100, repeat = 10) {
+            super(width, bagSize, pieces, controls, delay, repeat);
+            this._progress = 0;
+            this._map = clearable;
+            this._order = order;
+            this._attack = new ASC.AttackTable(this._width);
+        }
+        resetGame() {
+            this._queue = new ASC.StaticQueue(this._pieces, this._order);
+            this._progress = 0;
+            super.resetGame();
+            this._field.setBlocks(this._map, new ASC.Block(0xDDDDDD, true, true));
+            this.update();
+        }
+        tick() {
+            this.updateTime();
+        }
+        gameOver() {
+            super.gameOver();
+            this.updateTime();
+        }
+        lock() {
+            let spin = this.checkImmobile();
+            let yvals = this._currentPiece.getYVals();
+            super.lock();
+            let cleared = this.clearLines(yvals);
+            if (cleared > 0) {
+                if (spin) {
+                    this._progress += this._attack.spin(cleared);
+                }
+                else {
+                    this._progress += this._attack.clear(cleared);
+                }
+                if (this.checkPC()) {
+                    this._progress += this._attack.perfectClear(cleared);
+                    this.gameOver();
+                    this._renderer.updateTime("You Win");
+                }
+            }
+        }
+        update() {
+            super.update();
+            this.updateProgress();
+        }
+        updateProgress() {
+            this._renderer.updateProgress(this._progress.toString());
+        }
+        updateTime() {
+            this._renderer.updateTime("Timer off for now :)");
+        }
+    }
+    ASC.MapGame = MapGame;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -1012,6 +1087,62 @@ var ASC;
     }
     ASC.Timer = Timer;
 })(ASC || (ASC = {}));
+var C;
+(function (C) {
+    class Checkbox {
+        constructor(size = 16) {
+            this._checked = false;
+            this._disabled = false;
+            this._td = document.createElement("td");
+            this._td.height = size.toString();
+            this._td.width = size.toString();
+            this._td.onmousemove = this.move.bind(this);
+            this._td.ondragover = (ev) => (ev.preventDefault());
+            this._td.onmousedown = (ev) => { this.click(); ev.preventDefault(); };
+            this._td.textContent = "";
+            this._td.draggable = false;
+            this.update();
+        }
+        getTD() {
+            return this._td;
+        }
+        update() {
+            this._td.style.backgroundColor = this._disabled ? "#000000" : this._checked ? "#DDDDDD" : "#333333";
+        }
+        click() {
+            console.log("move");
+            if (!this._disabled) {
+                Checkbox._lastState = !this._checked;
+                this._checked = Checkbox._lastState;
+                this.update();
+            }
+        }
+        move(ev) {
+            console.log("move");
+            var style = getComputedStyle(this._td);
+            if (!this._disabled && D.Drag.mouseDown) {
+                this._checked = Checkbox._lastState;
+                this.update();
+            }
+        }
+        get checked() {
+            return this._checked;
+        }
+        set checked(value) {
+            this._checked = value;
+            this.update();
+        }
+        get disabled() {
+            return this._disabled;
+        }
+        set disabled(value) {
+            this._disabled = value;
+            this.update();
+        }
+    }
+    Checkbox._lastState = false;
+    C.Checkbox = Checkbox;
+})(C || (C = {}));
 var D;
 (function (D) {
     class Drag {
@@ -1342,6 +1473,48 @@ var M;
     }
     M.init = init;
 })(M || (M = {}));
+var NAV;
+(function (NAV) {
+    function init() {
+        document.head.insertAdjacentHTML("afterend", `
+<style>
+.topnav {
+  background-color: #333;
+  overflow: hidden;
+  font-size: 1.2em;
+}
+
+/* Style the links inside the navigation bar */
+.topnav a {
+  float: left;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 0.8em 1em;
+  text-decoration: none;
+}
+
+/* Change the color of links on hover */
+.topnav a:hover {
+  background-color: #ddd;
+  color: #777;
+}
+
+/* Add a color to the active/current link */
+.topnav a.active {
+  background-color: #555;
+  color:  #fcbf75;
+  font-weight: bold;
+}</style>`);
+        document.body.insertAdjacentHTML("beforebegin", `
+<div class="topnav">
+  <a class="active" href="index.html">ASCENSION</a>
+  <a href="game.html">Game</a>
+  <a href="designer.html">Map Editor</a>
+    <a href="https://discord.gg/GjScWEh" style="float: right;">Discord</a>
+    </div>`);
+    }
+    NAV.init = init;
+})(NAV || (NAV = {}));
 var B;
 (function (B) {
     const _Rixits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
@@ -1650,48 +1823,6 @@ var SETTINGS;
     Settings._map = false;
     SETTINGS.Settings = Settings;
 })(SETTINGS || (SETTINGS = {}));
-var NAV;
-(function (NAV) {
-    function init() {
-        document.head.insertAdjacentHTML("afterend", `
-<style>
-.topnav {
-  background-color: #333;
-  overflow: hidden;
-  font-size: 1.2em;
-}
-
-/* Style the links inside the navigation bar */
-.topnav a {
-  float: left;
-  color: #f2f2f2;
-  text-align: center;
-  padding: 0.8em 1em;
-  text-decoration: none;
-}
-
-/* Change the color of links on hover */
-.topnav a:hover {
-  background-color: #ddd;
-  color: #777;
-}
-
-/* Add a color to the active/current link */
-.topnav a.active {
-  background-color: #555;
-  color:  #fcbf75;
-  font-weight: bold;
-}</style>`);
-        document.body.insertAdjacentHTML("beforebegin", `
-<div class="topnav">
-  <a class="active" href="index.html">ASCENSION</a>
-  <a href="game.html">Game</a>
-  <a href="designer.html">Map Editor</a>
-    <a href="https://discord.gg/GjScWEh" style="float: right;">Discord</a>
-    </div>`);
-    }
-    NAV.init = init;
-})(NAV || (NAV = {}));
 var STYLE;
 (function (STYLE) {
     function init() {
@@ -1852,60 +1983,4 @@ background-color: #4CAF50; /* Green */
     }
     STYLE.init = init;
 })(STYLE || (STYLE = {}));
-var C;
-(function (C) {
-    class Checkbox {
-        constructor(size = 16) {
-            this._checked = false;
-            this._disabled = false;
-            this._td = document.createElement("td");
-            this._td.height = size.toString();
-            this._td.width = size.toString();
-            this._td.onmousemove = this.move.bind(this);
-            this._td.ondragover = (ev) => (ev.preventDefault());
-            this._td.onmousedown = (ev) => { this.click(); ev.preventDefault(); };
-            this._td.textContent = "";
-            this._td.draggable = false;
-            this.update();
-        }
-        getTD() {
-            return this._td;
-        }
-        update() {
-            this._td.style.backgroundColor = this._disabled ? "#000000" : this._checked ? "#DDDDDD" : "#333333";
-        }
-        click() {
-            console.log("move");
-            if (!this._disabled) {
-                Checkbox._lastState = !this._checked;
-                this._checked = Checkbox._lastState;
-                this.update();
-            }
-        }
-        move(ev) {
-            console.log("move");
-            var style = getComputedStyle(this._td);
-            if (!this._disabled && D.Drag.mouseDown) {
-                this._checked = Checkbox._lastState;
-                this.update();
-            }
-        }
-        get checked() {
-            return this._checked;
-        }
-        set checked(value) {
-            this._checked = value;
-            this.update();
-        }
-        get disabled() {
-            return this._disabled;
-        }
-        set disabled(value) {
-            this._disabled = value;
-            this.update();
-        }
-    }
-    Checkbox._lastState = false;
-    C.Checkbox = Checkbox;
-})(C || (C = {}));
 //# sourceMappingURL=main.js.map
