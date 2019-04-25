@@ -1331,7 +1331,7 @@ var M;
                     mapR = document.createElement("tr");
                     this._mapTable.appendChild(mapR);
                 }
-                let b = new C.Checkbox();
+                let b = new C.Checkbox(24);
                 this._blocks.push(b);
                 mapR.appendChild(b.getTD());
             }
@@ -1746,12 +1746,12 @@ var STYLE;
 var C;
 (function (C) {
     class Checkbox {
-        constructor() {
+        constructor(size = 16) {
             this._checked = false;
             this._disabled = false;
             this._td = document.createElement("td");
-            this._td.height = "16";
-            this._td.width = "16";
+            this._td.height = size.toString();
+            this._td.width = size.toString();
             this._td.onmousemove = this.move.bind(this);
             this._td.ondragover = (ev) => (ev.preventDefault());
             this._td.onmousedown = (ev) => { this.click(); ev.preventDefault(); };

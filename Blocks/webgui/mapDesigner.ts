@@ -168,7 +168,7 @@ namespace M {
                     mapR = document.createElement("tr");
                     this._mapTable.appendChild(mapR);
                 }
-                let b: C.Checkbox = new C.Checkbox();
+                let b: C.Checkbox = new C.Checkbox(24);
                 this._blocks.push(b);
                 mapR.appendChild(b.getTD());
             }

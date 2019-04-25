@@ -4,10 +4,10 @@
         private _checked: boolean = false;
         private _disabled: boolean = false;
         private _td: HTMLTableDataCellElement;
-        public constructor() {
+        public constructor(size: number = 16) {
             this._td = document.createElement("td");
-            this._td.height = "16";
-            this._td.width = "16";
+            this._td.height = size.toString();
+            this._td.width = size.toString();
             this._td.onmousemove = this.move.bind(this);
             this._td.ondragover = (ev) => (ev.preventDefault());
             this._td.onmousedown = (ev) => { this.click(); ev.preventDefault();};
