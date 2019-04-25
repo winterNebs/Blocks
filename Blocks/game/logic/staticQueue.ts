@@ -23,5 +23,8 @@ namespace ASC {
         public hasNext(): boolean {
             return this._queue.length > 0;
         }
+        public blocksLeft(): number {
+            return this._queue.length;
+        }
     }
 }

@@ -4,7 +4,7 @@
   "private": true,
   "devDependencies": {},
   "dependencies": {
-    "@types/pixi.js": "^4.8.6",
+    "@types/pixi.js": "^4.8.7",
     "typescript": "next"
   },
   "description": "A complex falling-blocks puzzle game",

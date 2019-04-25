@@ -13,23 +13,23 @@ var RUN;
     }
     RUN.init = init;
     function startGame(config, static = false, queue = [], map = []) {
-        // try {
-        if (config !== undefined) {
-            if (static) {
-                RUN.game = new ASC.MapGame(config._width, config._bagSize, config._pieces, config._controls, queue, map, config._delay, config._repeat);
+        try {
+            if (config !== undefined) {
+                if (static) {
+                    RUN.game = new ASC.MapGame(config._width, config._bagSize, config._pieces, config._controls, queue, map, config._delay, config._repeat);
+                }
+                else {
+                    RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
+                }
             }
             else {
-                RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
+                RUN.game = new ASC.Game();
             }
         }
-        else {
+        catch (err) {
+            alert("Error in config: " + err);
             RUN.game = new ASC.Game();
         }
-        //}
-        // catch (err) {
-        //     alert("Error in config: " + err);
-        //    game = new ASC.Game();
-        // }
         RUN.game.resetGame();
         RUN.app.view.focus();
     }

@@ -12,15 +12,21 @@ var RUN;
     }
     RUN.init = init;
     function startGame(config, static = false, queue = [], map = []) {
-        if (config !== undefined) {
-            if (static) {
-                RUN.game = new ASC.MapGame(config._width, config._bagSize, config._pieces, config._controls, queue, map, config._delay, config._repeat);
+        try {
+            if (config !== undefined) {
+                if (static) {
+                    RUN.game = new ASC.MapGame(config._width, config._bagSize, config._pieces, config._controls, queue, map, config._delay, config._repeat);
+                }
+                else {
+                    RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
+                }
             }
             else {
-                RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
+                RUN.game = new ASC.Game();
             }
         }
-        else {
+        catch (err) {
+            alert("Error in config: " + err);
             RUN.game = new ASC.Game();
         }
         RUN.game.resetGame();
@@ -642,6 +648,12 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
+    class AGarbage {
+    }
+    ASC.AGarbage = AGarbage;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
     ASC.NUM_PREVIEWS = 6;
     class AQueue {
     }
@@ -666,6 +678,25 @@ var ASC;
         }
     }
     ASC.Block = Block;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Garbage extends ASC.AGarbage {
+        constructor(width, percentage) {
+            super();
+            this._width = width;
+            if (percentage >= 0 && percentage < 100) {
+                this._percentage = percentage;
+            }
+            else {
+                throw new Error("Invalid Percentage: " + percentage);
+            }
+        }
+        addGarbage(attack) {
+            return [];
+        }
+    }
+    ASC.Garbage = Garbage;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -874,6 +905,9 @@ var ASC;
         }
         hasNext() {
             return this._queue.length > 0;
+        }
+        blocksLeft() {
+            return this._queue.length;
         }
     }
     ASC.StaticQueue = StaticQueue;
@@ -1698,7 +1732,6 @@ var SETTINGS;
             apply.innerText = "Apply Settings";
             apply.onclick = function () {
                 Settings._config._pieces = Settings._pieceEditor.getPieces();
-                console.log(Settings._mapShape);
                 Settings.restartGame();
                 Settings.saveCookie();
             };
@@ -1760,11 +1793,12 @@ var SETTINGS;
             }
             catch (err) {
                 alert("Corrupted cookies: " + err.message);
+                this.saveCookie();
             }
         }
         static saveCookie() {
             let c = "";
-            c += "ver=" + VERSION.toString() + ";";
+            c += "v=" + VERSION.toString() + ";";
             if (!Settings._map) {
                 c += "p=" + JSON.stringify(Settings._config._pieces) + ";";
             }

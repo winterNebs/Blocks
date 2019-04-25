@@ -64,7 +64,7 @@ namespace SETTINGS {
             settings.appendChild(controlsTitle);
 
             let controlTable: HTMLElement = document.createElement("table")
-            const labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop","Instant Drop", "Restart"];
+            const labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop", "Instant Drop", "Restart"];
             let controlsBox: HTMLElement[] = [];
             let row: HTMLElement;
             for (let i = 0; i < labels.length; ++i) {
@@ -163,7 +163,6 @@ namespace SETTINGS {
             apply.innerText = "Apply Settings"
             apply.onclick = function () {
                 Settings._config._pieces = Settings._pieceEditor.getPieces();
-                console.log(Settings._mapShape);
                 Settings.restartGame();
                 Settings.saveCookie();
             }
@@ -235,6 +234,7 @@ namespace SETTINGS {
             }
             catch (err) {
                 alert("Corrupted cookies: " + err.message);
+                this.saveCookie();
             }
 
         }
@@ -242,7 +242,7 @@ namespace SETTINGS {
             let c = "";
             //Cookie format:
             //Version: ?; pieces; controls; delay; rate; bagsize;
-            c += "ver=" + VERSION.toString()+";";
+            c += "v=" + VERSION.toString() + ";";
             if (!Settings._map) {
                 c += "p=" + JSON.stringify(Settings._config._pieces) + ";";
 

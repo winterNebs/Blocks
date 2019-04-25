@@ -24,7 +24,7 @@
     <UseGlobalApplicationHostFile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-    <TypeScriptToolsVersion>Latest</TypeScriptToolsVersion>
+    <TypeScriptToolsVersion>3.3</TypeScriptToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -123,6 +123,9 @@
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
     <TypeScriptCompile Include="game\Agame.ts" />
+    <TypeScriptCompile Include="game\diggame.ts" />
+    <TypeScriptCompile Include="game\logic\Agarbage.ts" />
+    <TypeScriptCompile Include="game\logic\garbage.ts" />
     <TypeScriptCompile Include="game\mapgame.ts" />
     <TypeScriptCompile Include="webgui\bettercb.ts" />
     <TypeScriptCompile Include="webgui\dragutil.ts" />

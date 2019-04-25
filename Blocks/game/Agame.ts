@@ -17,6 +17,7 @@
         protected _controls: number[];
         protected _renderer: Renderer;
         protected _active: boolean = false;
+        protected _garbage: AGarbage;
         /**
          * Creates a new game
          * @param width Width of the game feild, (5 < width < 20, Default: 12).

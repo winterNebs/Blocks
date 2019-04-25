@@ -19,7 +19,7 @@ namespace RUN {
 
     }
     export function startGame(config?: ASC.Config, static: boolean = false, queue: number[] = [], map: number[] = []) {
-       // try {
+        try {
             if (config !== undefined) {
                 if (static) {
                     game = new ASC.MapGame(config._width, config._bagSize, config._pieces, config._controls, queue, map, config._delay, config._repeat);
@@ -31,11 +31,11 @@ namespace RUN {
             else {
                 game = new ASC.Game();
             }
-        //}
-       // catch (err) {
-       //     alert("Error in config: " + err);
-        //    game = new ASC.Game();
-       // }
+        }
+        catch (err) {
+            alert("Error in config: " + err);
+            game = new ASC.Game();
+        }
         game.resetGame();
         app.view.focus();
     }
