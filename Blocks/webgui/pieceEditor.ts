@@ -5,7 +5,7 @@ namespace P {
         private _pieces: ASC.Piece[] = [];
         private _width: number = 12;
         private _pieceSelect: HTMLSelectElement = <HTMLSelectElement>document.createElement("select");
-        private _checks: HTMLInputElement[] = [];
+        private _checks: C.Checkbox[] = [];
         private _pieceNameInput: HTMLInputElement = <HTMLInputElement>document.createElement("input");
         private _pieceColor: HTMLInputElement = <HTMLInputElement>document.createElement("input");
         private _offsetSlider: HTMLInputElement = <HTMLInputElement>document.createElement("input");
@@ -41,34 +41,11 @@ namespace P {
                     row1 = document.createElement("tr");
                     editorTable.appendChild(row1);
                 }
-                let check: HTMLInputElement = document.createElement("input");
-                check.setAttribute("type", "checkbox");
-                check.onmouseenter = function () {
-                    if (D.Drag.mouseDown) {
-                        check.checked = D.Drag.lastState;
-                    }
-                }
-                check.onmousedown = function (ev) {
-                    D.Drag.lastState = !check.checked;
-                    D.Drag.lastSelected = check;
-                    check.checked = D.Drag.lastState;
-                    ev.preventDefault();
-                }
-                check.onmouseup = function (ev) {
-                    if (D.Drag.lastSelected == check) {
-                        check.checked = !check.checked;
-                    }
-                    ev.preventDefault();
-                }
-                check.ondragover = function (ev) {
-                    ev.preventDefault();
-                }
+                let check = new C.Checkbox();
                 this._checks.push(check);
-                row1.appendChild(check);
+                row1.appendChild(check.getTD());
             }
-
-
-
+            
             this._pieceDiv.appendChild(editorTable);
 
             let pieceNameText: HTMLElement = document.createElement("label");

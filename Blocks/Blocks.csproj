@@ -97,7 +97,6 @@
   <ItemGroup>
     <Content Include="assets\textures\b.png" />
     <Content Include="assets\textures\a.jpg" />
-    <Content Include="checkbox.css" />
     <Content Include="designer.html" />
     <Content Include="map.html" />
     <Content Include="game.html" />
@@ -123,6 +122,7 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
+    <TypeScriptCompile Include="webgui\bettercb.ts" />
     <TypeScriptCompile Include="webgui\dragutil.ts" />
     <TypeScriptCompile Include="webgui\navbar.ts" />
     <TypeScriptCompile Include="webgui\numberarrayconverter.ts" />

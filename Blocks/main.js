@@ -1,7 +1,7 @@
 var RUN;
 (function (RUN) {
     function init() {
-        RUN.app = new PIXI.Application(800, 600, { backgroundColor: 0x423c3e });
+        RUN.app = new PIXI.Application(800, 600, { backgroundColor: 0x333333 });
         RUN.app.view.setAttribute('tabindex', '0');
         document.body.onclick = function () {
             ASC.InputManager.setFocus(document.activeElement == RUN.app.view);
@@ -12,10 +12,16 @@ var RUN;
     }
     RUN.init = init;
     function startGame(config, static = false, queue = [], map = []) {
-        if (config !== undefined) {
-            RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, static, queue, map, config._delay, config._repeat);
+        try {
+            if (config !== undefined) {
+                RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, static, queue, map, config._delay, config._repeat);
+            }
+            else {
+                RUN.game = new ASC.Game();
+            }
         }
-        else {
+        catch (err) {
+            alert("Error in config: " + err);
             RUN.game = new ASC.Game();
         }
         RUN.app.view.focus();
@@ -877,11 +883,11 @@ var ASC;
             this._hold = new ASC.RenderGrid(5, 5, SMALL_SIZE);
             this.addChild(this._hold);
             this._progressText = progress;
-            this._progress = new PIXI.Text(progress + "\n", { fontFamily: 'Arial', fontSize: 24, fill: 0x000000, align: 'center' });
+            this._progress = new PIXI.Text(progress + "\n", { fontFamily: 'Arial Black', fontSize: 24, fill: 0xFFFFFF, align: 'center' });
             this._progress.x = width * FIELD_SIZE + SMALL_SIZE * 5 + 10;
             this._progress.y = SMALL_SIZE * 5 * ASC.NUM_PREVIEWS + 10;
             this.addChild(this._progress);
-            this._time = new PIXI.Text("\n\nhi", { fontFamily: 'Arial', fontSize: 24, fill: 0x000000, align: 'center' });
+            this._time = new PIXI.Text("\n\nhi", { fontFamily: 'Arial Black', fontSize: 24, fill: 0xFFFFFF, align: 'center' });
             this._time.x = width * FIELD_SIZE + SMALL_SIZE * 5 + 10;
             this._time.y = SMALL_SIZE * 5 * ASC.NUM_PREVIEWS + 10;
             this.addChild(this._time);
@@ -901,7 +907,7 @@ var ASC;
             this._progress.text = this._progressText + "\n" + t;
         }
         updateTime(t) {
-            this._time.text = "\n\nTime:" + t;
+            this._time.text = "\n\nTime: " + t;
         }
     }
     ASC.Renderer = Renderer;
@@ -1062,30 +1068,9 @@ var P;
                     row1 = document.createElement("tr");
                     editorTable.appendChild(row1);
                 }
-                let check = document.createElement("input");
-                check.setAttribute("type", "checkbox");
-                check.onmouseenter = function () {
-                    if (D.Drag.mouseDown) {
-                        check.checked = D.Drag.lastState;
-                    }
-                };
-                check.onmousedown = function (ev) {
-                    D.Drag.lastState = !check.checked;
-                    D.Drag.lastSelected = check;
-                    check.checked = D.Drag.lastState;
-                    ev.preventDefault();
-                };
-                check.onmouseup = function (ev) {
-                    if (D.Drag.lastSelected == check) {
-                        check.checked = !check.checked;
-                    }
-                    ev.preventDefault();
-                };
-                check.ondragover = function (ev) {
-                    ev.preventDefault();
-                };
+                let check = new C.Checkbox();
                 this._checks.push(check);
-                row1.appendChild(check);
+                row1.appendChild(check.getTD());
             }
             this._pieceDiv.appendChild(editorTable);
             let pieceNameText = document.createElement("label");
@@ -1346,31 +1331,9 @@ var M;
                     mapR = document.createElement("tr");
                     this._mapTable.appendChild(mapR);
                 }
-                let b = document.createElement("input");
-                b.setAttribute("type", "checkbox");
-                b.onmouseenter = function () {
-                    if (D.Drag.mouseDown) {
-                        b.checked = D.Drag.lastState;
-                    }
-                };
-                b.onmousedown = function (ev) {
-                    D.Drag.lastState = !b.checked;
-                    D.Drag.lastSelected = b;
-                    b.checked = D.Drag.lastState;
-                    ev.preventDefault();
-                };
-                b.onmouseup = function (ev) {
-                    if (D.Drag.lastSelected == b) {
-                        b.checked = !b.checked;
-                    }
-                    ev.preventDefault();
-                };
-                b.ondragover = function (ev) {
-                    ev.preventDefault();
-                    ev.preventDefault();
-                };
+                let b = new C.Checkbox();
                 this._blocks.push(b);
-                mapR.appendChild(b);
+                mapR.appendChild(b.getTD());
             }
             this._lefts.appendChild(this._mapTable);
         }
@@ -1691,10 +1654,12 @@ var SETTINGS;
 var NAV;
 (function (NAV) {
     function init() {
-        document.body.insertAdjacentHTML("beforebegin", `
-<style>.topnav {
+        document.head.insertAdjacentHTML("afterend", `
+<style>
+.topnav {
   background-color: #333;
   overflow: hidden;
+  font-size: 1.2em;
 }
 
 /* Style the links inside the navigation bar */
@@ -1702,28 +1667,136 @@ var NAV;
   float: left;
   color: #f2f2f2;
   text-align: center;
-  padding: 14px 16px;
+  padding: 0.8em 1em;
   text-decoration: none;
-  font-size: 17px;
 }
 
 /* Change the color of links on hover */
 .topnav a:hover {
   background-color: #ddd;
-  color: black;
+  color: #777;
 }
 
 /* Add a color to the active/current link */
 .topnav a.active {
-  background-color: #4CAF50;
-  color: white;
-}</style>
+  background-color: #555;
+  color:  #fcbf75;
+  font-weight: bold;
+}</style>`);
+        document.body.insertAdjacentHTML("beforebegin", `
 <div class="topnav">
-  <a href="index.html">Home</a>
+  <a class="active" href="index.html">ASCENSION</a>
   <a href="game.html">Game</a>
   <a href="designer.html">Map Editor</a>
     </div>`);
     }
     NAV.init = init;
 })(NAV || (NAV = {}));
+var STYLE;
+(function (STYLE) {
+    function init() {
+        document.head.insertAdjacentHTML("afterend", `
+<style>
+
+    * {
+        touch-action: manipulation;
+    }
+    html {
+        background-color:#000000;
+        color: #EEEEEE;
+        font-family: Arial Black,Arial Bold,Gadget,sans-serif; 
+    }
+
+    a:link {
+      color: #ea2347;
+    }
+
+    a:visited {
+      color: #ea2347;
+    }
+
+    a:hover {
+      color: hotpink;
+    }
+
+    a:active {
+      color: blue;
+    }
+
+    input {
+        background-color: #555;
+        border: none;
+    }
+    tr {
+        margin: 0px;
+        padding: 0px;
+        border: 0px;
+    }
+
+    table {
+        border-collapse: collapse;
+        border-spacing: 0;
+    }
+
+
+</style>`);
+    }
+    STYLE.init = init;
+})(STYLE || (STYLE = {}));
+var C;
+(function (C) {
+    class Checkbox {
+        constructor() {
+            this._checked = false;
+            this._disabled = false;
+            this._td = document.createElement("td");
+            this._td.height = "16";
+            this._td.width = "16";
+            this._td.onmousemove = this.move.bind(this);
+            this._td.ondragover = (ev) => (ev.preventDefault());
+            this._td.onmousedown = (ev) => { this.click(); ev.preventDefault(); };
+            this._td.textContent = "";
+            this._td.draggable = false;
+            this.update();
+        }
+        getTD() {
+            return this._td;
+        }
+        update() {
+            this._td.style.backgroundColor = this._disabled ? "#000000" : this._checked ? "#DDDDDD" : "#333333";
+        }
+        click() {
+            console.log("move");
+            if (!this._disabled) {
+                Checkbox._lastState = !this._checked;
+                this._checked = Checkbox._lastState;
+                this.update();
+            }
+        }
+        move(ev) {
+            console.log("move");
+            var style = getComputedStyle(this._td);
+            if (!this._disabled && D.Drag.mouseDown) {
+                this._checked = Checkbox._lastState;
+                this.update();
+            }
+        }
+        get checked() {
+            return this._checked;
+        }
+        set checked(value) {
+            this._checked = value;
+            this.update();
+        }
+        get disabled() {
+            return this._disabled;
+        }
+        set disabled(value) {
+            this._disabled = value;
+            this.update();
+        }
+    }
+    Checkbox._lastState = false;
+    C.Checkbox = Checkbox;
+})(C || (C = {}));
 //# sourceMappingURL=main.js.map

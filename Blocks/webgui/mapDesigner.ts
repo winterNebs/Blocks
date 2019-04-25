@@ -3,7 +3,7 @@ namespace M {
     export class MapEditor {
         private _mapDiv: HTMLDivElement = document.createElement("div");
         private _mapTable: HTMLElement = document.createElement("table")
-        private _blocks: HTMLInputElement[] = [];
+        private _blocks: C.Checkbox[] = [];
         private _width: number = 12;
         private _lefts: HTMLTableDataCellElement = document.createElement("td");
 
@@ -168,31 +168,9 @@ namespace M {
                     mapR = document.createElement("tr");
                     this._mapTable.appendChild(mapR);
                 }
-                let b: HTMLInputElement = document.createElement("input");
-                b.setAttribute("type", "checkbox");
-                b.onmouseenter = function () {
-                    if (D.Drag.mouseDown) {
-                        b.checked = D.Drag.lastState;
-                    }
-                }
-                b.onmousedown = function (ev) {
-                    D.Drag.lastState = !b.checked;
-                    D.Drag.lastSelected = b;
-                    b.checked = D.Drag.lastState;
-                    ev.preventDefault();
-                }
-                b.onmouseup = function (ev) {
-                    if (D.Drag.lastSelected == b) {
-                        b.checked = !b.checked;
-                    }
-                    ev.preventDefault();
-                }
-                b.ondragover = function (ev) {
-                    ev.preventDefault();
-                    ev.preventDefault();
-                }
+                let b: C.Checkbox = new C.Checkbox();
                 this._blocks.push(b);
-                mapR.appendChild(b);
+                mapR.appendChild(b.getTD());
             }
 
             this._lefts.appendChild(this._mapTable);

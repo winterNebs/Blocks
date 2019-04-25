@@ -13,18 +13,18 @@ var RUN;
     }
     RUN.init = init;
     function startGame(config, static = false, queue = [], map = []) {
-        //try {
-        if (config !== undefined) {
-            RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, static, queue, map, config._delay, config._repeat);
+        try {
+            if (config !== undefined) {
+                RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, static, queue, map, config._delay, config._repeat);
+            }
+            else {
+                RUN.game = new ASC.Game();
+            }
         }
-        else {
+        catch (err) {
+            alert("Error in config: " + err);
             RUN.game = new ASC.Game();
         }
-        // }
-        //catch (err) {
-        //  alert("Error in config: " + err);
-        //   game = new ASC.Game();
-        //}
         RUN.app.view.focus();
     }
     RUN.startGame = startGame;

@@ -1,11 +1,12 @@
 ﻿namespace NAV {
 
     export function init() {
-        document.body.insertAdjacentHTML("beforebegin",
-            `
-<style>.topnav {
+        document.head.insertAdjacentHTML("afterend", `
+<style>
+.topnav {
   background-color: #333;
   overflow: hidden;
+  font-size: 1.2em;
 }
 
 /* Style the links inside the navigation bar */
@@ -13,24 +14,26 @@
   float: left;
   color: #f2f2f2;
   text-align: center;
-  padding: 14px 16px;
+  padding: 0.8em 1em;
   text-decoration: none;
-  font-size: 17px;
 }
 
 /* Change the color of links on hover */
 .topnav a:hover {
   background-color: #ddd;
-  color: black;
+  color: #777;
 }
 
 /* Add a color to the active/current link */
 .topnav a.active {
-  background-color: #4CAF50;
-  color: white;
-}</style>
+  background-color: #555;
+  color:  #fcbf75;
+  font-weight: bold;
+}</style>`);
+        document.body.insertAdjacentHTML("beforebegin",
+            `
 <div class="topnav">
-  <a href="index.html">Home</a>
+  <a class="active" href="index.html">ASCENSION</a>
   <a href="game.html">Game</a>
   <a href="designer.html">Map Editor</a>
     </div>`);

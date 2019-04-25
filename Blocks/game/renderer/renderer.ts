@@ -19,11 +19,11 @@
             this._hold = new RenderGrid(5, 5, SMALL_SIZE);
             this.addChild(this._hold);
             this._progressText = progress;
-            this._progress = new PIXI.Text(progress + "\n", { fontFamily: 'Arial', fontSize: 24, fill: 0x000000, align: 'center' });
+            this._progress = new PIXI.Text(progress + "\n", { fontFamily: 'Arial Black', fontSize: 24, fill: 0xFFFFFF, align: 'center' });
             this._progress.x = width * FIELD_SIZE + SMALL_SIZE * 5 + 10;
             this._progress.y = SMALL_SIZE * 5 * NUM_PREVIEWS + 10;
             this.addChild(this._progress);
-            this._time = new PIXI.Text("\n\nhi", { fontFamily: 'Arial', fontSize: 24, fill: 0x000000, align: 'center' });
+            this._time = new PIXI.Text("\n\nhi", { fontFamily: 'Arial Black', fontSize: 24, fill: 0xFFFFFF, align: 'center' });
             this._time.x = width * FIELD_SIZE + SMALL_SIZE * 5 + 10;
             this._time.y = SMALL_SIZE * 5 * NUM_PREVIEWS + 10;
             this.addChild(this._time);
@@ -43,7 +43,8 @@
             this._progress.text = this._progressText + "\n" + t;
         }
         public updateTime(t: string): void {
-            this._time.text ="\n\nTime:" + t;
+            this._time.text ="\n\nTime: " + t;
         }
+
     }
 }
