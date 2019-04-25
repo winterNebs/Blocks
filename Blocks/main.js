@@ -394,6 +394,7 @@ var ASC;
             return config;
         }
         static pieceFromText(input) {
+            console.log(input);
             let p = JSON.parse(input);
             let ps = [];
             for (let i of p) {
@@ -1766,6 +1767,7 @@ var SETTINGS;
                                         this.saveCookie();
                                     }
                                 }
+                                break;
                             case 'p':
                                 if (!Settings._map) {
                                     let p = ASC.Config.pieceFromText(v.substring(2));

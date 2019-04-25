@@ -207,6 +207,7 @@ namespace SETTINGS {
                                         this.saveCookie();
                                     }
                                 }
+                                break;
                             case 'p':
                                 if (!Settings._map) {
                                     let p = ASC.Config.pieceFromText(v.substring(2));

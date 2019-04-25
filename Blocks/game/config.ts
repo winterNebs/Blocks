@@ -25,6 +25,7 @@
             return config;
         }
         public static pieceFromText(input: string): Piece[] {
+            console.log(input);
             let p = JSON.parse(input);
             let ps: Piece[] = [];
             for (let i of p) {
