@@ -6,12 +6,14 @@ namespace RUN {
     export function init() {
         app = new PIXI.Application(800, 600, { backgroundColor: 0x423c3e });
         app.view.setAttribute('tabindex', '0');
+        
         document.body.onclick = function () {
             ASC.InputManager.setFocus(document.activeElement == app.view);
         }
 
         // load sprites and run game when done
         PIXI.loader.add('assets/textures/b.png').load(load);
+        app.view.onclick = () => (app.view.focus());
         document.body.appendChild(app.view);
 
 

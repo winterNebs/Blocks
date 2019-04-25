@@ -8,6 +8,7 @@ var RUN;
         };
         // load sprites and run game when done
         PIXI.loader.add('assets/textures/b.png').load(load);
+        RUN.app.view.onclick = () => (RUN.app.view.focus());
         document.body.appendChild(RUN.app.view);
     }
     RUN.init = init;

@@ -7,6 +7,7 @@ var RUN;
             ASC.InputManager.setFocus(document.activeElement == RUN.app.view);
         };
         PIXI.loader.add('assets/textures/b.png').load(load);
+        RUN.app.view.onclick = () => (RUN.app.view.focus());
         document.body.appendChild(RUN.app.view);
     }
     RUN.init = init;
