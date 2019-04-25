@@ -1461,10 +1461,12 @@ var SETTINGS;
             for (let i = 0; i < labels.length; ++i) {
                 if (i % 4 === 0) {
                     row = document.createElement("tr");
+                    row.setAttribute("align", "left");
                     controlTable.appendChild(row);
                 }
-                let item = document.createElement("th");
-                item.innerText = labels[i] + ": ";
+                let item = document.createElement("td");
+                item.innerText = labels[i];
+                let numcontain = document.createElement("td");
                 let numberbox = document.createElement("input");
                 numberbox.setAttribute("type", "number");
                 numberbox.readOnly = true;
@@ -1476,9 +1478,10 @@ var SETTINGS;
                     }
                     numberbox.blur();
                 };
-                item.appendChild(numberbox);
+                numcontain.appendChild(numberbox);
                 controlsBox.push(numberbox);
                 row.appendChild(item);
+                row.appendChild(numcontain);
             }
             settings.appendChild(controlTable);
             let delayText = document.createElement("label");

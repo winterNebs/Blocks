@@ -70,10 +70,12 @@ namespace SETTINGS {
             for (let i = 0; i < labels.length; ++i) {
                 if (i % 4 === 0) {
                     row = document.createElement("tr");
+                    row.setAttribute("align", "left");
                     controlTable.appendChild(row);
                 }
-                let item: HTMLElement = document.createElement("th");
-                item.innerText = labels[i] + ": ";
+                let item: HTMLElement = document.createElement("td");
+                item.innerText = labels[i];
+                let numcontain: HTMLElement = document.createElement("td");
                 let numberbox: HTMLInputElement = <HTMLInputElement>document.createElement("input");
                 numberbox.setAttribute("type", "number");
                 numberbox.readOnly = true;
@@ -85,9 +87,10 @@ namespace SETTINGS {
                     }
                     numberbox.blur();
                 }
-                item.appendChild(numberbox);
+                numcontain.appendChild(numberbox);
                 controlsBox.push(numberbox);
                 row.appendChild(item);
+                row.appendChild(numcontain);
             }
 
             settings.appendChild(controlTable);
