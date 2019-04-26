@@ -181,13 +181,13 @@
                 //}
                 let xkicks = [];
                 let ykicks = [];
-                let indexxx = [13,17,18,22,23,19,24,14,11,7,11,8,9,2,3]
+                let indexxx = [13, 17, 18, 22, 23, 19, 24, 14, 11, 7, 11, 8, 9, 2, 3]
                 for (let i of indexxx) {
-                    xkicks.push((i % 5)-2);
-                    ykicks.push(~~(i / 5)-2);
+                    xkicks.push((i % 5) - 2);
+                    ykicks.push(~~(i / 5) - 2);
                 }
                 for (let i = 0; i < xkicks.length; ++i) {
-                    console.log(sign *xkicks[i] + ", " + ykicks[i]);
+                    console.log(sign * xkicks[i] + ", " + ykicks[i]);
                     if (this.checkShift(sign * xkicks[i], ykicks[i])) {
                         this._currentPiece.move(sign * xkicks[i], ykicks[i]);
                         return; //successful kick
@@ -238,13 +238,16 @@
                         let index = i + this._currentPiece.xy[0] + (j + this._currentPiece.xy[1]) * this._width;
                         if (i + this._currentPiece.xy[0] >= 0 && i + this._currentPiece.xy[0] < this._width &&
                             j + this._currentPiece.xy[1] >= 0 && j + this._currentPiece.xy[1] < FIELD_HEIGHT) {
-                            temp[index] = this.lighten(temp[index]);
+                            if (i == 2 && j == 2) {
+                                temp[index] = this.darken(temp[index]);
+                            }
+                            else {
+                                temp[index] = this.lighten(temp[index]);
+                            }
 
                         }
                     }
                 }
-                let i = this._currentPiece.xy[0] + 2 + (this._currentPiece.xy[1] + 2) * this._width;
-                temp[i] = this.lighten(temp[i]);
             }
             this._renderer.updateField(temp);
         }
@@ -261,9 +264,9 @@
             let r = (hex >> 16) & 255;
             let g = (hex >> 8) & 255;
             let b = hex & 255;
-            r = Math.min(r - 75, 255);
-            g = Math.min(g - 75, 255);
-            b = Math.min(b - 75, 255);
+            r = Math.max(r - 50, 0);
+            g = Math.max(g - 50, 0);
+            b = Math.max(b - 50, 0);
             return r * 65536 + g * 256 + b;
         }
         private updateQueue(): void {

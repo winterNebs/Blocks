@@ -268,12 +268,15 @@ var ASC;
                         let index = i + this._currentPiece.xy[0] + (j + this._currentPiece.xy[1]) * this._width;
                         if (i + this._currentPiece.xy[0] >= 0 && i + this._currentPiece.xy[0] < this._width &&
                             j + this._currentPiece.xy[1] >= 0 && j + this._currentPiece.xy[1] < ASC.FIELD_HEIGHT) {
-                            temp[index] = this.lighten(temp[index]);
+                            if (i == 2 && j == 2) {
+                                temp[index] = this.darken(temp[index]);
+                            }
+                            else {
+                                temp[index] = this.lighten(temp[index]);
+                            }
                         }
                     }
                 }
-                let i = this._currentPiece.xy[0] + 2 + (this._currentPiece.xy[1] + 2) * this._width;
-                temp[i] = this.lighten(temp[i]);
             }
             this._renderer.updateField(temp);
         }
@@ -290,9 +293,9 @@ var ASC;
             let r = (hex >> 16) & 255;
             let g = (hex >> 8) & 255;
             let b = hex & 255;
-            r = Math.min(r - 75, 255);
-            g = Math.min(g - 75, 255);
-            b = Math.min(b - 75, 255);
+            r = Math.max(r - 50, 0);
+            g = Math.max(g - 50, 0);
+            b = Math.max(b - 50, 0);
             return r * 65536 + g * 256 + b;
         }
         updateQueue() {
@@ -457,7 +460,7 @@ var ASC;
             this._progress = 0;
             this._attack = new ASC.AttackTable(this._width);
             this._garbage = new ASC.Garbage(Math.random() * Number.MAX_VALUE, this._width, 0.9);
-            this._timer = new ASC.Timer(this.tick.bind(this), this.win.bind(this), 2000, 120000);
+            this._timer = new ASC.Timer(120000, 2000, this.tick.bind(this), this.win.bind(this));
         }
         resetGame() {
             this._progress = 0;
@@ -1247,10 +1250,9 @@ var ASC;
 var ASC;
 (function (ASC) {
     class Timer {
-        constructor(tick, finish, interval, end) {
-            this._elapsed = 0;
+        constructor(length, interval, tick, end) {
             this._running = false;
-            this._finish = finish;
+            this._length = length;
             this._interval = interval;
             this._tick = tick;
             this._end = end;
@@ -1258,36 +1260,27 @@ var ASC;
         start() {
             this.stop();
             this._running = true;
-            this._elapsed = 0;
-            this._expectedEnd = Date.now() + this._end;
-            this._expected = Date.now() + this._interval;
-            this._timeout = window.setTimeout(this.step.bind(this), this._interval);
+            this._expected = performance.now() + this._length;
+            this._expectedTick = performance.now() + this._interval;
+            this._request = window.requestAnimationFrame(this.step.bind(this));
         }
         stop() {
-            if (this._running) {
-                clearTimeout(this._timeout);
-            }
             this._running = false;
+            window.cancelAnimationFrame(this._request);
         }
         step() {
             if (this._running) {
-                this._elapsed += this._interval;
-                if (Date.now() >= this._expectedEnd) {
+                if (performance.now() >= this._expectedTick) {
+                    this._expectedTick = performance.now() + this._interval;
+                    this._tick();
+                }
+                else if (performance.now() >= this._expected) {
                     this.stop();
-                    this._finish();
+                    this._end();
                     return;
                 }
-                var drift = Date.now() - this._expected;
-                this._tick();
-                this._expected += this._interval;
-                this._timeout = window.setTimeout(this.step.bind(this), Math.max(0, this._interval - drift));
+                window.requestAnimationFrame(this.step.bind(this));
             }
-            else {
-                this.stop();
-            }
-        }
-        get elapsed() {
-            return this._elapsed;
         }
     }
     ASC.Timer = Timer;

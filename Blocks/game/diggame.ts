@@ -21,7 +21,7 @@ namespace ASC {
             super(width, bagSize, pieces, controls, delay, repeat);
             this._attack = new AttackTable(this._width);
             this._garbage = new Garbage(Math.random() * Number.MAX_VALUE, this._width, 0.9);
-            this._timer = new Timer(this.tick.bind(this), this.win.bind(this), 2000, 120000);
+            this._timer = new Timer(120000, 2000, this.tick.bind(this), this.win.bind(this));
         }
         public resetGame(): void {
             this._progress = 0;
@@ -93,7 +93,7 @@ namespace ASC {
 
         private checkGarbageShift(): void {
             let y = 0;
-            let highest: number = this._currentPiece.getYVals().sort(function (a, b) { return a-b})[0];
+            let highest: number = this._currentPiece.getYVals().sort(function (a, b) { return a - b })[0];
             while (!this.checkShift(0, y)) {
                 --y;
                 if (highest + y == 0) {
