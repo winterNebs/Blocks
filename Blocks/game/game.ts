@@ -13,7 +13,7 @@ namespace ASC {
          * @param width Width of the game feild, (5 < width < 20, Default: 12).
          */
         public constructor(
-            width: number = 12, bagSize: number = 6,
+            width: number = 12, bagSize: number = 7,
             pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
             new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)],

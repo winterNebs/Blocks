@@ -27,7 +27,6 @@
             this._td.style.backgroundColor = this._disabled ? "#000000" : this._checked ? "#DDDDDD" : "#333333";
         }
         private click(): void {
-            console.log("move");
             if (!this._disabled) {
                 Checkbox._lastState = !this._checked;
                 this._checked = Checkbox._lastState;
@@ -36,8 +35,6 @@
             }
         }
         private move(ev:MouseEvent): void {
-            console.log("move");
-
             var style = getComputedStyle(this._td);
             if (!this._disabled && D.Drag.mouseDown) {
                 this._checked = Checkbox._lastState;

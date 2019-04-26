@@ -7,7 +7,8 @@
         private _finish: Function;
         private _end: number;
         private _expectedEnd: number;
-        private _elapsed:number = 0;
+        private _elapsed: number = 0;
+        private _running: boolean = false;
 
         public constructor(tick: Function, finish: Function, interval: number, end:number) {
             this._finish = finish;
@@ -17,17 +18,20 @@
         }
         public start(): void {
             this.stop();
+            this._running = true;
             this._elapsed = 0;
             this._expectedEnd = Date.now() + this._end;
             this._expected = Date.now() + this._interval;
             this._timeout = window.setTimeout(this.step.bind(this), this._interval);
         }
         public stop(): void {
+            if (this._running) {
             clearTimeout(this._timeout);
+            }
+            this._running = false;
         }
 
         public step(): void {
-            
             this._elapsed += this._interval;
             if (Date.now() >= this._expectedEnd) {
                 this.stop();

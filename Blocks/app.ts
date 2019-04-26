@@ -14,15 +14,18 @@ namespace RUN {
         // load sprites and run game when done
         PIXI.loader.add('assets/textures/b.png').load(load);
         app.view.onclick = () => (app.view.focus());
-        document.body.appendChild(app.view);
+        document.body.insertBefore(app.view, document.body.childNodes[1]);
 
 
     }
-    export function startGame(config?: ASC.Config, static: boolean = false, queue: number[] = [], map: number[] = []) {
+    export function startGame(config?: ASC.Config, mode: number = 0, queue: number[] = [], map: number[] = []) {
         try {
             if (config !== undefined) {
-                if (static) {
+                if (mode == 1) {
                     game = new ASC.MapGame(config._width, config._bagSize, config._pieces, config._controls, queue, map, config._delay, config._repeat);
+                }
+                else if (mode == 2) {
+                    game = new ASC.DigGame(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
                 }
                 else {
                     game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);

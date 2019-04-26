@@ -7,10 +7,10 @@ namespace SETTINGS {
         private static _config: ASC.Config;
         private static _pieceEditor: P.PieceEditor;
         private static _widthSlider: HTMLInputElement;
-        private static _map: boolean = false;
+        private static _mode: number = 0; //0 game, 1 map, 2 dig
 
-        public static init(map: boolean = false) {
-            Settings._map = map;
+        public static init(mode: number = 0) {
+            Settings._mode = mode;
 
             let pieces: ASC.Piece[] = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
             new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
@@ -152,13 +152,9 @@ namespace SETTINGS {
             settings.appendChild(bag);
 
             settings.appendChild(document.createElement("hr"));
-
-
-
+            
             settings.appendChild(Settings._pieceEditor.getDiv());
-
-
-
+      
             let apply: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
             apply.innerText = "Apply Settings"
             apply.onclick = function () {
@@ -171,10 +167,13 @@ namespace SETTINGS {
 
             document.body.appendChild(settings);
 
-            if (map) {
+            ////////////////////////
+            //END DOM MINIPULATION//
+            ////////////////////////
+            
+            if (mode == 1) {
                 Settings.loadMap();
             }
-
             if (document.cookie !== "") {
                 Settings.readCookie();
 
@@ -183,13 +182,20 @@ namespace SETTINGS {
                 }
                 delay.setAttribute("value", Settings._config._delay.toString());
                 repeat.setAttribute("value", Settings._config._repeat.toString());
-                RUN.afterLoad = () => (Settings.restartGame());
+            }
+            else {
+                Settings.saveCookie();
             }
 
+
+            RUN.afterLoad = () => {
+                Settings.restartGame();
+            };
+            RUN.init();
         }
 
         private static restartGame() {
-            RUN.startGame(Settings._config, Settings._map, Settings._staticQueue, Settings._mapShape);
+            RUN.startGame(Settings._config, Settings._mode, Settings._staticQueue, Settings._mapShape);
         }
 
         private static readCookie() {
@@ -209,14 +215,14 @@ namespace SETTINGS {
                                 }
                                 break;
                             case 'p':
-                                if (!Settings._map) {
+                                if (Settings._mode == 1) {
                                     let p = ASC.Config.pieceFromText(v.substring(2));
                                     Settings._config._pieces = p;
                                     Settings._pieceEditor.setPieces(p);
                                 }
                                 break;
                             case 'b':
-                                if (!Settings._map) {
+                                if (Settings._mode == 1) {
                                     Settings._config._bagSize = JSON.parse(v.substring(2));
                                 }
                                 break;
@@ -244,14 +250,14 @@ namespace SETTINGS {
             //Cookie format:
             //Version: ?; pieces; controls; delay; rate; bagsize;
             c += "v=" + VERSION.toString() + ";";
-            if (!Settings._map) {
+            if (Settings._mode != 1) {
                 c += "p=" + JSON.stringify(Settings._config._pieces) + ";";
 
             }
             c += "c=" + JSON.stringify(Settings._config._controls) + ";";
             c += "r=" + JSON.stringify(Settings._config._repeat) + ";";
             c += "d=" + JSON.stringify(Settings._config._delay) + ';';
-            if (!Settings._map) {
+            if (Settings._mode != 1) {
                 c += "b=" + JSON.stringify(Settings._config._bagSize) + ";";
             }
             c += "Expires: 2147483647;"
@@ -296,7 +302,6 @@ namespace SETTINGS {
                 i++;
             }
             Settings._mapShape = map;
-            RUN.afterLoad = () => (Settings.restartGame());
         }
     }
 }

@@ -98,6 +98,7 @@
     <Content Include="assets\textures\b.png" />
     <Content Include="assets\textures\a.jpg" />
     <Content Include="designer.html" />
+    <Content Include="dig.html" />
     <Content Include="map.html" />
     <Content Include="game.html" />
     <Content Include="index.html" />

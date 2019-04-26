@@ -17,13 +17,12 @@
         protected _controls: number[];
         protected _renderer: Renderer;
         protected _active: boolean = false;
-        protected _garbage: AGarbage;
         /**
          * Creates a new game
          * @param width Width of the game feild, (5 < width < 20, Default: 12).
          */
         public constructor(
-            width: number = 12, bagSize: number = 6,
+            width: number = 12, bagSize: number = 7,
             pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
             new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)],
@@ -68,7 +67,7 @@
         }
         protected gameOver(): void {
             this._active = false;
-
+            this.update();
         }
 
         protected next(): void {
@@ -241,7 +240,11 @@
             }
             this._renderer.updateQueue(q);
         }
-
+        protected appendRow(rows: Block[][], yval: number) {
+            for (let r of rows) {
+                this._field.appendRow(r, yval);
+            }
+        }
         protected clearLines(yvals: number[]): number { //returns number of lines cleared
             let lines = 0;
             yvals.sort(function (a, b) { return a - b }); //sort and remove backwards

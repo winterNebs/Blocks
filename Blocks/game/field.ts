@@ -20,13 +20,21 @@
         }
 
 
-        private shift(lines: number): void { // take garbage or something;
+        private shift(lines: number): void { // take garbage or something; nah
             this._array.splice(0, lines * this._width);
             for (let i = 0; i < lines * this._width; ++i) {
                 this._array.push(new Block());
             }
         }
 
+        public appendRow(row: Block[], yval: number) {
+            //this._array.splice.apply(this._width * yval, ...row);
+            //this._array.splice(0, row.length);
+            let end = this._array.splice(yval * this._width);
+            let temp = this._array.concat(row).concat(end);
+            temp.splice(0,row.length);
+            this._array = temp;
+        }
         /**
          * Returns the block at the 1D index.
          * @param index Index of the block to be returned.
@@ -34,7 +42,7 @@
         public getAt(index: number): Block {
             return this._array[index];
         }
-        
+
         public getColors(): number[] {
             let c: number[] = [];
             for (let i of this._array) {
@@ -47,7 +55,7 @@
          * @param indices Indices to be replaced.
          * @param block Type of block to replace with.
          */
-        public setBlocks(indices: number[], block: Block) :void{
+        public setBlocks(indices: number[], block: Block): void {
             for (let i of indices) {
                 this._array[i] = block;
             }
@@ -56,7 +64,7 @@
          * Clear the line at the specified y-value.
          * @param yval Row to be removed.
          */
-        public clearLineAt(yval: number):void {
+        public clearLineAt(yval: number): void {
             this._array.splice(yval * this._width, this._width);
             for (let i = 0; i < this._width; ++i) {
                 this._array.unshift(new Block());

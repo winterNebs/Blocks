@@ -8,14 +8,17 @@ var RUN;
         };
         PIXI.loader.add('assets/textures/b.png').load(load);
         RUN.app.view.onclick = () => (RUN.app.view.focus());
-        document.body.appendChild(RUN.app.view);
+        document.body.insertBefore(RUN.app.view, document.body.childNodes[1]);
     }
     RUN.init = init;
-    function startGame(config, static = false, queue = [], map = []) {
+    function startGame(config, mode = 0, queue = [], map = []) {
         try {
             if (config !== undefined) {
-                if (static) {
+                if (mode == 1) {
                     RUN.game = new ASC.MapGame(config._width, config._bagSize, config._pieces, config._controls, queue, map, config._delay, config._repeat);
+                }
+                else if (mode == 2) {
+                    RUN.game = new ASC.DigGame(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
                 }
                 else {
                     RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
@@ -75,7 +78,7 @@ var ASC;
         Inputs[Inputs["RESTART"] = 9] = "RESTART";
     })(Inputs = ASC.Inputs || (ASC.Inputs = {}));
     class AGame {
-        constructor(width = 12, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+        constructor(width = 12, bagSize = 7, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
             new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay = 100, repeat = 10) {
             this._pieces = [];
@@ -116,6 +119,7 @@ var ASC;
         }
         gameOver() {
             this._active = false;
+            this.update();
         }
         next() {
             if (this._queue.hasNext()) {
@@ -274,6 +278,11 @@ var ASC;
             }
             this._renderer.updateQueue(q);
         }
+        appendRow(rows, yval) {
+            for (let r of rows) {
+                this._field.appendRow(r, yval);
+            }
+        }
         clearLines(yvals) {
             let lines = 0;
             yvals.sort(function (a, b) { return a - b; });
@@ -407,6 +416,97 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
+    class DigGame extends ASC.AGame {
+        constructor(width = 12, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay = 100, repeat = 10) {
+            super(width, bagSize, pieces, controls, delay, repeat);
+            this._progress = 0;
+            this._attack = new ASC.AttackTable(this._width);
+            this._garbage = new ASC.Garbage(Math.random() * Number.MAX_VALUE, this._width, 0.9);
+            this._timer = new ASC.Timer(this.tick.bind(this), this.win.bind(this), 2000, 120000);
+        }
+        resetGame() {
+            this._progress = 0;
+            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
+            super.resetGame();
+            this._timer.start();
+        }
+        tick() {
+            this.addGarbage(~~(Math.random() * 1));
+            this.update();
+        }
+        gameOver() {
+            this._timer.stop();
+            super.gameOver();
+        }
+        win() {
+            super.gameOver();
+            this._timer.stop();
+            this._renderer.updateTime("You dug for 1 min!");
+        }
+        lock() {
+            let spin = this.checkImmobile();
+            let yvals = this._currentPiece.getYVals();
+            super.lock();
+            let cleared = this.clearLines(yvals);
+            if (cleared > 0) {
+                if (spin) {
+                    this._progress += this._attack.spin(cleared);
+                }
+                else {
+                    this._progress += this._attack.clear(cleared);
+                }
+                if (this.checkPC()) {
+                    this._progress += this._attack.perfectClear(cleared);
+                }
+            }
+        }
+        update() {
+            super.update();
+            this.updateProgress();
+        }
+        updateProgress() {
+            this._renderer.updateProgress(this._progress.toString());
+        }
+        updateTime() {
+            this._renderer.updateTime("Timer off for now :)");
+        }
+        addGarbage(attack = 1) {
+            let garbage = [];
+            let g = this._garbage.addGarbage(attack);
+            for (let row of g) {
+                garbage.push([]);
+                for (let b of row) {
+                    if (b == 1) {
+                        garbage[garbage.length - 1].push(new ASC.Block(0xDDDDDD, true, true));
+                    }
+                    else {
+                        garbage[garbage.length - 1].push(new ASC.Block(0x000000, false, false));
+                    }
+                }
+            }
+            super.appendRow(garbage, ASC.FIELD_HEIGHT);
+            this.checkGarbageShift();
+        }
+        checkGarbageShift() {
+            let y = 0;
+            while (!this.checkShift(0, y)) {
+                --y;
+                for (let v of this._currentPiece.getYVals()) {
+                    if (v + y <= 0) {
+                        this.hardDrop();
+                        return;
+                    }
+                }
+            }
+            this._currentPiece.move(0, y);
+        }
+    }
+    ASC.DigGame = DigGame;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
     let Rotations;
     (function (Rotations) {
         Rotations[Rotations["NONE"] = 0] = "NONE";
@@ -441,6 +541,12 @@ var ASC;
                 this._array.push(new ASC.Block());
             }
         }
+        appendRow(row, yval) {
+            let end = this._array.splice(yval * this._width);
+            let temp = this._array.concat(row).concat(end);
+            temp.splice(0, row.length);
+            this._array = temp;
+        }
         getAt(index) {
             return this._array[index];
         }
@@ -469,7 +575,7 @@ var ASC;
 (function (ASC) {
     const TIMELIMIT = 60;
     class Game extends ASC.AGame {
-        constructor(width = 12, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+        constructor(width = 12, bagSize = 7, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
             new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay = 100, repeat = 10) {
             super(width, bagSize, pieces, controls, delay, repeat);
@@ -683,8 +789,9 @@ var ASC;
 var ASC;
 (function (ASC) {
     class Garbage extends ASC.AGarbage {
-        constructor(width, percentage) {
+        constructor(seed, width, percentage) {
             super();
+            this._prng = new ASC.PRNG(seed);
             this._width = width;
             if (percentage >= 0 && percentage < 100) {
                 this._percentage = percentage;
@@ -694,7 +801,21 @@ var ASC;
             }
         }
         addGarbage(attack) {
-            return [];
+            let g = [];
+            let a = [];
+            for (let i = 0; i < this._width; ++i) {
+                if (i < this._percentage * this._width) {
+                    a.push(1);
+                }
+                else {
+                    a.push(0);
+                }
+            }
+            this._prng.shuffleArray(a);
+            for (let i = 0; i < attack * this._percentage + 0.1; ++i) {
+                g.push(a);
+            }
+            return g;
         }
     }
     ASC.Garbage = Garbage;
@@ -1089,6 +1210,7 @@ var ASC;
     class Timer {
         constructor(tick, finish, interval, end) {
             this._elapsed = 0;
+            this._running = false;
             this._finish = finish;
             this._interval = interval;
             this._tick = tick;
@@ -1096,13 +1218,17 @@ var ASC;
         }
         start() {
             this.stop();
+            this._running = true;
             this._elapsed = 0;
             this._expectedEnd = Date.now() + this._end;
             this._expected = Date.now() + this._interval;
             this._timeout = window.setTimeout(this.step.bind(this), this._interval);
         }
         stop() {
-            clearTimeout(this._timeout);
+            if (this._running) {
+                clearTimeout(this._timeout);
+            }
+            this._running = false;
         }
         step() {
             this._elapsed += this._interval;
@@ -1145,7 +1271,6 @@ var C;
             this._td.style.backgroundColor = this._disabled ? "#000000" : this._checked ? "#DDDDDD" : "#333333";
         }
         click() {
-            console.log("move");
             if (!this._disabled) {
                 Checkbox._lastState = !this._checked;
                 this._checked = Checkbox._lastState;
@@ -1153,7 +1278,6 @@ var C;
             }
         }
         move(ev) {
-            console.log("move");
             var style = getComputedStyle(this._td);
             if (!this._disabled && D.Drag.mouseDown) {
                 this._checked = Checkbox._lastState;
@@ -1545,6 +1669,7 @@ var NAV;
   <a class="active" href="index.html">ASCENSION</a>
   <a href="game.html">Game</a>
   <a href="designer.html">Map Editor</a>
+  <a href="dig.html">Dig Modeᵇᵉᵗᵃ</a>
     <a href="https://discord.gg/GjScWEh" style="float: right;">Discord</a>
     </div>`);
     }
@@ -1619,8 +1744,8 @@ var SETTINGS;
 (function (SETTINGS) {
     const VERSION = 0.002;
     class Settings {
-        static init(map = false) {
-            Settings._map = map;
+        static init(mode = 0) {
+            Settings._mode = mode;
             let pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
                 new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
             Settings._config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], 100, 10, 7);
@@ -1738,7 +1863,7 @@ var SETTINGS;
             };
             settings.appendChild(apply);
             document.body.appendChild(settings);
-            if (map) {
+            if (mode == 1) {
                 Settings.loadMap();
             }
             if (document.cookie !== "") {
@@ -1748,11 +1873,17 @@ var SETTINGS;
                 }
                 delay.setAttribute("value", Settings._config._delay.toString());
                 repeat.setAttribute("value", Settings._config._repeat.toString());
-                RUN.afterLoad = () => (Settings.restartGame());
             }
+            else {
+                Settings.saveCookie();
+            }
+            RUN.afterLoad = () => {
+                Settings.restartGame();
+            };
+            RUN.init();
         }
         static restartGame() {
-            RUN.startGame(Settings._config, Settings._map, Settings._staticQueue, Settings._mapShape);
+            RUN.startGame(Settings._config, Settings._mode, Settings._staticQueue, Settings._mapShape);
         }
         static readCookie() {
             let vals = decodeURIComponent(document.cookie).split(";");
@@ -1769,14 +1900,14 @@ var SETTINGS;
                                 }
                                 break;
                             case 'p':
-                                if (!Settings._map) {
+                                if (Settings._mode == 1) {
                                     let p = ASC.Config.pieceFromText(v.substring(2));
                                     Settings._config._pieces = p;
                                     Settings._pieceEditor.setPieces(p);
                                 }
                                 break;
                             case 'b':
-                                if (!Settings._map) {
+                                if (Settings._mode == 1) {
                                     Settings._config._bagSize = JSON.parse(v.substring(2));
                                 }
                                 break;
@@ -1801,13 +1932,13 @@ var SETTINGS;
         static saveCookie() {
             let c = "";
             c += "v=" + VERSION.toString() + ";";
-            if (!Settings._map) {
+            if (Settings._mode != 1) {
                 c += "p=" + JSON.stringify(Settings._config._pieces) + ";";
             }
             c += "c=" + JSON.stringify(Settings._config._controls) + ";";
             c += "r=" + JSON.stringify(Settings._config._repeat) + ";";
             c += "d=" + JSON.stringify(Settings._config._delay) + ';';
-            if (!Settings._map) {
+            if (Settings._mode != 1) {
                 c += "b=" + JSON.stringify(Settings._config._bagSize) + ";";
             }
             c += "Expires: 2147483647;";
@@ -1851,12 +1982,11 @@ var SETTINGS;
                 i++;
             }
             Settings._mapShape = map;
-            RUN.afterLoad = () => (Settings.restartGame());
         }
     }
     Settings._staticQueue = [];
     Settings._mapShape = [];
-    Settings._map = false;
+    Settings._mode = 0;
     SETTINGS.Settings = Settings;
 })(SETTINGS || (SETTINGS = {}));
 var STYLE;
