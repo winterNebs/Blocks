@@ -1907,9 +1907,6 @@ var SETTINGS;
             };
             settings.appendChild(apply);
             document.body.appendChild(settings);
-            if (mode == 1) {
-                Settings.loadMap();
-            }
             if (document.cookie !== "") {
                 Settings.readCookie();
                 for (let i = 0; i < controlsBox.length; ++i) {
@@ -1920,6 +1917,9 @@ var SETTINGS;
             }
             else {
                 Settings.saveCookie();
+            }
+            if (mode == 1) {
+                Settings.loadMap();
             }
             RUN.afterLoad = () => {
                 Settings.restartGame();

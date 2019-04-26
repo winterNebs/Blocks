@@ -13,7 +13,7 @@ namespace SETTINGS {
             Settings._mode = mode;
 
             let pieces: ASC.Piece[] = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
-                new ASC.Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new ASC.Piece("S", [7, 8, 11, 12], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
+            new ASC.Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new ASC.Piece("S", [7, 8, 11, 12], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
 
             Settings._config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], 100, 10, 7);
             Settings._pieceEditor = new P.PieceEditor(Settings._config._width, pieces);
@@ -152,9 +152,9 @@ namespace SETTINGS {
             settings.appendChild(bag);
 
             settings.appendChild(document.createElement("hr"));
-            
+
             settings.appendChild(Settings._pieceEditor.getDiv());
-      
+
             let apply: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
             apply.innerText = "Apply Settings"
             apply.onclick = function () {
@@ -170,10 +170,7 @@ namespace SETTINGS {
             ////////////////////////
             //END DOM MINIPULATION//
             ////////////////////////
-            
-            if (mode == 1) {
-                Settings.loadMap();
-            }
+
             if (document.cookie !== "") {
                 Settings.readCookie();
 
@@ -187,6 +184,9 @@ namespace SETTINGS {
                 Settings.saveCookie();
             }
 
+            if (mode == 1) {
+                Settings.loadMap();
+            }
 
             RUN.afterLoad = () => {
                 Settings.restartGame();
