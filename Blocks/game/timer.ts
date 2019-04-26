@@ -10,7 +10,7 @@
         private _elapsed: number = 0;
         private _running: boolean = false;
 
-        public constructor(tick: Function, finish: Function, interval: number, end:number) {
+        public constructor(tick: Function, finish: Function, interval: number, end: number) {
             this._finish = finish;
             this._interval = interval;
             this._tick = tick;
@@ -26,7 +26,7 @@
         }
         public stop(): void {
             if (this._running) {
-            clearTimeout(this._timeout);
+                clearTimeout(this._timeout);
             }
             this._running = false;
         }
