@@ -131,5 +131,8 @@
         public get offset(): number {
             return this._offset;
         }
+        public get xy(): number[] {
+            return [this._x, this._y];
+        }
     }
 }

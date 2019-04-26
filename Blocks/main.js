@@ -259,8 +259,26 @@ var ASC;
                 for (let point of this._currentPiece.getCoords(this._width)) {
                     temp[point] = this._currentPiece.color;
                 }
+                for (let i = 0; i < 5; ++i) {
+                    for (let j = 0; j < 5; ++j) {
+                        let index = i + this._currentPiece.xy[0] + (j + this._currentPiece.xy[1]) * this._width;
+                        if (i + this._currentPiece.xy[0] >= 0 && i + this._currentPiece.xy[0] < this._width &&
+                            j + this._currentPiece.xy[1] >= 0 && j + this._currentPiece.xy[1] < ASC.FIELD_HEIGHT) {
+                            temp[index] = this.lighten(temp[index]);
+                        }
+                    }
+                }
             }
             this._renderer.updateField(temp);
+        }
+        lighten(hex) {
+            let r = (hex >> 16) & 255;
+            let g = (hex >> 8) & 255;
+            let b = hex & 255;
+            r = Math.min(r + 50, 255);
+            g = Math.min(g + 50, 255);
+            b = Math.min(b + 50, 255);
+            return r * 65536 + g * 256 + b;
         }
         updateQueue() {
             let queue = this._queue.getQueue();
@@ -417,7 +435,7 @@ var ASC;
 var ASC;
 (function (ASC) {
     class DigGame extends ASC.AGame {
-        constructor(width = 12, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+        constructor(width = 10, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
             new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay = 100, repeat = 10) {
             super(width, bagSize, pieces, controls, delay, repeat);
@@ -818,6 +836,7 @@ var ASC;
             for (let i = 0; i < attack * this._percentage + 0.1; ++i) {
                 g.push(a);
             }
+            console.log(g);
             return g;
         }
     }
@@ -945,6 +964,9 @@ var ASC;
         }
         get offset() {
             return this._offset;
+        }
+        get xy() {
+            return [this._x, this._y];
         }
     }
     ASC.Piece = Piece;

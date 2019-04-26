@@ -219,9 +219,31 @@
                 for (let point of this._currentPiece.getCoords(this._width)) {
                     temp[point] = this._currentPiece.color; /// for now
                 }
+                for (let i = 0; i < 5; ++i) {
+                    for (let j = 0; j < 5; ++j) {
 
+                        let index = i + this._currentPiece.xy[0] + (j + this._currentPiece.xy[1]) * this._width;
+                        if (i + this._currentPiece.xy[0] >= 0 && i + this._currentPiece.xy[0] < this._width && 
+                            j + this._currentPiece.xy[1] >= 0 && j + this._currentPiece.xy[1] < FIELD_HEIGHT) {
+                            temp[index] = this.lighten(temp[index]);
+
+                        }
+                        /*block == null ||                           //Up, Down bounds
+                    yvals[i] != ~~((coords[i] + x) / this._width) ||  //Left, Right wrapping bounds
+                    block.solid                               //Colliding with a block*/
+                    }
+                }
             }
             this._renderer.updateField(temp);
+        }
+        private lighten(hex: number): number {
+            let r = (hex >> 16) & 255;
+            let g = (hex >> 8) & 255;
+            let b = hex & 255;
+            r = Math.min(r + 50, 255);
+            g = Math.min(g + 50, 255);
+            b = Math.min(b + 50, 255);
+            return r * 65536 + g * 256 + b;
         }
         private updateQueue(): void {
             //Update queue

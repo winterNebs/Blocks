@@ -33,6 +33,7 @@
             for (let i = 0; i < attack *this._percentage +0.1; ++i) {
                 g.push(a);
             }
+            console.log(g);
             return g;
         }
     }
