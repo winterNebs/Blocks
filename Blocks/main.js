@@ -77,9 +77,10 @@ var ASC;
         Inputs[Inputs["SONIC"] = 8] = "SONIC";
         Inputs[Inputs["RESTART"] = 9] = "RESTART";
     })(Inputs = ASC.Inputs || (ASC.Inputs = {}));
+    const KICKVER = 1;
     class AGame {
         constructor(width = 12, bagSize = 7, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
-            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
+            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new ASC.Piece("S", [7, 8, 11, 12], 2, 0x00FF00),
             new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay = 100, repeat = 10) {
             this._pieces = [];
             this._active = false;
@@ -209,17 +210,20 @@ var ASC;
                 return;
             }
             if (dir !== ASC.Rotations.CWCW) {
-                let sign = -(dir - 2);
+                let sign = (dir - 2);
                 console.log("Trying to kick:");
-                for (let x = 0; x < 8; ++x) {
-                    let xkicks = Math.pow(-1, x) * ~~(x / 2) * sign;
-                    for (let i = 0; i < (x + 1) * 2; ++i) {
-                        let ykicks = (Math.pow(-1, i) * ~~(i / 2) + ~~(i / 4));
-                        console.log(xkicks, ykicks);
-                        if (this.checkShift(xkicks, ykicks)) {
-                            this._currentPiece.move(xkicks, ykicks);
-                            return;
-                        }
+                let xkicks = [];
+                let ykicks = [];
+                let indexxx = [13, 17, 18, 22, 23, 19, 24, 14, 11, 7, 11, 8, 9, 2, 3];
+                for (let i of indexxx) {
+                    xkicks.push((i % 5) - 2);
+                    ykicks.push(~~(i / 5) - 2);
+                }
+                for (let i = 0; i < xkicks.length; ++i) {
+                    console.log(sign * xkicks[i] + ", " + ykicks[i]);
+                    if (this.checkShift(sign * xkicks[i], ykicks[i])) {
+                        this._currentPiece.move(sign * xkicks[i], ykicks[i]);
+                        return;
                     }
                 }
             }
@@ -268,6 +272,8 @@ var ASC;
                         }
                     }
                 }
+                let i = this._currentPiece.xy[0] + 2 + (this._currentPiece.xy[1] + 2) * this._width;
+                temp[i] = this.lighten(temp[i]);
             }
             this._renderer.updateField(temp);
         }
@@ -278,6 +284,15 @@ var ASC;
             r = Math.min(r + 50, 255);
             g = Math.min(g + 50, 255);
             b = Math.min(b + 50, 255);
+            return r * 65536 + g * 256 + b;
+        }
+        darken(hex) {
+            let r = (hex >> 16) & 255;
+            let g = (hex >> 8) & 255;
+            let b = hex & 255;
+            r = Math.min(r - 75, 255);
+            g = Math.min(g - 75, 255);
+            b = Math.min(b - 75, 255);
             return r * 65536 + g * 256 + b;
         }
         updateQueue() {
@@ -836,7 +851,6 @@ var ASC;
             for (let i = 0; i < attack * this._percentage + 0.1; ++i) {
                 g.push(a);
             }
-            console.log(g);
             return g;
         }
     }
@@ -1355,7 +1369,7 @@ var P;
 (function (P) {
     class PieceEditor {
         constructor(width = 12, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
-            new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]) {
+            new ASC.Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new ASC.Piece("S", [7, 8, 11, 12], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]) {
             this._pieceDiv = document.createElement("div");
             this._pieces = [];
             this._width = 12;
@@ -1777,7 +1791,7 @@ var SETTINGS;
         static init(mode = 0) {
             Settings._mode = mode;
             let pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
-                new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
+                new ASC.Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new ASC.Piece("S", [7, 8, 11, 12], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
             Settings._config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], 100, 10, 7);
             Settings._pieceEditor = new P.PieceEditor(Settings._config._width, pieces);
             D.Drag.init();
