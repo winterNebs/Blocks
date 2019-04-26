@@ -433,7 +433,7 @@ var ASC;
             this._timer.start();
         }
         tick() {
-            this.addGarbage(~~(Math.random() * 1));
+            this.addGarbage(~~(Math.random() * 4));
             this.update();
         }
         gameOver() {
@@ -443,7 +443,7 @@ var ASC;
         win() {
             super.gameOver();
             this._timer.stop();
-            this._renderer.updateTime("You dug for 1 min!");
+            this._renderer.updateTime("You dug for 2 mins!");
         }
         lock() {
             let spin = this.checkImmobile();

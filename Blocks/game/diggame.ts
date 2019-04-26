@@ -30,7 +30,7 @@ namespace ASC {
             this._timer.start();
         }
         protected tick(): void {
-            this.addGarbage(~~(Math.random() * 1));
+            this.addGarbage(~~(Math.random() * 4));
             this.update();
 
         }
@@ -41,7 +41,7 @@ namespace ASC {
         private win(): void {
             super.gameOver();
             this._timer.stop();
-            this._renderer.updateTime("You dug for 1 min!");
+            this._renderer.updateTime("You dug for 2 mins!");
         }
         protected lock() {
             let spin = this.checkImmobile();
