@@ -491,13 +491,16 @@ var ASC;
         }
         checkGarbageShift() {
             let y = 0;
+            let highest = this._currentPiece.getYVals().sort(function (a, b) { return a - b; })[0];
             while (!this.checkShift(0, y)) {
                 --y;
-                for (let v of this._currentPiece.getYVals()) {
-                    if (v + y <= 0) {
-                        this.hardDrop();
-                        return;
-                    }
+                if (highest + y == 0) {
+                    this.hardDrop();
+                    return;
+                }
+                else if (highest + y < 0) {
+                    this.gameOver();
+                    return;
                 }
             }
             this._currentPiece.move(0, y);
@@ -1231,16 +1234,21 @@ var ASC;
             this._running = false;
         }
         step() {
-            this._elapsed += this._interval;
-            if (Date.now() >= this._expectedEnd) {
-                this.stop();
-                this._finish();
-                return;
+            if (this._running) {
+                this._elapsed += this._interval;
+                if (Date.now() >= this._expectedEnd) {
+                    this.stop();
+                    this._finish();
+                    return;
+                }
+                var drift = Date.now() - this._expected;
+                this._tick();
+                this._expected += this._interval;
+                this._timeout = window.setTimeout(this.step.bind(this), Math.max(0, this._interval - drift));
             }
-            var drift = Date.now() - this._expected;
-            this._tick();
-            this._expected += this._interval;
-            this._timeout = window.setTimeout(this.step.bind(this), Math.max(0, this._interval - drift));
+            else {
+                this.stop();
+            }
         }
         get elapsed() {
             return this._elapsed;

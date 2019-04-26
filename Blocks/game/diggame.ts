@@ -32,7 +32,6 @@ namespace ASC {
         protected tick(): void {
             this.addGarbage(~~(Math.random() * 4));
             this.update();
-
         }
         protected gameOver(): void {
             this._timer.stop();
@@ -94,13 +93,16 @@ namespace ASC {
 
         private checkGarbageShift(): void {
             let y = 0;
+            let highest: number = this._currentPiece.getYVals().sort(function (a, b) { return a-b})[0];
             while (!this.checkShift(0, y)) {
                 --y;
-                for (let v of this._currentPiece.getYVals()) {
-                    if (v + y <= 0) {
-                        this.hardDrop();
-                        return;
-                    }
+                if (highest + y == 0) {
+                    this.hardDrop();
+                    return;
+                }
+                else if (highest + y < 0) {
+                    this.gameOver();
+                    return;
                 }
             }
             this._currentPiece.move(0, y);

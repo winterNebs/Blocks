@@ -32,16 +32,21 @@
         }
 
         public step(): void {
-            this._elapsed += this._interval;
-            if (Date.now() >= this._expectedEnd) {
-                this.stop();
-                this._finish();
-                return;
+            if (this._running) {
+                this._elapsed += this._interval;
+                if (Date.now() >= this._expectedEnd) {
+                    this.stop();
+                    this._finish();
+                    return;
+                }
+                var drift = Date.now() - this._expected;
+                this._tick();
+                this._expected += this._interval;
+                this._timeout = window.setTimeout(this.step.bind(this), Math.max(0, this._interval - drift));
             }
-            var drift = Date.now() - this._expected;
-            this._tick();
-            this._expected += this._interval;
-            this._timeout = window.setTimeout(this.step.bind(this), Math.max(0, this._interval - drift));
+            else {
+                this.stop();
+            }
         }
         public get elapsed(): number {
             return this._elapsed;
