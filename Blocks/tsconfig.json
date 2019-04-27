@@ -3,6 +3,8 @@
   "compilerOptions": {
     "moduleResolution": "node",
 	"sourceMap": false,
+
+        "outFile": "main.js",
     "typeRoots": [
       "node_modules/@types"
     ],
