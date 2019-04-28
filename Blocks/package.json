@@ -5,7 +5,7 @@
   "devDependencies": {},
   "dependencies": {
     "@types/pixi.js": "^4.8.7",
-    "typescript": "next"
+    "typescript": "^3.5.0-dev.20190427"
   },
   "description": "A complex falling-blocks puzzle game",
   "main": "index.js",

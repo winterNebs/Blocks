@@ -26,7 +26,8 @@ namespace ASC {
         }
         public resetGame(): void {
             this._progress = 0;
-            this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
+            this._seed = Math.random() * Number.MAX_VALUE
+            this._queue = new Queue(this._seed, this._pieces, this._bagSize);
             super.resetGame();
         }
         protected tick(): void {

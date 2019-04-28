@@ -7,6 +7,7 @@
     }
     const KICKVER = 1;
     export abstract class AGame implements ITriggerObserver {
+        private _visible: boolean = true;
         protected _field: Field;
         protected _currentPiece: Piece;
         protected _hold: Piece;
@@ -17,6 +18,8 @@
         protected _controls: number[];
         protected _renderer: Renderer;
         protected _active: boolean = false;
+        protected _seed: number;
+        private _time: Stopwatch;
         /**
          * Creates a new game
          * @param width Width of the game feild, (5 < width < 20, Default: 12).
@@ -27,33 +30,34 @@
             new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new Piece("S", [7, 8, 11, 12], 2, 0x00FF00),
             new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)],
             controls: number[] = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay: number = 100, repeat: number = 10) {
-            for (var i = RUN.app.stage.children.length - 1; i >= 0; --i) {
-                RUN.app.stage.removeChild(RUN.app.stage.children[i]);
-            };
-
             if (delay < 1) {
                 throw new Error("Invalid Delay");
             }
             if (repeat < 1) {
                 throw new Error("Invalid Repeat");
             }
-            InputManager.RegisterObserver(this);
-            InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
-            this._controls = controls
             if (width > MAX_FIELD_WIDTH || width < MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
             this._width = width;
             this._bagSize = bagSize;
-            this._renderer = new Renderer(this._width, "Attack");
             //Verify piece offset.
             for (let p of pieces) {
                 p.validateOffset(this._width);
             }
             this._pieces = pieces;
             this._pieces.forEach((i) => (i.initRotations()));
-            //this.resetGame();
-            RUN.app.stage.addChild(this._renderer);
+            if (this._visible) {
+                for (var i = RUN.app.stage.children.length - 1; i >= 0; --i) {
+                    RUN.app.stage.removeChild(RUN.app.stage.children[i]);
+                }
+                InputManager.RegisterObserver(this);
+                InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
+                this._controls = controls
+                this._renderer = new Renderer(this._width, "Attack");
+                RUN.app.stage.addChild(this._renderer);
+            }
+            this._time = new Stopwatch();
         }
 
         public resetGame(): void {
@@ -61,7 +65,8 @@
             this._hold = undefined;
             this.next();
             this._active = true;
-            this._renderer.updateTime("new game haha :)");
+            this._time.start();
+            this._renderer.updateTime((this._time.getTime()/1000).toString());
             this.update();
 
         }
@@ -206,6 +211,7 @@
         protected update(): void {
             this.updateField();
             this.updateQueue();
+            this._renderer.updateTime((this._time.getTime() / 1000).toString());
             this.updateHold();
         }
         private updateHold(): void {

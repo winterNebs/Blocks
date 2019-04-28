@@ -128,6 +128,8 @@
     <TypeScriptCompile Include="game\logic\Agarbage.ts" />
     <TypeScriptCompile Include="game\logic\garbage.ts" />
     <TypeScriptCompile Include="game\mapgame.ts" />
+    <Content Include="test.html" />
+    <TypeScriptCompile Include="game\stopwatch.ts" />
     <TypeScriptCompile Include="webgui\bettercb.ts" />
     <TypeScriptCompile Include="webgui\dragutil.ts" />
     <TypeScriptCompile Include="webgui\navbar.ts" />

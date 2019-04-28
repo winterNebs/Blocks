@@ -82,40 +82,44 @@ var ASC;
         constructor(width = 12, bagSize = 7, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new ASC.Piece("S", [7, 8, 11, 12], 2, 0x00FF00),
             new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay = 100, repeat = 10) {
+            this._visible = true;
             this._pieces = [];
             this._active = false;
-            for (var i = RUN.app.stage.children.length - 1; i >= 0; --i) {
-                RUN.app.stage.removeChild(RUN.app.stage.children[i]);
-            }
-            ;
             if (delay < 1) {
                 throw new Error("Invalid Delay");
             }
             if (repeat < 1) {
                 throw new Error("Invalid Repeat");
             }
-            ASC.InputManager.RegisterObserver(this);
-            ASC.InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
-            this._controls = controls;
             if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
                 throw new Error("Invalid width: " + width.toString());
             }
             this._width = width;
             this._bagSize = bagSize;
-            this._renderer = new ASC.Renderer(this._width, "Attack");
             for (let p of pieces) {
                 p.validateOffset(this._width);
             }
             this._pieces = pieces;
             this._pieces.forEach((i) => (i.initRotations()));
-            RUN.app.stage.addChild(this._renderer);
+            if (this._visible) {
+                for (var i = RUN.app.stage.children.length - 1; i >= 0; --i) {
+                    RUN.app.stage.removeChild(RUN.app.stage.children[i]);
+                }
+                ASC.InputManager.RegisterObserver(this);
+                ASC.InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
+                this._controls = controls;
+                this._renderer = new ASC.Renderer(this._width, "Attack");
+                RUN.app.stage.addChild(this._renderer);
+            }
+            this._time = new ASC.Stopwatch();
         }
         resetGame() {
             this._field = new ASC.Field(this._width);
             this._hold = undefined;
             this.next();
             this._active = true;
-            this._renderer.updateTime("new game haha :)");
+            this._time.start();
+            this._renderer.updateTime((this._time.getTime() / 1000).toString());
             this.update();
         }
         gameOver() {
@@ -237,6 +241,7 @@ var ASC;
         update() {
             this.updateField();
             this.updateQueue();
+            this._renderer.updateTime((this._time.getTime() / 1000).toString());
             this.updateHold();
         }
         updateHold() {
@@ -459,12 +464,13 @@ var ASC;
             super(width, bagSize, pieces, controls, delay, repeat);
             this._progress = 0;
             this._attack = new ASC.AttackTable(this._width);
-            this._garbage = new ASC.Garbage(Math.random() * Number.MAX_VALUE, this._width, 0.9);
             this._timer = new ASC.Timer(120000, 2000, this.tick.bind(this), this.win.bind(this));
         }
         resetGame() {
             this._progress = 0;
-            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
+            this._seed = Math.random() * Number.MAX_VALUE;
+            this._garbage = new ASC.Garbage(this._seed, this._width, 0.9);
+            this._queue = new ASC.Queue(this._seed, this._pieces, this._bagSize);
             super.resetGame();
             this._timer.start();
         }
@@ -623,7 +629,8 @@ var ASC;
         }
         resetGame() {
             this._progress = 0;
-            this._queue = new ASC.Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
+            this._seed = Math.random() * Number.MAX_VALUE;
+            this._queue = new ASC.Queue(this._seed, this._pieces, this._bagSize);
             super.resetGame();
         }
         tick() {
@@ -1246,6 +1253,20 @@ var ASC;
         }
     }
     ASC.AttackTable = AttackTable;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Stopwatch {
+        constructor() {
+        }
+        start() {
+            this._start = performance.now();
+        }
+        getTime() {
+            return performance.now() - this._start;
+        }
+    }
+    ASC.Stopwatch = Stopwatch;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {

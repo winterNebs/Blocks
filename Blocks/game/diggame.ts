@@ -20,12 +20,13 @@ namespace ASC {
 
             super(width, bagSize, pieces, controls, delay, repeat);
             this._attack = new AttackTable(this._width);
-            this._garbage = new Garbage(Math.random() * Number.MAX_VALUE, this._width, 0.9);
             this._timer = new Timer(120000, 2000, this.tick.bind(this), this.win.bind(this));
         }
         public resetGame(): void {
             this._progress = 0;
-            this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
+            this._seed = Math.random() * Number.MAX_VALUE
+            this._garbage = new Garbage(this._seed, this._width, 0.9);
+            this._queue = new Queue(this._seed, this._pieces, this._bagSize);
             super.resetGame();
             this._timer.start();
         }
