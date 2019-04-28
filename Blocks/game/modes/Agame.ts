@@ -20,6 +20,7 @@
         protected _active: boolean = false;
         protected _seed: number;
         private _time: Stopwatch;
+        private _inputs: Inputs[];
         /**
          * Creates a new game
          * @param width Width of the game feild, (5 < width < 20, Default: 12).
@@ -59,14 +60,23 @@
             }
             this._time = new Stopwatch();
         }
-
+        protected randomSeed() {
+            this._seed = Math.round(Math.random() * Number.MAX_SAFE_INTEGER);
+        }
+        //public static replay(replay: string): AGame {
+         //   le
+        //}
         public resetGame(): void {
+            if (this._inputs != undefined) {
+                console.log(JSON.stringify(this._seed) + "; " + this._inputs.join());
+            }
             this._field = new Field(this._width);
             this._hold = undefined;
             this.next();
             this._active = true;
             this._time.start();
-            this._renderer.updateTime((this._time.getTime()/1000).toString());
+            this._inputs = [];
+            this._renderer.updateTime((this._time.getTime() / 1000).toString());
             this.update();
 
         }
@@ -359,32 +369,41 @@
             if (this._active) {
                 switch (keyCode) {
                     case this._controls[Inputs.CW]:
+                        this._inputs.push(Inputs.CW);
                         this.rotate(Rotations.CW);
                         break;
                     case this._controls[Inputs.RIGHT]:
+                        this._inputs.push(Inputs.RIGHT);
                         this.move(Directions.RIGHT);
                         InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
                         break;
                     case this._controls[Inputs.SD]:
+                        this._inputs.push(Inputs.SD);
                         this.move(Directions.DOWN);
                         break;
                     case this._controls[Inputs.LEFT]:
-                        InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
+                        this._inputs.push(Inputs.LEFT);
                         this.move(Directions.LEFT);
+                        InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
                         break;
                     case this._controls[Inputs.CCW]:
+                        this._inputs.push(Inputs.CCW);
                         this.rotate(Rotations.CCW);
                         break;
                     case this._controls[Inputs.CWCW]:
+                        this._inputs.push(Inputs.CWCW);
                         this.rotate(Rotations.CWCW);
                         break;
                     case this._controls[Inputs.HD]:
+                        this._inputs.push(Inputs.HD);
                         this.hardDrop();
                         break;
                     case this._controls[Inputs.HOLD]:
+                        this._inputs.push(Inputs.HOLD);
                         this.hold();
                         break;
                     case this._controls[Inputs.SONIC]:
+                        this._inputs.push(Inputs.SONIC);
                         this.sonicDrop();
                         break;
                 }
