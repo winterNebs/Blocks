@@ -15,10 +15,7 @@
             this._td.draggable = false;
             this.update();
         }
-
-
-
-
+        
         public getTD(): HTMLTableDataCellElement {
             return this._td;
         }

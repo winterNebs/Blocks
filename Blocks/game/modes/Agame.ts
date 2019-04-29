@@ -1,13 +1,6 @@
 ﻿namespace ASC {
-    export const MAX_FIELD_WIDTH: number = 20;
-    export const MIN_FIELD_WIDTH: number = 5;
-    export const FIELD_HEIGHT: number = 25;
-    export enum Inputs {
-        RIGHT, SD, LEFT, CW, CCW, CWCW, HOLD, HD, SONIC, RESTART
-    }
     const KICKVER = 1;
-    export abstract class AGame implements ITriggerObserver {
-        private _visible: boolean = true;
+    export abstract class AGame {
         protected _field: Field;
         protected _currentPiece: Piece;
         protected _hold: Piece;
@@ -16,21 +9,20 @@
         protected _bagSize: number;
         protected _pieces: Piece[] = [];
         protected _controls: number[];
-        protected _renderer: Renderer;
-        protected _active: boolean = false;
+        protected _state: State = State.LOSE;
         protected _seed: number;
         private _time: Stopwatch;
         private _inputs: Inputs[];
-        /**
-         * Creates a new game
-         * @param width Width of the game feild, (5 < width < 20, Default: 12).
-         */
+        private _updateCallback: Function;
+        private _updateHoldCallback: Function;
+        private _updateQueueCallback: Function;
+        private _updateFieldCallback: Function;
+
         public constructor(
             width: number = 12, bagSize: number = 7,
             pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new Piece("S", [7, 8, 11, 12], 2, 0x00FF00),
-            new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)],
-            controls: number[] = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay: number = 100, repeat: number = 10) {
+            new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay: number = 100, repeat: number = 10) {
             if (delay < 1) {
                 throw new Error("Invalid Delay");
             }
@@ -48,23 +40,14 @@
             }
             this._pieces = pieces;
             this._pieces.forEach((i) => (i.initRotations()));
-            if (this._visible) {
-                for (var i = RUN.app.stage.children.length - 1; i >= 0; --i) {
-                    RUN.app.stage.removeChild(RUN.app.stage.children[i]);
-                }
-                InputManager.RegisterObserver(this);
-                InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
-                this._controls = controls
-                this._renderer = new Renderer(this._width, "Attack");
-                RUN.app.stage.addChild(this._renderer);
-            }
+
             this._time = new Stopwatch();
         }
         protected randomSeed() {
             this._seed = Math.round(Math.random() * Number.MAX_SAFE_INTEGER);
         }
         //public static replay(replay: string): AGame {
-         //   le
+        //   le
         //}
         public resetGame(): void {
             if (this._inputs != undefined) {
@@ -73,15 +56,14 @@
             this._field = new Field(this._width);
             this._hold = undefined;
             this.next();
-            this._active = true;
+            this._state = State.ACTIVE;
             this._time.start();
             this._inputs = [];
-            this._renderer.updateTime((this._time.getTime() / 1000).toString());
             this.update();
 
         }
         protected gameOver(): void {
-            this._active = false;
+            this._state = State.LOSE;
             this.update();
         }
 
@@ -90,12 +72,12 @@
                 this._currentPiece = this._queue.getNext();
                 if (!this.checkShift(0, 0)) {
                     this.gameOver();
-                    this._renderer.updateTime("Game end");
+                    this._state = State.LOSE;
                 }
             }
             else {
                 this.gameOver();
-                this._renderer.updateTime("Game end");
+                this._state = State.LOSE;
             }
         }
         protected hold(): void {
@@ -220,87 +202,18 @@
 
         protected update(): void {
             this.updateField();
-            this.updateQueue();
-            this._renderer.updateTime((this._time.getTime() / 1000).toString());
-            this.updateHold();
-        }
-        private updateHold(): void {
-            if (this._hold === undefined) {
-                let temp = [];
-                for (let i = 0; i < 25; ++i) {
-                    temp.push(0x000000);
-                }
-                this._renderer.updateHold(temp);
-                return;
-            }
-            this._renderer.updateHold(this._hold.getRenderShape());
+            this._updateQueueCallback(this._queue.getQueue());
+            this._updateHoldCallback(this._hold);
+            this._updateCallback();
         }
         private updateField(): void {
-            //Update field
             let temp = this._field.getColors();
-            if (this._currentPiece != undefined) {
-                let copyCurrent = this._currentPiece.getCopy();
-                this.sonicDrop();
-                for (let point of this._currentPiece.getCoords(this._width)) {
-                    temp[point] = (this._currentPiece.color & 0xfefefe) >> 1;; /// for now
-                }
-                this._currentPiece = copyCurrent;
-                for (let point of this._currentPiece.getCoords(this._width)) {
-                    temp[point] = this._currentPiece.color; /// for now
-                }
-                for (let i = 0; i < 5; ++i) {
-                    for (let j = 0; j < 5; ++j) {
+            let current = this._currentPiece.getCopy();
+            this.sonicDrop();
+            let ghost = this._currentPiece.getCopy();
+            this._currentPiece = current;
+            this._updateFieldCallback(temp, current.getCopy(), ghost);
 
-                        let index = i + this._currentPiece.xy[0] + (j + this._currentPiece.xy[1]) * this._width;
-                        if (i + this._currentPiece.xy[0] >= 0 && i + this._currentPiece.xy[0] < this._width &&
-                            j + this._currentPiece.xy[1] >= 0 && j + this._currentPiece.xy[1] < FIELD_HEIGHT) {
-                            if (i == 2 && j == 2) {
-                                temp[index] = this.darken(temp[index]);
-                            }
-                            else {
-                                temp[index] = this.lighten(temp[index]);
-                            }
-
-                        }
-                    }
-                }
-            }
-            this._renderer.updateField(temp);
-        }
-        private lighten(hex: number): number {
-            let r = (hex >> 16) & 255;
-            let g = (hex >> 8) & 255;
-            let b = hex & 255;
-            r = Math.min(r + 50, 255);
-            g = Math.min(g + 50, 255);
-            b = Math.min(b + 50, 255);
-            return r * 65536 + g * 256 + b;
-        }
-        private darken(hex: number): number {
-            let r = (hex >> 16) & 255;
-            let g = (hex >> 8) & 255;
-            let b = hex & 255;
-            r = Math.max(r - 50, 0);
-            g = Math.max(g - 50, 0);
-            b = Math.max(b - 50, 0);
-            return r * 65536 + g * 256 + b;
-        }
-        private updateQueue(): void {
-            //Update queue
-            let queue: Piece[] = this._queue.getQueue();
-            while (queue.length < NUM_PREVIEWS) {
-                queue.push(undefined);
-            }
-            let q: number[][] = [];
-            for (let p of queue) {
-                if (p == undefined) {
-                    q.push(new Array(25).fill(0));
-                }
-                else {
-                    q.push(p.getRenderShape());
-                }
-            }
-            this._renderer.updateQueue(q);
         }
         protected appendRow(rows: Block[][], yval: number) {
             for (let r of rows) {
@@ -325,93 +238,70 @@
 
             return lines;
         }
-        public touchControl(code: number): void {
-            if (this._active) {
-                switch (code) {
-                    case 0:
-                        InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
-                        this.move(Directions.LEFT);
-                        break;
-                    case 1:
-                        this.move(Directions.DOWN);
-                        break;
-                    case 2:
-                        this.move(Directions.RIGHT);
-                        InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
-                        break;
-                    case 3:
-
-                        this.rotate(Rotations.CW);
-                        break;
-                    case 4:
-                        this.rotate(Rotations.CWCW);
-                        break;
-                    case 5:
-                        this.rotate(Rotations.CCW);
-                        break;
-                    case 6:
-                        this.hardDrop();
-                        break;
-                    case 7:
-                        this.hold();
-                        break;
-                    case 8:
-                        this.sonicDrop();
-                        break;
-                }
-                this.update();//remove this and only update when needed
-            }
-            if (code == 9) { //f4
-                this.resetGame();
-            }
+        public setUpdate(u: Function) {
+            this._updateCallback = u;
         }
-        Triggered(keyCode: number): void {
-            if (this._active) {
-                switch (keyCode) {
-                    case this._controls[Inputs.CW]:
-                        this._inputs.push(Inputs.CW);
+        public setUpdateHold(u: Function) {
+            this._updateHoldCallback = u;
+        }
+        public setUpdateQueue(u: Function) {
+            this._updateQueueCallback = u;
+        }
+        public setUpdateField(u: Function) {
+            this._updateFieldCallback = u;
+        }
+        public get time(): number {
+            return this._time.getTime();
+        }
+        public get state(): State {
+            return this._state;
+        }
+
+        public readinput(input: Inputs) {
+            if (this._state == State.ACTIVE) {
+                switch (input) {
+                    case Inputs.CW:
+                        this._inputs.push(input);
                         this.rotate(Rotations.CW);
                         break;
-                    case this._controls[Inputs.RIGHT]:
-                        this._inputs.push(Inputs.RIGHT);
+                    case Inputs.RIGHT:
+                        this._inputs.push(input);
                         this.move(Directions.RIGHT);
-                        InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
+                      
                         break;
-                    case this._controls[Inputs.SD]:
-                        this._inputs.push(Inputs.SD);
+                    case Inputs.SD:
+                        this._inputs.push(input);
                         this.move(Directions.DOWN);
                         break;
-                    case this._controls[Inputs.LEFT]:
-                        this._inputs.push(Inputs.LEFT);
+                    case Inputs.LEFT:
+                        this._inputs.push(input);
                         this.move(Directions.LEFT);
-                        InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
                         break;
-                    case this._controls[Inputs.CCW]:
-                        this._inputs.push(Inputs.CCW);
+                    case Inputs.CCW:
+                        this._inputs.push(input);
                         this.rotate(Rotations.CCW);
                         break;
-                    case this._controls[Inputs.CWCW]:
-                        this._inputs.push(Inputs.CWCW);
+                    case Inputs.CWCW:
+                        this._inputs.push(input);
                         this.rotate(Rotations.CWCW);
                         break;
-                    case this._controls[Inputs.HD]:
-                        this._inputs.push(Inputs.HD);
+                    case Inputs.HD:
+                        this._inputs.push(input);
                         this.hardDrop();
                         break;
-                    case this._controls[Inputs.HOLD]:
-                        this._inputs.push(Inputs.HOLD);
+                    case Inputs.HOLD:
+                        this._inputs.push(input);
                         this.hold();
                         break;
-                    case this._controls[Inputs.SONIC]:
-                        this._inputs.push(Inputs.SONIC);
+                    case Inputs.SONIC:
+                        this._inputs.push(input);
                         this.sonicDrop();
                         break;
+                    default:
+                        break;
                 }
-                this.update();//remove this and only update when needed
             }
-            if (keyCode == this._controls[Inputs.RESTART]) { //f4
-                this.resetGame();
-            }
+            this.update();//remove this and only update when needed
         }
     }
 }

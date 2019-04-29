@@ -1,7 +1,8 @@
-﻿
+﻿/// <reference path="game/gamemanager.ts" />
+
 namespace RUN {
     export var app: PIXI.Application;
-    export var game: ASC.AGame;
+    export var game: ASC.GameManager;
     export var afterLoad;
     export function init() {
         app = new PIXI.Application(800, 600, { backgroundColor: 0x333333 });
@@ -18,26 +19,13 @@ namespace RUN {
 
 
     }
-    export function startGame(config?: ASC.Config, mode: number = 0, queue: number[] = [], map: number[] = []) {
+    export function startGame(config?: ASC.Config, mode?:ASC.Mode, mapdata?:ASC.MapData) {
         try {
-            if (config !== undefined) {
-                if (mode == 1) {
-                    game = new ASC.MapGame(config._width, config._bagSize, config._pieces, config._controls, queue, map, config._delay, config._repeat);
-                }
-                else if (mode == 2) {
-                    game = new ASC.DigGame(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
-                }
-                else {
-                    game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
-                }
-            }
-            else {
-                game = new ASC.Game();
-            }
+            game = new ASC.GameManager(config, mode, mapdata);
         }
         catch (err) {
             alert("Error in config: " + err);
-            game = new ASC.Game();
+            game = new ASC.GameManager(new ASC.Config, ASC.Mode.PRACTICE);
         }
         game.resetGame();
         app.view.focus();
@@ -56,7 +44,7 @@ namespace RUN {
         newGameButton.innerText = "New Game";
         newGameButton.onclick = () => (game.resetGame());
         document.body.appendChild(newGameButton);
-        let lables = ["Left", "Softdrop", "Right", "Clockwise", "180", "Counter Clockwise", "Hard Drop", "Hold", "Instant Drop", "Restart"];
+        const lables = ["Left", "Softdrop", "Right", "Clockwise", "180", "Counter Clockwise", "Hard Drop", "Hold", "Instant Drop", "Restart"];
         for (let i = 0; i < lables.length; ++i) {
             let be: HTMLButtonElement = document.createElement("button");
             be.innerText = lables[i];

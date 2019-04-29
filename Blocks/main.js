@@ -1,3 +1,141 @@
+var ASC;
+(function (ASC) {
+    class GameManager {
+        constructor(c, mode, mapdata) {
+            this._visible = true;
+            this._config = c;
+            this._mapdata = mapdata;
+            switch (mode) {
+                case ASC.Mode.PRACTICE:
+                    this._game = new ASC.Game(this._config.width, this._config.bagSize, this._config.pieces, this._config.delay, this._config.repeat);
+                    break;
+                case ASC.Mode.MAP:
+                    this._game = new ASC.MapGame(this._mapdata.width, this._config.bagSize, mapdata.pieces, this._mapdata.queue, this._mapdata.clearable, this._mapdata.unclearable, this._config.delay, this._config.repeat);
+                    break;
+                case ASC.Mode.DIG:
+                    this._game = new ASC.DigGame(this._config.width, this._config.bagSize, this._config.pieces, this._config.delay, this._config.repeat);
+                    break;
+                case ASC.Mode.VS:
+                    break;
+            }
+            this._controls = this._config.controls;
+            this._renderer = new ASC.Renderer(this._config.width, "Attack");
+            for (var i = RUN.app.stage.children.length - 1; i >= 0; --i) {
+                RUN.app.stage.removeChild(RUN.app.stage.children[i]);
+            }
+            ASC.InputManager.RegisterObserver(this);
+            ASC.InputManager.RegisterKeys(this, [this._config.controls[ASC.Inputs.LEFT], this._config.controls[ASC.Inputs.RIGHT], this._config.controls[ASC.Inputs.SD]], this._config.delay, this._config.repeat);
+            RUN.app.stage.addChild(this._renderer);
+            this._game.setUpdate(this.updateGame.bind(this));
+            this._game.setUpdateHold(this.updateHold.bind(this));
+            this._game.setUpdateQueue(this.updateQueue.bind(this));
+            this._game.setUpdateField(this.updateField.bind(this));
+        }
+        resetGame() {
+            this._game.resetGame();
+        }
+        updateGame() {
+            this._renderer.updateTime((this._game.time / 1000).toString());
+        }
+        updateHold(hold) {
+            if (hold === undefined) {
+                let temp = [];
+                for (let i = 0; i < 25; ++i) {
+                    temp.push(0x000000);
+                }
+                this._renderer.updateHold(temp);
+            }
+            else {
+                this._renderer.updateHold(hold.getRenderShape());
+            }
+        }
+        updateQueue(queue) {
+            while (queue.length < ASC.NUM_PREVIEWS) {
+                queue.push(undefined);
+            }
+            let q = [];
+            for (let p of queue) {
+                if (p == undefined) {
+                    q.push(new Array(25).fill(0));
+                }
+                else {
+                    q.push(p.getRenderShape());
+                }
+            }
+            this._renderer.updateQueue(q);
+        }
+        updateField(temp, current, ghost) {
+            if (current != undefined) {
+                for (let point of ghost.getCoords(this._config.width)) {
+                    temp[point] = (ghost.color & 0xfefefe) >> 1;
+                    ;
+                }
+                for (let point of current.getCoords(this._config.width)) {
+                    temp[point] = current.color;
+                }
+                for (let i = 0; i < 5; ++i) {
+                    for (let j = 0; j < 5; ++j) {
+                        let index = i + current.xy[0] + (j + current.xy[1]) * this._config.width;
+                        if (i + current.xy[0] >= 0 && i + current.xy[0] < this._config.width &&
+                            j + current.xy[1] >= 0 && j + current.xy[1] < ASC.FIELD_HEIGHT) {
+                            if (i == 2 && j == 2) {
+                                temp[index] = GameManager.darken(temp[index]);
+                            }
+                            else {
+                                temp[index] = GameManager.lighten(temp[index]);
+                            }
+                        }
+                    }
+                }
+            }
+            this._renderer.updateField(temp);
+        }
+        static lighten(hex) {
+            let r = (hex >> 16) & 255;
+            let g = (hex >> 8) & 255;
+            let b = hex & 255;
+            r = Math.min(r + 50, 255);
+            g = Math.min(g + 50, 255);
+            b = Math.min(b + 50, 255);
+            return r * 65536 + g * 256 + b;
+        }
+        static darken(hex) {
+            let r = (hex >> 16) & 255;
+            let g = (hex >> 8) & 255;
+            let b = hex & 255;
+            r = Math.max(r - 50, 0);
+            g = Math.max(g - 50, 0);
+            b = Math.max(b - 50, 0);
+            return r * 65536 + g * 256 + b;
+        }
+        touchControl(code) {
+            const touchMap = [ASC.Inputs.LEFT, ASC.Inputs.SD, ASC.Inputs.RIGHT, ASC.Inputs.CW, ASC.Inputs.CWCW, ASC.Inputs.CCW, ASC.Inputs.HD, ASC.Inputs.HOLD, ASC.Inputs.SONIC];
+            if (this._game.state == ASC.State.ACTIVE) {
+                this._game.readinput(touchMap.indexOf(code));
+            }
+            if (code == 9) {
+                this.resetGame();
+            }
+        }
+        Triggered(keyCode) {
+            this._game.readinput(this._controls.indexOf(keyCode));
+            switch (keyCode) {
+                case this._controls[ASC.Inputs.RIGHT]:
+                    ASC.InputManager.cancelRepeat(this._controls[ASC.Inputs.LEFT]);
+                    break;
+                case this._controls[ASC.Inputs.LEFT]:
+                    ASC.InputManager.cancelRepeat(this._controls[ASC.Inputs.RIGHT]);
+                    break;
+                default:
+                    break;
+            }
+            if (keyCode == this._controls[ASC.Inputs.RESTART]) {
+                this.resetGame();
+            }
+        }
+    }
+    ASC.GameManager = GameManager;
+})(ASC || (ASC = {}));
 var RUN;
 (function (RUN) {
     function init() {
@@ -11,26 +149,13 @@ var RUN;
         document.body.insertBefore(RUN.app.view, document.body.childNodes[1]);
     }
     RUN.init = init;
-    function startGame(config, mode = 0, queue = [], map = []) {
+    function startGame(config, mode, mapdata) {
         try {
-            if (config !== undefined) {
-                if (mode == 1) {
-                    RUN.game = new ASC.MapGame(config._width, config._bagSize, config._pieces, config._controls, queue, map, config._delay, config._repeat);
-                }
-                else if (mode == 2) {
-                    RUN.game = new ASC.DigGame(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
-                }
-                else {
-                    RUN.game = new ASC.Game(config._width, config._bagSize, config._pieces, config._controls, config._delay, config._repeat);
-                }
-            }
-            else {
-                RUN.game = new ASC.Game();
-            }
+            RUN.game = new ASC.GameManager(config, mode, mapdata);
         }
         catch (err) {
             alert("Error in config: " + err);
-            RUN.game = new ASC.Game();
+            RUN.game = new ASC.GameManager(new ASC.Config, ASC.Mode.PRACTICE);
         }
         RUN.game.resetGame();
         RUN.app.view.focus();
@@ -49,7 +174,7 @@ var RUN;
         newGameButton.innerText = "New Game";
         newGameButton.onclick = () => (RUN.game.resetGame());
         document.body.appendChild(newGameButton);
-        let lables = ["Left", "Softdrop", "Right", "Clockwise", "180", "Counter Clockwise", "Hard Drop", "Hold", "Instant Drop", "Restart"];
+        const lables = ["Left", "Softdrop", "Right", "Clockwise", "180", "Counter Clockwise", "Hard Drop", "Hold", "Instant Drop", "Restart"];
         for (let i = 0; i < lables.length; ++i) {
             let be = document.createElement("button");
             be.innerText = lables[i];
@@ -190,19 +315,6 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    class AGarbage {
-    }
-    ASC.AGarbage = AGarbage;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    ASC.NUM_PREVIEWS = 6;
-    class AQueue {
-    }
-    ASC.AQueue = AQueue;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
     class Block {
         constructor(color = 0x000000, solid = false, clearable = false) {
             this._color = color;
@@ -220,40 +332,6 @@ var ASC;
         }
     }
     ASC.Block = Block;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class Garbage extends ASC.AGarbage {
-        constructor(seed, width, percentage) {
-            super();
-            this._prng = new ASC.PRNG(seed);
-            this._width = width;
-            if (percentage >= 0 && percentage < 100) {
-                this._percentage = percentage;
-            }
-            else {
-                throw new Error("Invalid Percentage: " + percentage);
-            }
-        }
-        addGarbage(attack) {
-            let g = [];
-            let a = [];
-            for (let i = 0; i < this._width; ++i) {
-                if (i < this._percentage * this._width) {
-                    a.push(1);
-                }
-                else {
-                    a.push(0);
-                }
-            }
-            this._prng.shuffleArray(a);
-            for (let i = 0; i < attack * this._percentage + 0.1; ++i) {
-                g.push(a);
-            }
-            return g;
-        }
-    }
-    ASC.Garbage = Garbage;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -410,70 +488,6 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    class Queue extends ASC.AQueue {
-        constructor(seed, pieces, size = pieces.length) {
-            super();
-            this._queue = [];
-            this._rng = new ASC.PRNG(seed);
-            this._bag = pieces;
-            this._bagSize = size;
-            this.generateQueue();
-        }
-        generateQueue() {
-            while (this._queue.length < ASC.NUM_PREVIEWS) {
-                let tempBag = [];
-                while (tempBag.length < this._bagSize) {
-                    this._bag.forEach((i) => tempBag.push(i.getCopy()));
-                }
-                this._rng.shuffleArray(tempBag);
-                for (let i of tempBag.slice(0, this._bagSize + 1)) {
-                    this._queue.push(i);
-                }
-            }
-        }
-        getQueue() {
-            return this._queue.slice(0, ASC.NUM_PREVIEWS);
-        }
-        getNext() {
-            let temp = this._queue.splice(0, 1)[0];
-            this.generateQueue();
-            return temp;
-        }
-        hasNext() {
-            return true;
-        }
-    }
-    ASC.Queue = Queue;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class StaticQueue extends ASC.AQueue {
-        constructor(pieces, order) {
-            super();
-            this._queue = [];
-            this._bag = pieces;
-            for (let i of order) {
-                this._queue.push(this._bag[i].getCopy());
-            }
-        }
-        getQueue() {
-            return this._queue.slice(0, ASC.NUM_PREVIEWS);
-        }
-        getNext() {
-            let temp = this._queue.splice(0, 1)[0];
-            return temp;
-        }
-        hasNext() {
-            return this._queue.length > 0;
-        }
-        blocksLeft() {
-            return this._queue.length;
-        }
-    }
-    ASC.StaticQueue = StaticQueue;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
     const FIELD_SIZE = 24;
     const SMALL_SIZE = 16;
     class Renderer extends PIXI.Container {
@@ -560,60 +574,6 @@ var ASC;
     }
     ASC.RenderGrid = RenderGrid;
 })(ASC || (ASC = {}));
-var C;
-(function (C) {
-    class Checkbox {
-        constructor(size = 16) {
-            this._checked = false;
-            this._disabled = false;
-            this._td = document.createElement("td");
-            this._td.height = size.toString();
-            this._td.width = size.toString();
-            this._td.onmousemove = this.move.bind(this);
-            this._td.ondragover = (ev) => (ev.preventDefault());
-            this._td.onmousedown = (ev) => { this.click(); ev.preventDefault(); };
-            this._td.textContent = "";
-            this._td.draggable = false;
-            this.update();
-        }
-        getTD() {
-            return this._td;
-        }
-        update() {
-            this._td.style.backgroundColor = this._disabled ? "#000000" : this._checked ? "#DDDDDD" : "#333333";
-        }
-        click() {
-            if (!this._disabled) {
-                Checkbox._lastState = !this._checked;
-                this._checked = Checkbox._lastState;
-                this.update();
-            }
-        }
-        move(ev) {
-            var style = getComputedStyle(this._td);
-            if (!this._disabled && D.Drag.mouseDown) {
-                this._checked = Checkbox._lastState;
-                this.update();
-            }
-        }
-        get checked() {
-            return this._checked;
-        }
-        set checked(value) {
-            this._checked = value;
-            this.update();
-        }
-        get disabled() {
-            return this._disabled;
-        }
-        set disabled(value) {
-            this._disabled = value;
-            this.update();
-        }
-    }
-    Checkbox._lastState = false;
-    C.Checkbox = Checkbox;
-})(C || (C = {}));
 var D;
 (function (D) {
     class Drag {
@@ -1052,6 +1012,53 @@ var B;
     }
     B.pad = pad;
 })(B || (B = {}));
+var ASC;
+(function (ASC) {
+    ASC.MAX_FIELD_WIDTH = 20;
+    ASC.MIN_FIELD_WIDTH = 5;
+    ASC.FIELD_HEIGHT = 25;
+    let Rotations;
+    (function (Rotations) {
+        Rotations[Rotations["NONE"] = 0] = "NONE";
+        Rotations[Rotations["CW"] = 1] = "CW";
+        Rotations[Rotations["CWCW"] = 2] = "CWCW";
+        Rotations[Rotations["CCW"] = 3] = "CCW";
+    })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
+    let Directions;
+    (function (Directions) {
+        Directions[Directions["UP"] = 0] = "UP";
+        Directions[Directions["RIGHT"] = 1] = "RIGHT";
+        Directions[Directions["DOWN"] = 2] = "DOWN";
+        Directions[Directions["LEFT"] = 3] = "LEFT";
+    })(Directions = ASC.Directions || (ASC.Directions = {}));
+    let Inputs;
+    (function (Inputs) {
+        Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
+        Inputs[Inputs["SD"] = 1] = "SD";
+        Inputs[Inputs["LEFT"] = 2] = "LEFT";
+        Inputs[Inputs["CW"] = 3] = "CW";
+        Inputs[Inputs["CCW"] = 4] = "CCW";
+        Inputs[Inputs["CWCW"] = 5] = "CWCW";
+        Inputs[Inputs["HOLD"] = 6] = "HOLD";
+        Inputs[Inputs["HD"] = 7] = "HD";
+        Inputs[Inputs["SONIC"] = 8] = "SONIC";
+        Inputs[Inputs["RESTART"] = 9] = "RESTART";
+    })(Inputs = ASC.Inputs || (ASC.Inputs = {}));
+    let State;
+    (function (State) {
+        State[State["ACTIVE"] = 0] = "ACTIVE";
+        State[State["PAUSED"] = 1] = "PAUSED";
+        State[State["WIN"] = 2] = "WIN";
+        State[State["LOSE"] = 3] = "LOSE";
+    })(State = ASC.State || (ASC.State = {}));
+    let Mode;
+    (function (Mode) {
+        Mode[Mode["PRACTICE"] = 0] = "PRACTICE";
+        Mode[Mode["MAP"] = 1] = "MAP";
+        Mode[Mode["DIG"] = 2] = "DIG";
+        Mode[Mode["VS"] = 3] = "VS";
+    })(Mode = ASC.Mode || (ASC.Mode = {}));
+})(ASC || (ASC = {}));
 var SETTINGS;
 (function (SETTINGS) {
     const VERSION = 0.002;
@@ -1061,7 +1068,7 @@ var SETTINGS;
             let pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
                 new ASC.Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new ASC.Piece("S", [7, 8, 11, 12], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
             Settings._config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], 100, 10, 7);
-            Settings._pieceEditor = new P.PieceEditor(Settings._config._width, pieces);
+            Settings._pieceEditor = new P.PieceEditor(Settings._config.width, pieces);
             D.Drag.init();
             let settings = document.createElement("div");
             settings.style.border = "1px solid black";
@@ -1069,7 +1076,7 @@ var SETTINGS;
             title.innerText = "Settings";
             settings.appendChild(title);
             let widthText = document.createElement("label");
-            widthText.innerText = "Width: " + Settings._config._width.toString();
+            widthText.innerText = "Width: " + Settings._config.width.toString();
             settings.appendChild(widthText);
             settings.appendChild(document.createElement("br"));
             Settings._widthSlider = document.createElement("input");
@@ -1079,16 +1086,16 @@ var SETTINGS;
             Settings._widthSlider.setAttribute("value", "10");
             Settings._widthSlider.oninput = function () {
                 if (!isNaN(Number(Settings._widthSlider.value))) {
-                    let temp = Settings._config._width;
-                    Settings._config._width = Number(Settings._widthSlider.value);
+                    let temp = Settings._config.width;
+                    Settings._config.width = Number(Settings._widthSlider.value);
                     try {
-                        Settings._pieceEditor.setWidth(Settings._config._width);
+                        Settings._pieceEditor.setWidth(Settings._config.width);
                     }
                     catch (err) {
                         alert(err);
-                        Settings._config._width = temp;
+                        Settings._config.width = temp;
                     }
-                    widthText.innerText = "Width: " + Settings._config._width.toString();
+                    widthText.innerText = "Width: " + Settings._config.width.toString();
                 }
             };
             settings.appendChild(Settings._widthSlider);
@@ -1111,11 +1118,11 @@ var SETTINGS;
                 let numberbox = document.createElement("input");
                 numberbox.setAttribute("type", "number");
                 numberbox.readOnly = true;
-                numberbox.setAttribute("value", Settings._config._controls[i].toString());
+                numberbox.setAttribute("value", Settings._config.controls[i].toString());
                 numberbox.onkeydown = function (event) {
                     if (event.keyCode !== 27) {
                         numberbox.value = event.keyCode.toString();
-                        Settings._config._controls[i] = event.keyCode;
+                        Settings._config.controls[i] = event.keyCode;
                     }
                     numberbox.blur();
                 };
@@ -1131,10 +1138,10 @@ var SETTINGS;
             let delay = document.createElement("input");
             delay.setAttribute("type", "number");
             delay.setAttribute("min", "1");
-            delay.setAttribute("value", Settings._config._delay.toString());
+            delay.setAttribute("value", Settings._config.delay.toString());
             delay.oninput = function () {
                 if (!isNaN(Number(delay.value))) {
-                    Settings._config._delay = Number(delay.value);
+                    Settings._config.delay = Number(delay.value);
                 }
             };
             settings.appendChild(delay);
@@ -1144,10 +1151,10 @@ var SETTINGS;
             let repeat = document.createElement("input");
             repeat.setAttribute("type", "number");
             repeat.setAttribute("min", "1");
-            repeat.setAttribute("value", Settings._config._repeat.toString());
+            repeat.setAttribute("value", Settings._config.repeat.toString());
             repeat.oninput = function () {
                 if (!isNaN(Number(repeat.value))) {
-                    Settings._config._repeat = Number(repeat.value);
+                    Settings._config.repeat = Number(repeat.value);
                 }
             };
             settings.appendChild(repeat);
@@ -1157,10 +1164,10 @@ var SETTINGS;
             let bag = document.createElement("input");
             bag.setAttribute("type", "number");
             bag.setAttribute("min", "0");
-            bag.setAttribute("value", Settings._config._bagSize.toString());
+            bag.setAttribute("value", Settings._config.bagSize.toString());
             bag.oninput = function () {
                 if (!isNaN(Number(repeat.value))) {
-                    Settings._config._bagSize = Number(bag.value);
+                    Settings._config.bagSize = Number(bag.value);
                 }
             };
             settings.appendChild(bag);
@@ -1169,7 +1176,7 @@ var SETTINGS;
             let apply = document.createElement("button");
             apply.innerText = "Apply Settings";
             apply.onclick = function () {
-                Settings._config._pieces = Settings._pieceEditor.getPieces();
+                Settings._config.pieces = Settings._pieceEditor.getPieces();
                 Settings.restartGame();
                 Settings.saveCookie();
             };
@@ -1178,10 +1185,10 @@ var SETTINGS;
             if (document.cookie !== "") {
                 Settings.readCookie();
                 for (let i = 0; i < controlsBox.length; ++i) {
-                    controlsBox[i].setAttribute("value", Settings._config._controls[i].toString());
+                    controlsBox[i].setAttribute("value", Settings._config.controls[i].toString());
                 }
-                delay.setAttribute("value", Settings._config._delay.toString());
-                repeat.setAttribute("value", Settings._config._repeat.toString());
+                delay.setAttribute("value", Settings._config.delay.toString());
+                repeat.setAttribute("value", Settings._config.repeat.toString());
             }
             else {
                 Settings.saveCookie();
@@ -1195,7 +1202,7 @@ var SETTINGS;
             RUN.init();
         }
         static restartGame() {
-            RUN.startGame(Settings._config, Settings._mode, Settings._staticQueue, Settings._mapShape);
+            RUN.startGame(Settings._config, Settings._mode, Settings._mapData);
         }
         static readCookie() {
             let vals = decodeURIComponent(document.cookie).split(";");
@@ -1214,23 +1221,23 @@ var SETTINGS;
                             case 'p':
                                 if (Settings._mode == 1) {
                                     let p = ASC.Config.pieceFromText(v.substring(2));
-                                    Settings._config._pieces = p;
+                                    Settings._config.pieces = p;
                                     Settings._pieceEditor.setPieces(p);
                                 }
                                 break;
                             case 'b':
                                 if (Settings._mode == 1) {
-                                    Settings._config._bagSize = JSON.parse(v.substring(2));
+                                    Settings._config.bagSize = JSON.parse(v.substring(2));
                                 }
                                 break;
                             case 'c':
-                                Settings._config._controls = JSON.parse(v.substring(2));
+                                Settings._config.controls = JSON.parse(v.substring(2));
                                 break;
                             case 'r':
-                                Settings._config._repeat = JSON.parse(v.substring(2));
+                                Settings._config.repeat = JSON.parse(v.substring(2));
                                 break;
                             case 'd':
-                                Settings._config._delay = JSON.parse(v.substring(2));
+                                Settings._config.delay = JSON.parse(v.substring(2));
                                 break;
                         }
                     }
@@ -1245,13 +1252,13 @@ var SETTINGS;
             let c = "";
             c += "v=" + VERSION.toString() + ";";
             if (Settings._mode != 1) {
-                c += "p=" + JSON.stringify(Settings._config._pieces) + ";";
+                c += "p=" + JSON.stringify(Settings._config.pieces) + ";";
             }
-            c += "c=" + JSON.stringify(Settings._config._controls) + ";";
-            c += "r=" + JSON.stringify(Settings._config._repeat) + ";";
-            c += "d=" + JSON.stringify(Settings._config._delay) + ';';
+            c += "c=" + JSON.stringify(Settings._config.controls) + ";";
+            c += "r=" + JSON.stringify(Settings._config.repeat) + ";";
+            c += "d=" + JSON.stringify(Settings._config.delay) + ';';
             if (Settings._mode != 1) {
-                c += "b=" + JSON.stringify(Settings._config._bagSize) + ";";
+                c += "b=" + JSON.stringify(Settings._config.bagSize) + ";";
             }
             c += "Expires: 2147483647;";
             document.cookie = encodeURIComponent(c);
@@ -1261,7 +1268,6 @@ var SETTINGS;
             Settings._pieceEditor.disable(true);
             let m = window.location.search.substring(1);
             let cfg = m.split("&");
-            Settings._config._width = B.toNumber(cfg[0]);
             let pc = [];
             let rawp = cfg[1].match(/.{1,11}/g);
             for (let r of rawp) {
@@ -1276,16 +1282,13 @@ var SETTINGS;
                 }
                 pc.push(new ASC.Piece(r.substring(0, 1), shape, B.toNumber(r.substring(6, 7)), Number("0x" + B.hexFrom64(r.substring(7)).padStart(6, '0'))));
             }
-            Settings._pieceEditor.setPieces(pc);
-            Settings._config._pieces = pc;
             let queue = [];
             for (let q of cfg[2].split('')) {
                 queue.push(B.toNumber(q));
             }
-            Settings._staticQueue = queue;
             let map = [];
             let rawmap = B.binaryFrom64(cfg[3]);
-            rawmap = rawmap.substring(rawmap.length - Settings._config._width * ASC.FIELD_HEIGHT);
+            rawmap = rawmap.substring(rawmap.length - Settings._config.width * ASC.FIELD_HEIGHT);
             let i = 0;
             for (let r of rawmap.split('')) {
                 if (Number(r) == 1) {
@@ -1293,12 +1296,12 @@ var SETTINGS;
                 }
                 i++;
             }
-            Settings._mapShape = map;
+            Settings._mapData = new ASC.MapData(B.toNumber(cfg[0]), pc, queue, map, []);
         }
     }
     Settings._staticQueue = [];
     Settings._mapShape = [];
-    Settings._mode = 0;
+    Settings._mode = ASC.Mode.PRACTICE;
     SETTINGS.Settings = Settings;
 })(SETTINGS || (SETTINGS = {}));
 var STYLE;
@@ -1487,63 +1490,13 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    class Config {
-        constructor(w, p, c, d, r, b) {
-            this._controls = [];
-            this._width = w;
-            this._bagSize = b;
-            this._pieces = p;
-            this._controls = c;
-            this._delay = d;
-            this._repeat = r;
-        }
-        static fromText(input) {
-            let cfg = JSON.parse(input);
-            let ps = [];
-            for (let i of cfg.pieces) {
-                ps.push(new ASC.Piece(i[0], i[1], i[2], Number("0x" + i[3]), 0));
-            }
-            let config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.bagSize);
-            return config;
-        }
-        static pieceFromText(input) {
-            console.log(input);
-            let p = JSON.parse(input);
-            let ps = [];
-            for (let i of p) {
-                ps.push(new ASC.Piece(i._name, i._shape, i._offset, i._color));
-            }
-            return ps;
-        }
-    }
-    ASC.Config = Config;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    ASC.MAX_FIELD_WIDTH = 20;
-    ASC.MIN_FIELD_WIDTH = 5;
-    ASC.FIELD_HEIGHT = 25;
-    let Inputs;
-    (function (Inputs) {
-        Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
-        Inputs[Inputs["SD"] = 1] = "SD";
-        Inputs[Inputs["LEFT"] = 2] = "LEFT";
-        Inputs[Inputs["CW"] = 3] = "CW";
-        Inputs[Inputs["CCW"] = 4] = "CCW";
-        Inputs[Inputs["CWCW"] = 5] = "CWCW";
-        Inputs[Inputs["HOLD"] = 6] = "HOLD";
-        Inputs[Inputs["HD"] = 7] = "HD";
-        Inputs[Inputs["SONIC"] = 8] = "SONIC";
-        Inputs[Inputs["RESTART"] = 9] = "RESTART";
-    })(Inputs = ASC.Inputs || (ASC.Inputs = {}));
     const KICKVER = 1;
     class AGame {
         constructor(width = 12, bagSize = 7, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new ASC.Piece("S", [7, 8, 11, 12], 2, 0x00FF00),
-            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay = 100, repeat = 10) {
-            this._visible = true;
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay = 100, repeat = 10) {
             this._pieces = [];
-            this._active = false;
+            this._state = ASC.State.LOSE;
             if (delay < 1) {
                 throw new Error("Invalid Delay");
             }
@@ -1560,16 +1513,6 @@ var ASC;
             }
             this._pieces = pieces;
             this._pieces.forEach((i) => (i.initRotations()));
-            if (this._visible) {
-                for (var i = RUN.app.stage.children.length - 1; i >= 0; --i) {
-                    RUN.app.stage.removeChild(RUN.app.stage.children[i]);
-                }
-                ASC.InputManager.RegisterObserver(this);
-                ASC.InputManager.RegisterKeys(this, [controls[Inputs.LEFT], controls[Inputs.RIGHT], controls[Inputs.SD]], delay, repeat);
-                this._controls = controls;
-                this._renderer = new ASC.Renderer(this._width, "Attack");
-                RUN.app.stage.addChild(this._renderer);
-            }
             this._time = new ASC.Stopwatch();
         }
         randomSeed() {
@@ -1582,14 +1525,13 @@ var ASC;
             this._field = new ASC.Field(this._width);
             this._hold = undefined;
             this.next();
-            this._active = true;
+            this._state = ASC.State.ACTIVE;
             this._time.start();
             this._inputs = [];
-            this._renderer.updateTime((this._time.getTime() / 1000).toString());
             this.update();
         }
         gameOver() {
-            this._active = false;
+            this._state = ASC.State.LOSE;
             this.update();
         }
         next() {
@@ -1597,12 +1539,12 @@ var ASC;
                 this._currentPiece = this._queue.getNext();
                 if (!this.checkShift(0, 0)) {
                     this.gameOver();
-                    this._renderer.updateTime("Game end");
+                    this._state = ASC.State.LOSE;
                 }
             }
             else {
                 this.gameOver();
-                this._renderer.updateTime("Game end");
+                this._state = ASC.State.LOSE;
             }
         }
         hold() {
@@ -1706,84 +1648,17 @@ var ASC;
         }
         update() {
             this.updateField();
-            this.updateQueue();
-            this._renderer.updateTime((this._time.getTime() / 1000).toString());
-            this.updateHold();
-        }
-        updateHold() {
-            if (this._hold === undefined) {
-                let temp = [];
-                for (let i = 0; i < 25; ++i) {
-                    temp.push(0x000000);
-                }
-                this._renderer.updateHold(temp);
-                return;
-            }
-            this._renderer.updateHold(this._hold.getRenderShape());
+            this._updateQueueCallback(this._queue.getQueue());
+            this._updateHoldCallback(this._hold);
+            this._updateCallback();
         }
         updateField() {
             let temp = this._field.getColors();
-            if (this._currentPiece != undefined) {
-                let copyCurrent = this._currentPiece.getCopy();
-                this.sonicDrop();
-                for (let point of this._currentPiece.getCoords(this._width)) {
-                    temp[point] = (this._currentPiece.color & 0xfefefe) >> 1;
-                    ;
-                }
-                this._currentPiece = copyCurrent;
-                for (let point of this._currentPiece.getCoords(this._width)) {
-                    temp[point] = this._currentPiece.color;
-                }
-                for (let i = 0; i < 5; ++i) {
-                    for (let j = 0; j < 5; ++j) {
-                        let index = i + this._currentPiece.xy[0] + (j + this._currentPiece.xy[1]) * this._width;
-                        if (i + this._currentPiece.xy[0] >= 0 && i + this._currentPiece.xy[0] < this._width &&
-                            j + this._currentPiece.xy[1] >= 0 && j + this._currentPiece.xy[1] < ASC.FIELD_HEIGHT) {
-                            if (i == 2 && j == 2) {
-                                temp[index] = this.darken(temp[index]);
-                            }
-                            else {
-                                temp[index] = this.lighten(temp[index]);
-                            }
-                        }
-                    }
-                }
-            }
-            this._renderer.updateField(temp);
-        }
-        lighten(hex) {
-            let r = (hex >> 16) & 255;
-            let g = (hex >> 8) & 255;
-            let b = hex & 255;
-            r = Math.min(r + 50, 255);
-            g = Math.min(g + 50, 255);
-            b = Math.min(b + 50, 255);
-            return r * 65536 + g * 256 + b;
-        }
-        darken(hex) {
-            let r = (hex >> 16) & 255;
-            let g = (hex >> 8) & 255;
-            let b = hex & 255;
-            r = Math.max(r - 50, 0);
-            g = Math.max(g - 50, 0);
-            b = Math.max(b - 50, 0);
-            return r * 65536 + g * 256 + b;
-        }
-        updateQueue() {
-            let queue = this._queue.getQueue();
-            while (queue.length < ASC.NUM_PREVIEWS) {
-                queue.push(undefined);
-            }
-            let q = [];
-            for (let p of queue) {
-                if (p == undefined) {
-                    q.push(new Array(25).fill(0));
-                }
-                else {
-                    q.push(p.getRenderShape());
-                }
-            }
-            this._renderer.updateQueue(q);
+            let current = this._currentPiece.getCopy();
+            this.sonicDrop();
+            let ghost = this._currentPiece.getCopy();
+            this._currentPiece = current;
+            this._updateFieldCallback(temp, current.getCopy(), ghost);
         }
         appendRow(rows, yval) {
             for (let r of rows) {
@@ -1807,92 +1682,68 @@ var ASC;
             }
             return lines;
         }
-        touchControl(code) {
-            if (this._active) {
-                switch (code) {
-                    case 0:
-                        ASC.InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
-                        this.move(ASC.Directions.LEFT);
-                        break;
-                    case 1:
-                        this.move(ASC.Directions.DOWN);
-                        break;
-                    case 2:
-                        this.move(ASC.Directions.RIGHT);
-                        ASC.InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
-                        break;
-                    case 3:
-                        this.rotate(ASC.Rotations.CW);
-                        break;
-                    case 4:
-                        this.rotate(ASC.Rotations.CWCW);
-                        break;
-                    case 5:
-                        this.rotate(ASC.Rotations.CCW);
-                        break;
-                    case 6:
-                        this.hardDrop();
-                        break;
-                    case 7:
-                        this.hold();
-                        break;
-                    case 8:
-                        this.sonicDrop();
-                        break;
-                }
-                this.update();
-            }
-            if (code == 9) {
-                this.resetGame();
-            }
+        setUpdate(u) {
+            this._updateCallback = u;
         }
-        Triggered(keyCode) {
-            if (this._active) {
-                switch (keyCode) {
-                    case this._controls[Inputs.CW]:
-                        this._inputs.push(Inputs.CW);
+        setUpdateHold(u) {
+            this._updateHoldCallback = u;
+        }
+        setUpdateQueue(u) {
+            this._updateQueueCallback = u;
+        }
+        setUpdateField(u) {
+            this._updateFieldCallback = u;
+        }
+        get time() {
+            return this._time.getTime();
+        }
+        get state() {
+            return this._state;
+        }
+        readinput(input) {
+            if (this._state == ASC.State.ACTIVE) {
+                switch (input) {
+                    case ASC.Inputs.CW:
+                        this._inputs.push(input);
                         this.rotate(ASC.Rotations.CW);
                         break;
-                    case this._controls[Inputs.RIGHT]:
-                        this._inputs.push(Inputs.RIGHT);
+                    case ASC.Inputs.RIGHT:
+                        this._inputs.push(input);
                         this.move(ASC.Directions.RIGHT);
-                        ASC.InputManager.cancelRepeat(this._controls[Inputs.LEFT]);
                         break;
-                    case this._controls[Inputs.SD]:
-                        this._inputs.push(Inputs.SD);
+                    case ASC.Inputs.SD:
+                        this._inputs.push(input);
                         this.move(ASC.Directions.DOWN);
                         break;
-                    case this._controls[Inputs.LEFT]:
-                        this._inputs.push(Inputs.LEFT);
+                    case ASC.Inputs.LEFT:
+                        this._inputs.push(input);
                         this.move(ASC.Directions.LEFT);
-                        ASC.InputManager.cancelRepeat(this._controls[Inputs.RIGHT]);
                         break;
-                    case this._controls[Inputs.CCW]:
-                        this._inputs.push(Inputs.CCW);
+                    case ASC.Inputs.CCW:
+                        this._inputs.push(input);
                         this.rotate(ASC.Rotations.CCW);
                         break;
-                    case this._controls[Inputs.CWCW]:
-                        this._inputs.push(Inputs.CWCW);
+                    case ASC.Inputs.CWCW:
+                        this._inputs.push(input);
                         this.rotate(ASC.Rotations.CWCW);
                         break;
-                    case this._controls[Inputs.HD]:
-                        this._inputs.push(Inputs.HD);
+                    case ASC.Inputs.HD:
+                        this._inputs.push(input);
                         this.hardDrop();
                         break;
-                    case this._controls[Inputs.HOLD]:
-                        this._inputs.push(Inputs.HOLD);
+                    case ASC.Inputs.HOLD:
+                        this._inputs.push(input);
                         this.hold();
                         break;
-                    case this._controls[Inputs.SONIC]:
-                        this._inputs.push(Inputs.SONIC);
+                    case ASC.Inputs.SONIC:
+                        this._inputs.push(input);
                         this.sonicDrop();
                         break;
+                    default:
+                        break;
                 }
-                this.update();
             }
-            if (keyCode == this._controls[Inputs.RESTART]) {
-                this.resetGame();
-            }
+            this.update();
         }
     }
     ASC.AGame = AGame;
@@ -1902,8 +1753,8 @@ var ASC;
     class DigGame extends ASC.AGame {
         constructor(width = 10, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
-            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay = 100, repeat = 10) {
-            super(width, bagSize, pieces, controls, delay, repeat);
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay = 100, repeat = 10) {
+            super(width, bagSize, pieces, delay, repeat);
             this._progress = 0;
             this._attack = new ASC.AttackTable(this._width);
             this._timer = new ASC.Timer(120000, 2000, this.tick.bind(this), this.win.bind(this));
@@ -1927,7 +1778,7 @@ var ASC;
         win() {
             super.gameOver();
             this._timer.stop();
-            this._renderer.updateTime("You dug for 2 mins!");
+            this._state = ASC.State.WIN;
         }
         lock() {
             let spin = this.checkImmobile();
@@ -1945,16 +1796,6 @@ var ASC;
                     this._progress += this._attack.perfectClear(cleared);
                 }
             }
-        }
-        update() {
-            super.update();
-            this.updateProgress();
-        }
-        updateProgress() {
-            this._renderer.updateProgress(this._progress.toString());
-        }
-        updateTime() {
-            this._renderer.updateTime("Timer off for now :)");
         }
         addGarbage(attack = 1) {
             let garbage = [];
@@ -1998,8 +1839,8 @@ var ASC;
     class Game extends ASC.AGame {
         constructor(width = 12, bagSize = 7, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
-            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], delay = 100, repeat = 10) {
-            super(width, bagSize, pieces, controls, delay, repeat);
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay = 100, repeat = 10) {
+            super(width, bagSize, pieces, delay, repeat);
             this._progress = 0;
             this._attack = new ASC.AttackTable(this._width);
         }
@@ -2008,13 +1849,6 @@ var ASC;
             this.randomSeed();
             this._queue = new ASC.Queue(this._seed, this._pieces, this._bagSize);
             super.resetGame();
-        }
-        tick() {
-            this.updateTime();
-        }
-        gameOver() {
-            super.gameOver();
-            this.updateTime();
         }
         lock() {
             let spin = this.checkImmobile();
@@ -2033,16 +1867,6 @@ var ASC;
                 }
             }
         }
-        update() {
-            super.update();
-            this.updateProgress();
-        }
-        updateProgress() {
-            this._renderer.updateProgress(this._progress.toString());
-        }
-        updateTime() {
-            this._renderer.updateTime("Timer off for now :)");
-        }
     }
     ASC.Game = Game;
 })(ASC || (ASC = {}));
@@ -2052,10 +1876,11 @@ var ASC;
     class MapGame extends ASC.AGame {
         constructor(width = 12, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
-            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], controls = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], order = [], clearable = [], delay = 100, repeat = 10) {
-            super(width, bagSize, pieces, controls, delay, repeat);
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], order = [], clearable = [], unclearable = [], delay = 100, repeat = 10) {
+            super(width, bagSize, pieces, delay, repeat);
             this._progress = 0;
             this._map = clearable;
+            this._solid = unclearable;
             this._order = order;
             this._attack = new ASC.AttackTable(this._width);
         }
@@ -2065,13 +1890,6 @@ var ASC;
             super.resetGame();
             this._field.setBlocks(this._map, new ASC.Block(0xDDDDDD, true, true));
             this.update();
-        }
-        tick() {
-            this.updateTime();
-        }
-        gameOver() {
-            super.gameOver();
-            this.updateTime();
         }
         lock() {
             let spin = this.checkImmobile();
@@ -2088,39 +1906,12 @@ var ASC;
                 if (this.checkPC()) {
                     this._progress += this._attack.perfectClear(cleared);
                     this.gameOver();
-                    this._renderer.updateTime("You Win");
+                    this._state = ASC.State.WIN;
                 }
             }
         }
-        update() {
-            super.update();
-            this.updateProgress();
-        }
-        updateProgress() {
-            this._renderer.updateProgress(this._progress.toString());
-        }
-        updateTime() {
-            this._renderer.updateTime("Timer off for now :)");
-        }
     }
     ASC.MapGame = MapGame;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    let Rotations;
-    (function (Rotations) {
-        Rotations[Rotations["NONE"] = 0] = "NONE";
-        Rotations[Rotations["CW"] = 1] = "CW";
-        Rotations[Rotations["CWCW"] = 2] = "CWCW";
-        Rotations[Rotations["CCW"] = 3] = "CCW";
-    })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
-    let Directions;
-    (function (Directions) {
-        Directions[Directions["UP"] = 0] = "UP";
-        Directions[Directions["RIGHT"] = 1] = "RIGHT";
-        Directions[Directions["DOWN"] = 2] = "DOWN";
-        Directions[Directions["LEFT"] = 3] = "LEFT";
-    })(Directions = ASC.Directions || (ASC.Directions = {}));
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -2173,6 +1964,131 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
+    ASC.NUM_PREVIEWS = 6;
+    class AQueue {
+    }
+    ASC.AQueue = AQueue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Queue extends ASC.AQueue {
+        constructor(seed, pieces, size = pieces.length) {
+            super();
+            this._queue = [];
+            this._rng = new ASC.PRNG(seed);
+            this._bag = pieces;
+            this._bagSize = size;
+            this.generateQueue();
+        }
+        generateQueue() {
+            while (this._queue.length < ASC.NUM_PREVIEWS) {
+                let tempBag = [];
+                while (tempBag.length < this._bagSize) {
+                    this._bag.forEach((i) => tempBag.push(i.getCopy()));
+                }
+                this._rng.shuffleArray(tempBag);
+                for (let i of tempBag.slice(0, this._bagSize + 1)) {
+                    this._queue.push(i);
+                }
+            }
+        }
+        getQueue() {
+            return this._queue.slice(0, ASC.NUM_PREVIEWS);
+        }
+        getNext() {
+            let temp = this._queue.splice(0, 1)[0];
+            this.generateQueue();
+            return temp;
+        }
+        hasNext() {
+            return true;
+        }
+    }
+    ASC.Queue = Queue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class StaticQueue extends ASC.AQueue {
+        constructor(pieces, order) {
+            super();
+            this._queue = [];
+            this._bag = pieces;
+            for (let i of order) {
+                this._queue.push(this._bag[i].getCopy());
+            }
+        }
+        getQueue() {
+            return this._queue.slice(0, ASC.NUM_PREVIEWS);
+        }
+        getNext() {
+            let temp = this._queue.splice(0, 1)[0];
+            return temp;
+        }
+        hasNext() {
+            return this._queue.length > 0;
+        }
+        blocksLeft() {
+            return this._queue.length;
+        }
+    }
+    ASC.StaticQueue = StaticQueue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class AGarbage {
+    }
+    ASC.AGarbage = AGarbage;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Garbage extends ASC.AGarbage {
+        constructor(seed, width, percentage) {
+            super();
+            this._prng = new ASC.PRNG(seed);
+            this._width = width;
+            if (percentage >= 0 && percentage < 100) {
+                this._percentage = percentage;
+            }
+            else {
+                throw new Error("Invalid Percentage: " + percentage);
+            }
+        }
+        addGarbage(attack) {
+            let g = [];
+            let a = [];
+            for (let i = 0; i < this._width; ++i) {
+                if (i < this._percentage * this._width) {
+                    a.push(1);
+                }
+                else {
+                    a.push(0);
+                }
+            }
+            this._prng.shuffleArray(a);
+            for (let i = 0; i < attack * this._percentage + 0.1; ++i) {
+                g.push(a);
+            }
+            return g;
+        }
+    }
+    ASC.Garbage = Garbage;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Stopwatch {
+        constructor() {
+        }
+        start() {
+            this._start = performance.now();
+        }
+        getTime() {
+            return performance.now() - this._start;
+        }
+    }
+    ASC.Stopwatch = Stopwatch;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
     class Timer {
         constructor(length, interval, tick, end) {
             this._running = false;
@@ -2211,16 +2127,206 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
-    class Stopwatch {
-        constructor() {
+    class Config {
+        constructor(w = 10, p = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], c = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], d = 100, r = 10, b = 7) {
+            this._controls = [];
+            this._width = w;
+            this._bagSize = b;
+            this._pieces = p;
+            this._controls = c;
+            this._delay = d;
+            this._repeat = r;
         }
-        start() {
-            this._start = performance.now();
+        static fromText(input) {
+            let cfg = JSON.parse(input);
+            let ps = [];
+            for (let i of cfg.pieces) {
+                ps.push(new ASC.Piece(i[0], i[1], i[2], Number("0x" + i[3]), 0));
+            }
+            let config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.bagSize);
+            return config;
         }
-        getTime() {
-            return performance.now() - this._start;
+        static pieceFromText(input) {
+            console.log(input);
+            let p = JSON.parse(input);
+            let ps = [];
+            for (let i of p) {
+                ps.push(new ASC.Piece(i._name, i._shape, i._offset, i._color));
+            }
+            return ps;
+        }
+        get width() {
+            return this._width;
+        }
+        set width(value) {
+            if (value != undefined && value >= ASC.MIN_FIELD_WIDTH && value <= ASC.MAX_FIELD_WIDTH) {
+                this._width = value;
+            }
+            else {
+                throw new Error("Invalid width in config: " + value);
+            }
+        }
+        get pieces() {
+            return [...this._pieces].map(x => x.getCopy());
+        }
+        set pieces(value) {
+            if (value != undefined && value.length > 0) {
+                this._pieces = [...value].map(x => x.getCopy());
+            }
+            else {
+                throw new Error("Invalid pieces in config: " + value);
+            }
+        }
+        get controls() {
+            return [...this._controls];
+        }
+        set controls(value) {
+            if (value != undefined && value.length > 0) {
+                this._controls = [...value];
+            }
+            else {
+                throw new Error("Invalid controls in config: " + value);
+            }
+        }
+        get delay() {
+            return this._delay;
+        }
+        set delay(value) {
+            if (value != undefined && value > 0) {
+                this._delay = value;
+            }
+            else {
+                throw new Error("Invalid delay in config: " + value);
+            }
+        }
+        get repeat() {
+            return this._repeat;
+        }
+        set repeat(value) {
+            if (value != undefined && value > 0) {
+                this._repeat = value;
+            }
+            else {
+                throw new Error("Invalid repeat in config: " + value);
+            }
+        }
+        get bagSize() {
+            return this._bagSize;
+        }
+        set bagSize(value) {
+            if (value != undefined && value > 0) {
+                this._bagSize = value;
+            }
+            else {
+                throw new Error("Invalid bag size in config: " + value);
+            }
         }
     }
-    ASC.Stopwatch = Stopwatch;
+    ASC.Config = Config;
 })(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class MapConfig extends ASC.Config {
+        constructor(w, p, c, d, r, b, map) {
+            super(w, p, c, d, r, b);
+            this._map = map;
+        }
+    }
+    ASC.MapConfig = MapConfig;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class MapData {
+        constructor(w, p, q, c, u) {
+            this._clearable = [];
+            this._width = 10;
+            this._unclearable = [];
+            this._queue = [];
+            this._pieces = [];
+            this._width = w;
+            this._pieces = p;
+            this._queue = q;
+            this._clearable = c;
+            this._unclearable;
+        }
+        get width() {
+            return this._width;
+        }
+        get clearable() {
+            return [...this._clearable];
+        }
+        get unclearable() {
+            return [...this._unclearable];
+        }
+        get queue() {
+            return [...this._queue];
+        }
+        get pieces() {
+            return [...this._pieces].map(p => p.getCopy());
+        }
+    }
+    ASC.MapData = MapData;
+})(ASC || (ASC = {}));
+var C;
+(function (C) {
+    class Checkbox {
+        constructor(size = 16) {
+            this._checked = false;
+            this._disabled = false;
+            this._td = document.createElement("td");
+            this._td.height = size.toString();
+            this._td.width = size.toString();
+            this._td.onmousemove = this.move.bind(this);
+            this._td.ondragover = (ev) => (ev.preventDefault());
+            this._td.onmousedown = (ev) => { this.click(); ev.preventDefault(); };
+            this._td.textContent = "";
+            this._td.draggable = false;
+            this.update();
+        }
+        getTD() {
+            return this._td;
+        }
+        update() {
+            this._td.style.backgroundColor = this._disabled ? "#000000" : this._checked ? "#DDDDDD" : "#333333";
+        }
+        click() {
+            if (!this._disabled) {
+                Checkbox._lastState = !this._checked;
+                this._checked = Checkbox._lastState;
+                this.update();
+            }
+        }
+        move(ev) {
+            var style = getComputedStyle(this._td);
+            if (!this._disabled && D.Drag.mouseDown) {
+                this._checked = Checkbox._lastState;
+                this.update();
+            }
+        }
+        get checked() {
+            return this._checked;
+        }
+        set checked(value) {
+            this._checked = value;
+            this.update();
+        }
+        get disabled() {
+            return this._disabled;
+        }
+        set disabled(value) {
+            this._disabled = value;
+            this.update();
+        }
+    }
+    Checkbox._lastState = false;
+    C.Checkbox = Checkbox;
+})(C || (C = {}));
+var H;
+(function (H) {
+    class Title {
+    }
+    H.Title = Title;
+})(H || (H = {}));
 //# sourceMappingURL=main.js.map

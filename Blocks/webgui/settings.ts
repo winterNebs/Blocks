@@ -1,13 +1,15 @@
-﻿/// <reference path="pieceeditor.ts" />
+﻿/// <reference path="../game/logic/enums.ts" />
+/// <reference path="pieceeditor.ts" />
 namespace SETTINGS {
     const VERSION = 0.002;
     export class Settings {
         private static _staticQueue: number[] = [];
         private static _mapShape: number[] = [];
         private static _config: ASC.Config;
+        private static _mapData: ASC.MapData;
         private static _pieceEditor: P.PieceEditor;
         private static _widthSlider: HTMLInputElement;
-        private static _mode: number = 0; //0 game, 1 map, 2 dig
+        private static _mode: ASC.Mode = ASC.Mode.PRACTICE;
 
         public static init(mode: number = 0) {
             Settings._mode = mode;
@@ -16,7 +18,7 @@ namespace SETTINGS {
             new ASC.Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new ASC.Piece("S", [7, 8, 11, 12], 2, 0x00FF00), new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
 
             Settings._config = new ASC.Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], 100, 10, 7);
-            Settings._pieceEditor = new P.PieceEditor(Settings._config._width, pieces);
+            Settings._pieceEditor = new P.PieceEditor(Settings._config.width, pieces);
 
             D.Drag.init();
 
@@ -29,7 +31,7 @@ namespace SETTINGS {
             settings.appendChild(title);
 
             let widthText: HTMLElement = document.createElement("label");
-            widthText.innerText = "Width: " + Settings._config._width.toString();
+            widthText.innerText = "Width: " + Settings._config.width.toString();
 
             settings.appendChild(widthText);
 
@@ -43,16 +45,16 @@ namespace SETTINGS {
 
             Settings._widthSlider.oninput = function () {
                 if (!isNaN(Number(Settings._widthSlider.value))) {
-                    let temp = Settings._config._width
-                    Settings._config._width = Number(Settings._widthSlider.value);
+                    let temp = Settings._config.width
+                    Settings._config.width = Number(Settings._widthSlider.value);
                     try {
-                        Settings._pieceEditor.setWidth(Settings._config._width);
+                        Settings._pieceEditor.setWidth(Settings._config.width);
                     }
                     catch (err) {
                         alert(err);
-                        Settings._config._width = temp;
+                        Settings._config.width = temp;
                     }
-                    widthText.innerText = "Width: " + Settings._config._width.toString();
+                    widthText.innerText = "Width: " + Settings._config.width.toString();
                 }
             }
 
@@ -79,11 +81,11 @@ namespace SETTINGS {
                 let numberbox: HTMLInputElement = <HTMLInputElement>document.createElement("input");
                 numberbox.setAttribute("type", "number");
                 numberbox.readOnly = true;
-                numberbox.setAttribute("value", Settings._config._controls[i].toString());
+                numberbox.setAttribute("value", Settings._config.controls[i].toString());
                 numberbox.onkeydown = function (event) {
                     if (event.keyCode !== 27) {
                         numberbox.value = event.keyCode.toString();
-                        Settings._config._controls[i] = event.keyCode;
+                        Settings._config.controls[i] = event.keyCode;
                     }
                     numberbox.blur();
                 }
@@ -104,11 +106,11 @@ namespace SETTINGS {
             let delay: HTMLInputElement = <HTMLInputElement>document.createElement("input");
             delay.setAttribute("type", "number");
             delay.setAttribute("min", "1");
-            delay.setAttribute("value", Settings._config._delay.toString());
+            delay.setAttribute("value", Settings._config.delay.toString());
 
             delay.oninput = function () {
                 if (!isNaN(Number(delay.value))) {
-                    Settings._config._delay = Number(delay.value);
+                    Settings._config.delay = Number(delay.value);
                 }
             }
 
@@ -122,12 +124,12 @@ namespace SETTINGS {
             let repeat: HTMLInputElement = <HTMLInputElement>document.createElement("input");
             repeat.setAttribute("type", "number");
             repeat.setAttribute("min", "1");
-            repeat.setAttribute("value", Settings._config._repeat.toString());
+            repeat.setAttribute("value", Settings._config.repeat.toString());
 
 
             repeat.oninput = function () {
                 if (!isNaN(Number(repeat.value))) {
-                    Settings._config._repeat = Number(repeat.value);
+                    Settings._config.repeat = Number(repeat.value);
                 }
             }
 
@@ -141,11 +143,11 @@ namespace SETTINGS {
             let bag: HTMLInputElement = <HTMLInputElement>document.createElement("input");
             bag.setAttribute("type", "number");
             bag.setAttribute("min", "0");
-            bag.setAttribute("value", Settings._config._bagSize.toString());
+            bag.setAttribute("value", Settings._config.bagSize.toString());
 
             bag.oninput = function () {
                 if (!isNaN(Number(repeat.value))) {
-                    Settings._config._bagSize = Number(bag.value);
+                    Settings._config.bagSize = Number(bag.value);
                 }
             }
 
@@ -158,7 +160,7 @@ namespace SETTINGS {
             let apply: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
             apply.innerText = "Apply Settings"
             apply.onclick = function () {
-                Settings._config._pieces = Settings._pieceEditor.getPieces();
+                Settings._config.pieces = Settings._pieceEditor.getPieces();
                 Settings.restartGame();
                 Settings.saveCookie();
             }
@@ -175,10 +177,10 @@ namespace SETTINGS {
                 Settings.readCookie();
 
                 for (let i = 0; i < controlsBox.length; ++i) {
-                    controlsBox[i].setAttribute("value", Settings._config._controls[i].toString());
+                    controlsBox[i].setAttribute("value", Settings._config.controls[i].toString());
                 }
-                delay.setAttribute("value", Settings._config._delay.toString());
-                repeat.setAttribute("value", Settings._config._repeat.toString());
+                delay.setAttribute("value", Settings._config.delay.toString());
+                repeat.setAttribute("value", Settings._config.repeat.toString());
             }
             else {
                 Settings.saveCookie();
@@ -195,7 +197,7 @@ namespace SETTINGS {
         }
 
         private static restartGame() {
-            RUN.startGame(Settings._config, Settings._mode, Settings._staticQueue, Settings._mapShape);
+            RUN.startGame(Settings._config, Settings._mode,Settings._mapData);
         }
 
         private static readCookie() {
@@ -217,23 +219,23 @@ namespace SETTINGS {
                             case 'p':
                                 if (Settings._mode == 1) {
                                     let p = ASC.Config.pieceFromText(v.substring(2));
-                                    Settings._config._pieces = p;
+                                    Settings._config.pieces = p;
                                     Settings._pieceEditor.setPieces(p);
                                 }
                                 break;
                             case 'b':
                                 if (Settings._mode == 1) {
-                                    Settings._config._bagSize = JSON.parse(v.substring(2));
+                                    Settings._config.bagSize = JSON.parse(v.substring(2));
                                 }
                                 break;
                             case 'c':
-                                Settings._config._controls = JSON.parse(v.substring(2));
+                                Settings._config.controls = JSON.parse(v.substring(2));
                                 break;
                             case 'r':
-                                Settings._config._repeat = JSON.parse(v.substring(2));
+                                Settings._config.repeat = JSON.parse(v.substring(2));
                                 break;
                             case 'd':
-                                Settings._config._delay = JSON.parse(v.substring(2));
+                                Settings._config.delay = JSON.parse(v.substring(2));
                                 break;
                         }
                     }
@@ -251,14 +253,14 @@ namespace SETTINGS {
             //Version: ?; pieces; controls; delay; rate; bagsize;
             c += "v=" + VERSION.toString() + ";";
             if (Settings._mode != 1) {
-                c += "p=" + JSON.stringify(Settings._config._pieces) + ";";
+                c += "p=" + JSON.stringify(Settings._config.pieces) + ";";
 
             }
-            c += "c=" + JSON.stringify(Settings._config._controls) + ";";
-            c += "r=" + JSON.stringify(Settings._config._repeat) + ";";
-            c += "d=" + JSON.stringify(Settings._config._delay) + ';';
+            c += "c=" + JSON.stringify(Settings._config.controls) + ";";
+            c += "r=" + JSON.stringify(Settings._config.repeat) + ";";
+            c += "d=" + JSON.stringify(Settings._config.delay) + ';';
             if (Settings._mode != 1) {
-                c += "b=" + JSON.stringify(Settings._config._bagSize) + ";";
+                c += "b=" + JSON.stringify(Settings._config.bagSize) + ";";
             }
             c += "Expires: 2147483647;"
             document.cookie = encodeURIComponent(c);
@@ -269,7 +271,6 @@ namespace SETTINGS {
             Settings._pieceEditor.disable(true);
             let m = window.location.search.substring(1);
             let cfg: string[] = m.split("&");
-            Settings._config._width = B.toNumber(cfg[0]);
             let pc: ASC.Piece[] = [];
             let rawp: string[] = cfg[1].match(/.{1,11}/g);
             for (let r of rawp) {
@@ -284,16 +285,14 @@ namespace SETTINGS {
                 }
                 pc.push(new ASC.Piece(r.substring(0, 1), shape, B.toNumber(r.substring(6, 7)), Number("0x" + B.hexFrom64(r.substring(7)).padStart(6, '0'))));
             }
-            Settings._pieceEditor.setPieces(pc);
-            Settings._config._pieces = pc;
+
             let queue: number[] = [];
             for (let q of cfg[2].split('')) {
                 queue.push(B.toNumber(q));
             }
-            Settings._staticQueue = queue;
             let map: number[] = [];
             let rawmap: string = B.binaryFrom64(cfg[3]);
-            rawmap = rawmap.substring(rawmap.length - Settings._config._width * ASC.FIELD_HEIGHT);
+            rawmap = rawmap.substring(rawmap.length - Settings._config.width * ASC.FIELD_HEIGHT);
             let i = 0;
             for (let r of rawmap.split('')) {
                 if (Number(r) == 1) {
@@ -301,7 +300,8 @@ namespace SETTINGS {
                 }
                 i++;
             }
-            Settings._mapShape = map;
+
+            Settings._mapData = new ASC.MapData(B.toNumber(cfg[0]), pc, queue, map, []);
         }
     }
 }

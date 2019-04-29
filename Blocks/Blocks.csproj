@@ -123,20 +123,23 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
+    <TypeScriptCompile Include="game\config\mapConfig.ts" />
+    <TypeScriptCompile Include="game\config\mapData.ts" />
+    <TypeScriptCompile Include="game\gameManager.ts" />
     <TypeScriptCompile Include="game\modes\Agame.ts" />
     <TypeScriptCompile Include="game\modes\diggame.ts" />
-    <TypeScriptCompile Include="game\logic\Agarbage.ts" />
-    <TypeScriptCompile Include="game\logic\garbage.ts" />
+    <TypeScriptCompile Include="game\logic\garbage\Agarbage.ts" />
+    <TypeScriptCompile Include="game\logic\garbage\garbage.ts" />
     <TypeScriptCompile Include="game\modes\mapgame.ts" />
     <Content Include="test.html" />
-    <TypeScriptCompile Include="game\logic\stopwatch.ts" />
-    <TypeScriptCompile Include="webgui\bettercb.ts" />
+    <TypeScriptCompile Include="game\logic\time\stopwatch.ts" />
+    <TypeScriptCompile Include="webgui\simplifiedHTML\bettercb.ts" />
     <TypeScriptCompile Include="webgui\dragutil.ts" />
     <TypeScriptCompile Include="webgui\navbar.ts" />
     <TypeScriptCompile Include="webgui\numberarrayconverter.ts" />
     <TypeScriptCompile Include="webgui\pieceEditor.ts" />
     <TypeScriptCompile Include="game\logic\block.ts" />
-    <TypeScriptCompile Include="game\logic\config.ts" />
+    <TypeScriptCompile Include="game\config\config.ts" />
     <TypeScriptCompile Include="game\inputManager.ts" />
     <TypeScriptCompile Include="game\logic\enums.ts" />
     <TypeScriptCompile Include="game\logic\field.ts" />
@@ -144,17 +147,18 @@
     <TypeScriptCompile Include="game\ITriggerObserver.ts" />
     <TypeScriptCompile Include="game\logic\piece.ts" />
     <TypeScriptCompile Include="game\logic\prng.ts" />
-    <TypeScriptCompile Include="game\logic\Aqueue.ts" />
-    <TypeScriptCompile Include="game\logic\queue.ts" />
-    <TypeScriptCompile Include="game\logic\staticQueue.ts" />
+    <TypeScriptCompile Include="game\logic\queue\Aqueue.ts" />
+    <TypeScriptCompile Include="game\logic\queue\queue.ts" />
+    <TypeScriptCompile Include="game\logic\queue\staticQueue.ts" />
     <TypeScriptCompile Include="game\renderer\renderer.ts" />
     <TypeScriptCompile Include="game\renderer\renderGrid.ts" />
     <TypeScriptCompile Include="game\logic\scoring\attackTable.ts" />
     <TypeScriptCompile Include="game\logic\scoring\scoreTable.ts" />
     <TypeScriptCompile Include="game\logic\scoring\table.ts" />
-    <TypeScriptCompile Include="game\logic\timer.ts" />
+    <TypeScriptCompile Include="game\logic\time\timer.ts" />
     <TypeScriptCompile Include="webgui\mapDesigner.ts" />
     <TypeScriptCompile Include="webgui\settings.ts" />
+    <TypeScriptCompile Include="webgui\simplifiedHTML\gtmlGenerator.ts" />
     <TypeScriptCompile Include="webgui\style.ts" />
   </ItemGroup>
   <ItemGroup>
