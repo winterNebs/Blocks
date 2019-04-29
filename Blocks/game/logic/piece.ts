@@ -15,7 +15,7 @@
 
 
         public constructor(name: string, shape: number[], offset: number = 0, color: number = 0xFFFFFF, initOrient: number = 0) {
-            this._name = name.substr(0,1);
+            this._name = name.substr(0, 1).replace(/[^a-z0-9]+/gi, '').padStart(1,'_');
             this.setShape(shape);
             this._offset = offset;
             this._initialOrientation = initOrient;

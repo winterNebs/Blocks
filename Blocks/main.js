@@ -186,6 +186,150 @@ var RUN;
 })(RUN || (RUN = {}));
 var ASC;
 (function (ASC) {
+    class Config {
+        constructor(w = 10, p = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], c = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], d = 100, r = 10, b = 7) {
+            this._controls = [];
+            this._width = w;
+            this._bagSize = b;
+            this._pieces = p;
+            this._controls = c;
+            this._delay = d;
+            this._repeat = r;
+        }
+        static fromText(input) {
+            let cfg = JSON.parse(input);
+            let ps = [];
+            for (let i of cfg.pieces) {
+                ps.push(new ASC.Piece(i[0], i[1], i[2], Number("0x" + i[3]), 0));
+            }
+            let config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.bagSize);
+            return config;
+        }
+        static pieceFromText(input) {
+            console.log(input);
+            let p = JSON.parse(input);
+            let ps = [];
+            for (let i of p) {
+                ps.push(new ASC.Piece(i._name, i._shape, i._offset, i._color));
+            }
+            return ps;
+        }
+        get width() {
+            return this._width;
+        }
+        set width(value) {
+            if (value != undefined && value >= ASC.MIN_FIELD_WIDTH && value <= ASC.MAX_FIELD_WIDTH) {
+                this._width = value;
+            }
+            else {
+                throw new Error("Invalid width in config: " + value);
+            }
+        }
+        get pieces() {
+            return [...this._pieces].map(x => x.getCopy());
+        }
+        set pieces(value) {
+            if (value != undefined && value.length > 0) {
+                this._pieces = [...value].map(x => x.getCopy());
+            }
+            else {
+                throw new Error("Invalid pieces in config: " + value);
+            }
+        }
+        get controls() {
+            return [...this._controls];
+        }
+        set controls(value) {
+            if (value != undefined && value.length > 0) {
+                this._controls = [...value];
+            }
+            else {
+                throw new Error("Invalid controls in config: " + value);
+            }
+        }
+        get delay() {
+            return this._delay;
+        }
+        set delay(value) {
+            if (value != undefined && value > 0) {
+                this._delay = value;
+            }
+            else {
+                throw new Error("Invalid delay in config: " + value);
+            }
+        }
+        get repeat() {
+            return this._repeat;
+        }
+        set repeat(value) {
+            if (value != undefined && value > 0) {
+                this._repeat = value;
+            }
+            else {
+                throw new Error("Invalid repeat in config: " + value);
+            }
+        }
+        get bagSize() {
+            return this._bagSize;
+        }
+        set bagSize(value) {
+            if (value != undefined && value > 0) {
+                this._bagSize = value;
+            }
+            else {
+                throw new Error("Invalid bag size in config: " + value);
+            }
+        }
+    }
+    ASC.Config = Config;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class MapConfig extends ASC.Config {
+        constructor(w, p, c, d, r, b, map) {
+            super(w, p, c, d, r, b);
+            this._map = map;
+        }
+    }
+    ASC.MapConfig = MapConfig;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class MapData {
+        constructor(w, p, q, c, u) {
+            this._clearable = [];
+            this._width = 10;
+            this._unclearable = [];
+            this._queue = [];
+            this._pieces = [];
+            this._width = w;
+            this._pieces = p;
+            this._queue = q;
+            this._clearable = c;
+            this._unclearable;
+        }
+        get width() {
+            return this._width;
+        }
+        get clearable() {
+            return [...this._clearable];
+        }
+        get unclearable() {
+            return [...this._unclearable];
+        }
+        get queue() {
+            return [...this._queue];
+        }
+        get pieces() {
+            return [...this._pieces].map(p => p.getCopy());
+        }
+    }
+    ASC.MapData = MapData;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
     let Keys;
     (function (Keys) {
         Keys[Keys["LEFT"] = 37] = "LEFT";
@@ -335,6 +479,142 @@ var ASC;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
+    ASC.MAX_FIELD_WIDTH = 20;
+    ASC.MIN_FIELD_WIDTH = 5;
+    ASC.FIELD_HEIGHT = 25;
+    let Rotations;
+    (function (Rotations) {
+        Rotations[Rotations["NONE"] = 0] = "NONE";
+        Rotations[Rotations["CW"] = 1] = "CW";
+        Rotations[Rotations["CWCW"] = 2] = "CWCW";
+        Rotations[Rotations["CCW"] = 3] = "CCW";
+    })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
+    let Directions;
+    (function (Directions) {
+        Directions[Directions["UP"] = 0] = "UP";
+        Directions[Directions["RIGHT"] = 1] = "RIGHT";
+        Directions[Directions["DOWN"] = 2] = "DOWN";
+        Directions[Directions["LEFT"] = 3] = "LEFT";
+    })(Directions = ASC.Directions || (ASC.Directions = {}));
+    let Inputs;
+    (function (Inputs) {
+        Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
+        Inputs[Inputs["SD"] = 1] = "SD";
+        Inputs[Inputs["LEFT"] = 2] = "LEFT";
+        Inputs[Inputs["CW"] = 3] = "CW";
+        Inputs[Inputs["CCW"] = 4] = "CCW";
+        Inputs[Inputs["CWCW"] = 5] = "CWCW";
+        Inputs[Inputs["HOLD"] = 6] = "HOLD";
+        Inputs[Inputs["HD"] = 7] = "HD";
+        Inputs[Inputs["SONIC"] = 8] = "SONIC";
+        Inputs[Inputs["RESTART"] = 9] = "RESTART";
+    })(Inputs = ASC.Inputs || (ASC.Inputs = {}));
+    let State;
+    (function (State) {
+        State[State["ACTIVE"] = 0] = "ACTIVE";
+        State[State["PAUSED"] = 1] = "PAUSED";
+        State[State["WIN"] = 2] = "WIN";
+        State[State["LOSE"] = 3] = "LOSE";
+    })(State = ASC.State || (ASC.State = {}));
+    let Mode;
+    (function (Mode) {
+        Mode[Mode["PRACTICE"] = 0] = "PRACTICE";
+        Mode[Mode["MAP"] = 1] = "MAP";
+        Mode[Mode["DIG"] = 2] = "DIG";
+        Mode[Mode["VS"] = 3] = "VS";
+    })(Mode = ASC.Mode || (ASC.Mode = {}));
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Field {
+        constructor(width) {
+            this._array = [];
+            this._width = width;
+            this.initialize();
+        }
+        initialize() {
+            for (let i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
+                this._array.push(new ASC.Block());
+            }
+        }
+        shift(lines) {
+            this._array.splice(0, lines * this._width);
+            for (let i = 0; i < lines * this._width; ++i) {
+                this._array.push(new ASC.Block());
+            }
+        }
+        appendRow(row, yval) {
+            let end = this._array.splice(yval * this._width);
+            let temp = this._array.concat(row).concat(end);
+            temp.splice(0, row.length);
+            this._array = temp;
+        }
+        getAt(index) {
+            return this._array[index];
+        }
+        getColors() {
+            let c = [];
+            for (let i of this._array) {
+                c.push(i.color);
+            }
+            return c;
+        }
+        setBlocks(indices, block) {
+            for (let i of indices) {
+                this._array[i] = block;
+            }
+        }
+        clearLineAt(yval) {
+            this._array.splice(yval * this._width, this._width);
+            for (let i = 0; i < this._width; ++i) {
+                this._array.unshift(new ASC.Block());
+            }
+        }
+    }
+    ASC.Field = Field;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class AGarbage {
+    }
+    ASC.AGarbage = AGarbage;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Garbage extends ASC.AGarbage {
+        constructor(seed, width, percentage) {
+            super();
+            this._prng = new ASC.PRNG(seed);
+            this._width = width;
+            if (percentage >= 0 && percentage < 100) {
+                this._percentage = percentage;
+            }
+            else {
+                throw new Error("Invalid Percentage: " + percentage);
+            }
+        }
+        addGarbage(attack) {
+            let g = [];
+            let a = [];
+            for (let i = 0; i < this._width; ++i) {
+                if (i < this._percentage * this._width) {
+                    a.push(1);
+                }
+                else {
+                    a.push(0);
+                }
+            }
+            this._prng.shuffleArray(a);
+            for (let i = 0; i < attack * this._percentage + 0.1; ++i) {
+                g.push(a);
+            }
+            return g;
+        }
+    }
+    ASC.Garbage = Garbage;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
     class Piece {
         constructor(name, shape, offset = 0, color = 0xFFFFFF, initOrient = 0) {
             this._shape = [];
@@ -342,7 +622,7 @@ var ASC;
             this._currentOrientation = 0;
             this._x = 0;
             this._y = 0;
-            this._name = name.substr(0, 1);
+            this._name = name.substr(0, 1).replace(/[^a-z0-9]+/gi, '').padStart(1, '_');
             this.setShape(shape);
             this._offset = offset;
             this._initialOrientation = initOrient;
@@ -485,6 +765,578 @@ var ASC;
         }
     }
     ASC.PRNG = PRNG;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    ASC.NUM_PREVIEWS = 6;
+    class AQueue {
+    }
+    ASC.AQueue = AQueue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Queue extends ASC.AQueue {
+        constructor(seed, pieces, size = pieces.length) {
+            super();
+            this._queue = [];
+            this._rng = new ASC.PRNG(seed);
+            this._bag = pieces;
+            this._bagSize = size;
+            this.generateQueue();
+        }
+        generateQueue() {
+            while (this._queue.length < ASC.NUM_PREVIEWS) {
+                let tempBag = [];
+                while (tempBag.length < this._bagSize) {
+                    this._bag.forEach((i) => tempBag.push(i.getCopy()));
+                }
+                this._rng.shuffleArray(tempBag);
+                for (let i of tempBag.slice(0, this._bagSize + 1)) {
+                    this._queue.push(i);
+                }
+            }
+        }
+        getQueue() {
+            return this._queue.slice(0, ASC.NUM_PREVIEWS);
+        }
+        getNext() {
+            let temp = this._queue.splice(0, 1)[0];
+            this.generateQueue();
+            return temp;
+        }
+        hasNext() {
+            return true;
+        }
+    }
+    ASC.Queue = Queue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class StaticQueue extends ASC.AQueue {
+        constructor(pieces, order) {
+            super();
+            this._queue = [];
+            this._bag = pieces;
+            for (let i of order) {
+                this._queue.push(this._bag[i].getCopy());
+            }
+        }
+        getQueue() {
+            return this._queue.slice(0, ASC.NUM_PREVIEWS);
+        }
+        getNext() {
+            let temp = this._queue.splice(0, 1)[0];
+            return temp;
+        }
+        hasNext() {
+            return this._queue.length > 0;
+        }
+        blocksLeft() {
+            return this._queue.length;
+        }
+    }
+    ASC.StaticQueue = StaticQueue;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    const CLEAR = -1;
+    const SPIN = 2;
+    const PC = 6;
+    class AttackTable {
+        constructor(width) {
+            this._width = width;
+        }
+        clear(num) {
+            return this.widthMultiplier(num + CLEAR);
+        }
+        spin(num) {
+            return this.widthMultiplier(num * SPIN);
+        }
+        perfectClear(num) {
+            return this.widthMultiplier(PC);
+        }
+        widthMultiplier(num) {
+            return num + ~~(num * (this._width - 10) / 4);
+        }
+    }
+    ASC.AttackTable = AttackTable;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Stopwatch {
+        constructor() {
+        }
+        start() {
+            this._start = performance.now();
+        }
+        getTime() {
+            return performance.now() - this._start;
+        }
+    }
+    ASC.Stopwatch = Stopwatch;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class Timer {
+        constructor(length, interval, tick, end) {
+            this._running = false;
+            this._length = length;
+            this._interval = interval;
+            this._tick = tick;
+            this._end = end;
+        }
+        start() {
+            this.stop();
+            this._running = true;
+            this._expected = performance.now() + this._length;
+            this._expectedTick = performance.now() + this._interval;
+            this._request = window.requestAnimationFrame(this.step.bind(this));
+        }
+        stop() {
+            this._running = false;
+            window.cancelAnimationFrame(this._request);
+        }
+        step() {
+            if (this._running) {
+                if (performance.now() >= this._expectedTick) {
+                    this._expectedTick = performance.now() + this._interval;
+                    this._tick();
+                }
+                else if (performance.now() >= this._expected) {
+                    this.stop();
+                    this._end();
+                    return;
+                }
+                window.requestAnimationFrame(this.step.bind(this));
+            }
+        }
+    }
+    ASC.Timer = Timer;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    const KICKVER = 1;
+    class AGame {
+        constructor(width = 12, bagSize = 7, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new ASC.Piece("S", [7, 8, 11, 12], 2, 0x00FF00),
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay = 100, repeat = 10) {
+            this._pieces = [];
+            this._state = ASC.State.LOSE;
+            if (delay < 1) {
+                throw new Error("Invalid Delay");
+            }
+            if (repeat < 1) {
+                throw new Error("Invalid Repeat");
+            }
+            if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
+                throw new Error("Invalid width: " + width.toString());
+            }
+            this._width = width;
+            this._bagSize = bagSize;
+            for (let p of pieces) {
+                p.validateOffset(this._width);
+            }
+            this._pieces = pieces;
+            this._pieces.forEach((i) => (i.initRotations()));
+            this._time = new ASC.Stopwatch();
+        }
+        randomSeed() {
+            this._seed = Math.round(Math.random() * Number.MAX_SAFE_INTEGER);
+        }
+        resetGame() {
+            if (this._inputs != undefined) {
+                console.log(JSON.stringify(this._seed) + "; " + this._inputs.join());
+            }
+            this._field = new ASC.Field(this._width);
+            this._hold = undefined;
+            this.next();
+            this._state = ASC.State.ACTIVE;
+            this._time.start();
+            this._inputs = [];
+            this.update();
+        }
+        gameOver() {
+            this._state = ASC.State.LOSE;
+            this.update();
+        }
+        next() {
+            if (this._queue.hasNext()) {
+                this._currentPiece = this._queue.getNext();
+                if (!this.checkShift(0, 0)) {
+                    this.gameOver();
+                    this._state = ASC.State.LOSE;
+                }
+            }
+            else {
+                this.gameOver();
+                this._state = ASC.State.LOSE;
+            }
+        }
+        hold() {
+            if (this._currentPiece)
+                this._currentPiece.reset();
+            if (this._hold === undefined) {
+                this._hold = this._currentPiece;
+                this.next();
+                return;
+            }
+            let temp = this._hold;
+            this._hold = this._currentPiece;
+            this._currentPiece = temp;
+        }
+        hardDrop() {
+            this.sonicDrop();
+            this.lock();
+        }
+        sonicDrop() {
+            let i = 0;
+            while (this.checkShift(0, i)) {
+                ++i;
+            }
+            this._currentPiece.move(0, i - 1);
+        }
+        move(dir) {
+            switch (dir) {
+                case ASC.Directions.LEFT:
+                    if (this.checkShift(-1, 0)) {
+                        this._currentPiece.move(-1, 0);
+                    }
+                    break;
+                case ASC.Directions.RIGHT:
+                    if (this.checkShift(1, 0)) {
+                        this._currentPiece.move(1, 0);
+                    }
+                    break;
+                case ASC.Directions.DOWN:
+                    if (this.checkShift(0, 1)) {
+                        this._currentPiece.move(0, 1);
+                    }
+                    break;
+            }
+        }
+        checkShift(x, y) {
+            let coords = this._currentPiece.getCoords(this._width);
+            let yvals = this._currentPiece.getYVals();
+            for (let i = 0; i < coords.length; ++i) {
+                let block = this._field.getAt(coords[i] + x + y * this._width);
+                if (block == null ||
+                    yvals[i] != ~~((coords[i] + x) / this._width) ||
+                    block.solid) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        checkPC() {
+            for (let i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
+                if (this._field.getAt(i).clearable && this._field.getAt(i).solid) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        checkImmobile() {
+            return !(this.checkShift(0, 1) ||
+                this.checkShift(0, -1) ||
+                this.checkShift(1, 0) ||
+                this.checkShift(-1, 0));
+        }
+        rotate(dir) {
+            this._currentPiece.rotate(dir);
+            if (this.checkShift(0, 0)) {
+                return;
+            }
+            if (dir !== ASC.Rotations.CWCW) {
+                let sign = (dir - 2);
+                console.log("Trying to kick:");
+                let xkicks = [];
+                let ykicks = [];
+                let indexxx = [13, 17, 18, 22, 23, 19, 24, 14, 11, 7, 11, 8, 9, 2, 3];
+                for (let i of indexxx) {
+                    xkicks.push((i % 5) - 2);
+                    ykicks.push(~~(i / 5) - 2);
+                }
+                for (let i = 0; i < xkicks.length; ++i) {
+                    console.log(sign * xkicks[i] + ", " + ykicks[i]);
+                    if (this.checkShift(sign * xkicks[i], ykicks[i])) {
+                        this._currentPiece.move(sign * xkicks[i], ykicks[i]);
+                        return;
+                    }
+                }
+            }
+            console.log("Failed Kick.");
+            this._currentPiece.rotate(4 - dir);
+        }
+        lock() {
+            this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(this._currentPiece.color, true, true));
+            this.next();
+        }
+        update() {
+            this.updateField();
+            this._updateQueueCallback(this._queue.getQueue());
+            this._updateHoldCallback(this._hold);
+            this._updateCallback();
+        }
+        updateField() {
+            let temp = this._field.getColors();
+            let current = this._currentPiece.getCopy();
+            this.sonicDrop();
+            let ghost = this._currentPiece.getCopy();
+            this._currentPiece = current;
+            this._updateFieldCallback(temp, current.getCopy(), ghost);
+        }
+        appendRow(rows, yval) {
+            for (let r of rows) {
+                this._field.appendRow(r, yval);
+            }
+        }
+        clearLines(yvals) {
+            let lines = 0;
+            yvals.sort(function (a, b) { return a - b; });
+            for (let y of yvals) {
+                for (let i = 0; i < this._width; i++) {
+                    let block = this._field.getAt(y * this._width + i);
+                    if (!block.solid || !block.clearable) {
+                        break;
+                    }
+                    if (i == this._width - 1) {
+                        ++lines;
+                        this._field.clearLineAt(y);
+                    }
+                }
+            }
+            return lines;
+        }
+        setUpdate(u) {
+            this._updateCallback = u;
+        }
+        setUpdateHold(u) {
+            this._updateHoldCallback = u;
+        }
+        setUpdateQueue(u) {
+            this._updateQueueCallback = u;
+        }
+        setUpdateField(u) {
+            this._updateFieldCallback = u;
+        }
+        get time() {
+            return this._time.getTime();
+        }
+        get state() {
+            return this._state;
+        }
+        readinput(input) {
+            if (this._state == ASC.State.ACTIVE) {
+                switch (input) {
+                    case ASC.Inputs.CW:
+                        this._inputs.push(input);
+                        this.rotate(ASC.Rotations.CW);
+                        break;
+                    case ASC.Inputs.RIGHT:
+                        this._inputs.push(input);
+                        this.move(ASC.Directions.RIGHT);
+                        break;
+                    case ASC.Inputs.SD:
+                        this._inputs.push(input);
+                        this.move(ASC.Directions.DOWN);
+                        break;
+                    case ASC.Inputs.LEFT:
+                        this._inputs.push(input);
+                        this.move(ASC.Directions.LEFT);
+                        break;
+                    case ASC.Inputs.CCW:
+                        this._inputs.push(input);
+                        this.rotate(ASC.Rotations.CCW);
+                        break;
+                    case ASC.Inputs.CWCW:
+                        this._inputs.push(input);
+                        this.rotate(ASC.Rotations.CWCW);
+                        break;
+                    case ASC.Inputs.HD:
+                        this._inputs.push(input);
+                        this.hardDrop();
+                        break;
+                    case ASC.Inputs.HOLD:
+                        this._inputs.push(input);
+                        this.hold();
+                        break;
+                    case ASC.Inputs.SONIC:
+                        this._inputs.push(input);
+                        this.sonicDrop();
+                        break;
+                    default:
+                        break;
+                }
+            }
+            this.update();
+        }
+    }
+    ASC.AGame = AGame;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    class DigGame extends ASC.AGame {
+        constructor(width = 10, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay = 100, repeat = 10) {
+            super(width, bagSize, pieces, delay, repeat);
+            this._progress = 0;
+            this._attack = new ASC.AttackTable(this._width);
+            this._timer = new ASC.Timer(120000, 2000, this.tick.bind(this), this.win.bind(this));
+        }
+        resetGame() {
+            this._progress = 0;
+            this.randomSeed();
+            this._garbage = new ASC.Garbage(this._seed, this._width, 0.9);
+            this._queue = new ASC.Queue(this._seed, this._pieces, this._bagSize);
+            super.resetGame();
+            this._timer.start();
+        }
+        tick() {
+            this.addGarbage(~~(Math.random() * 4));
+            this.update();
+        }
+        gameOver() {
+            this._timer.stop();
+            super.gameOver();
+        }
+        win() {
+            super.gameOver();
+            this._timer.stop();
+            this._state = ASC.State.WIN;
+        }
+        lock() {
+            let spin = this.checkImmobile();
+            let yvals = this._currentPiece.getYVals();
+            super.lock();
+            let cleared = this.clearLines(yvals);
+            if (cleared > 0) {
+                if (spin) {
+                    this._progress += this._attack.spin(cleared);
+                }
+                else {
+                    this._progress += this._attack.clear(cleared);
+                }
+                if (this.checkPC()) {
+                    this._progress += this._attack.perfectClear(cleared);
+                }
+            }
+        }
+        addGarbage(attack = 1) {
+            let garbage = [];
+            let g = this._garbage.addGarbage(attack);
+            for (let row of g) {
+                garbage.push([]);
+                for (let b of row) {
+                    if (b == 1) {
+                        garbage[garbage.length - 1].push(new ASC.Block(0xDDDDDD, true, true));
+                    }
+                    else {
+                        garbage[garbage.length - 1].push(new ASC.Block(0x000000, false, false));
+                    }
+                }
+            }
+            super.appendRow(garbage, ASC.FIELD_HEIGHT);
+            this.checkGarbageShift();
+        }
+        checkGarbageShift() {
+            let y = 0;
+            let highest = this._currentPiece.getYVals().sort(function (a, b) { return a - b; })[0];
+            while (!this.checkShift(0, y)) {
+                --y;
+                if (highest + y == 0) {
+                    this.hardDrop();
+                    return;
+                }
+                else if (highest + y < 0) {
+                    this.gameOver();
+                    return;
+                }
+            }
+            this._currentPiece.move(0, y);
+        }
+    }
+    ASC.DigGame = DigGame;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    const TIMELIMIT = 60;
+    class Game extends ASC.AGame {
+        constructor(width = 12, bagSize = 7, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay = 100, repeat = 10) {
+            super(width, bagSize, pieces, delay, repeat);
+            this._progress = 0;
+            this._attack = new ASC.AttackTable(this._width);
+        }
+        resetGame() {
+            this._progress = 0;
+            this.randomSeed();
+            this._queue = new ASC.Queue(this._seed, this._pieces, this._bagSize);
+            super.resetGame();
+        }
+        lock() {
+            let spin = this.checkImmobile();
+            let yvals = this._currentPiece.getYVals();
+            super.lock();
+            let cleared = this.clearLines(yvals);
+            if (cleared > 0) {
+                if (spin) {
+                    this._progress += this._attack.spin(cleared);
+                }
+                else {
+                    this._progress += this._attack.clear(cleared);
+                }
+                if (this.checkPC()) {
+                    this._progress += this._attack.perfectClear(cleared);
+                }
+            }
+        }
+    }
+    ASC.Game = Game;
+})(ASC || (ASC = {}));
+var ASC;
+(function (ASC) {
+    const TIMELIMIT = 60;
+    class MapGame extends ASC.AGame {
+        constructor(width = 12, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
+            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
+            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], order = [], clearable = [], unclearable = [], delay = 100, repeat = 10) {
+            super(width, bagSize, pieces, delay, repeat);
+            this._progress = 0;
+            this._map = clearable;
+            this._solid = unclearable;
+            this._order = order;
+            this._attack = new ASC.AttackTable(this._width);
+        }
+        resetGame() {
+            this._queue = new ASC.StaticQueue(this._pieces, this._order);
+            this._progress = 0;
+            super.resetGame();
+            this._field.setBlocks(this._map, new ASC.Block(0xDDDDDD, true, true));
+            this.update();
+        }
+        lock() {
+            let spin = this.checkImmobile();
+            let yvals = this._currentPiece.getYVals();
+            super.lock();
+            let cleared = this.clearLines(yvals);
+            if (cleared > 0) {
+                if (spin) {
+                    this._progress += this._attack.spin(cleared);
+                }
+                else {
+                    this._progress += this._attack.clear(cleared);
+                }
+                if (this.checkPC()) {
+                    this._progress += this._attack.perfectClear(cleared);
+                    this.gameOver();
+                    this._state = ASC.State.WIN;
+                }
+            }
+        }
+    }
+    ASC.MapGame = MapGame;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -1012,53 +1864,6 @@ var B;
     }
     B.pad = pad;
 })(B || (B = {}));
-var ASC;
-(function (ASC) {
-    ASC.MAX_FIELD_WIDTH = 20;
-    ASC.MIN_FIELD_WIDTH = 5;
-    ASC.FIELD_HEIGHT = 25;
-    let Rotations;
-    (function (Rotations) {
-        Rotations[Rotations["NONE"] = 0] = "NONE";
-        Rotations[Rotations["CW"] = 1] = "CW";
-        Rotations[Rotations["CWCW"] = 2] = "CWCW";
-        Rotations[Rotations["CCW"] = 3] = "CCW";
-    })(Rotations = ASC.Rotations || (ASC.Rotations = {}));
-    let Directions;
-    (function (Directions) {
-        Directions[Directions["UP"] = 0] = "UP";
-        Directions[Directions["RIGHT"] = 1] = "RIGHT";
-        Directions[Directions["DOWN"] = 2] = "DOWN";
-        Directions[Directions["LEFT"] = 3] = "LEFT";
-    })(Directions = ASC.Directions || (ASC.Directions = {}));
-    let Inputs;
-    (function (Inputs) {
-        Inputs[Inputs["RIGHT"] = 0] = "RIGHT";
-        Inputs[Inputs["SD"] = 1] = "SD";
-        Inputs[Inputs["LEFT"] = 2] = "LEFT";
-        Inputs[Inputs["CW"] = 3] = "CW";
-        Inputs[Inputs["CCW"] = 4] = "CCW";
-        Inputs[Inputs["CWCW"] = 5] = "CWCW";
-        Inputs[Inputs["HOLD"] = 6] = "HOLD";
-        Inputs[Inputs["HD"] = 7] = "HD";
-        Inputs[Inputs["SONIC"] = 8] = "SONIC";
-        Inputs[Inputs["RESTART"] = 9] = "RESTART";
-    })(Inputs = ASC.Inputs || (ASC.Inputs = {}));
-    let State;
-    (function (State) {
-        State[State["ACTIVE"] = 0] = "ACTIVE";
-        State[State["PAUSED"] = 1] = "PAUSED";
-        State[State["WIN"] = 2] = "WIN";
-        State[State["LOSE"] = 3] = "LOSE";
-    })(State = ASC.State || (ASC.State = {}));
-    let Mode;
-    (function (Mode) {
-        Mode[Mode["PRACTICE"] = 0] = "PRACTICE";
-        Mode[Mode["MAP"] = 1] = "MAP";
-        Mode[Mode["DIG"] = 2] = "DIG";
-        Mode[Mode["VS"] = 3] = "VS";
-    })(Mode = ASC.Mode || (ASC.Mode = {}));
-})(ASC || (ASC = {}));
 var SETTINGS;
 (function (SETTINGS) {
     const VERSION = 0.002;
@@ -1304,6 +2109,66 @@ var SETTINGS;
     Settings._mode = ASC.Mode.PRACTICE;
     SETTINGS.Settings = Settings;
 })(SETTINGS || (SETTINGS = {}));
+var C;
+(function (C) {
+    class Checkbox {
+        constructor(size = 16) {
+            this._checked = false;
+            this._disabled = false;
+            this._td = document.createElement("td");
+            this._td.height = size.toString();
+            this._td.width = size.toString();
+            this._td.onmousemove = this.move.bind(this);
+            this._td.ondragover = (ev) => (ev.preventDefault());
+            this._td.onmousedown = (ev) => { this.click(); ev.preventDefault(); };
+            this._td.textContent = "";
+            this._td.draggable = false;
+            this.update();
+        }
+        getTD() {
+            return this._td;
+        }
+        update() {
+            this._td.style.backgroundColor = this._disabled ? "#000000" : this._checked ? "#DDDDDD" : "#333333";
+        }
+        click() {
+            if (!this._disabled) {
+                Checkbox._lastState = !this._checked;
+                this._checked = Checkbox._lastState;
+                this.update();
+            }
+        }
+        move(ev) {
+            var style = getComputedStyle(this._td);
+            if (!this._disabled && D.Drag.mouseDown) {
+                this._checked = Checkbox._lastState;
+                this.update();
+            }
+        }
+        get checked() {
+            return this._checked;
+        }
+        set checked(value) {
+            this._checked = value;
+            this.update();
+        }
+        get disabled() {
+            return this._disabled;
+        }
+        set disabled(value) {
+            this._disabled = value;
+            this.update();
+        }
+    }
+    Checkbox._lastState = false;
+    C.Checkbox = Checkbox;
+})(C || (C = {}));
+var H;
+(function (H) {
+    class Title {
+    }
+    H.Title = Title;
+})(H || (H = {}));
 var STYLE;
 (function (STYLE) {
     function init() {
@@ -1464,869 +2329,4 @@ background-color: #4CAF50; /* Green */
     }
     STYLE.init = init;
 })(STYLE || (STYLE = {}));
-var ASC;
-(function (ASC) {
-    const CLEAR = -1;
-    const SPIN = 2;
-    const PC = 6;
-    class AttackTable {
-        constructor(width) {
-            this._width = width;
-        }
-        clear(num) {
-            return this.widthMultiplier(num + CLEAR);
-        }
-        spin(num) {
-            return this.widthMultiplier(num * SPIN);
-        }
-        perfectClear(num) {
-            return this.widthMultiplier(PC);
-        }
-        widthMultiplier(num) {
-            return num + ~~(num * (this._width - 10) / 4);
-        }
-    }
-    ASC.AttackTable = AttackTable;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    const KICKVER = 1;
-    class AGame {
-        constructor(width = 12, bagSize = 7, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
-            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new ASC.Piece("S", [7, 8, 11, 12], 2, 0x00FF00),
-            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay = 100, repeat = 10) {
-            this._pieces = [];
-            this._state = ASC.State.LOSE;
-            if (delay < 1) {
-                throw new Error("Invalid Delay");
-            }
-            if (repeat < 1) {
-                throw new Error("Invalid Repeat");
-            }
-            if (width > ASC.MAX_FIELD_WIDTH || width < ASC.MIN_FIELD_WIDTH) {
-                throw new Error("Invalid width: " + width.toString());
-            }
-            this._width = width;
-            this._bagSize = bagSize;
-            for (let p of pieces) {
-                p.validateOffset(this._width);
-            }
-            this._pieces = pieces;
-            this._pieces.forEach((i) => (i.initRotations()));
-            this._time = new ASC.Stopwatch();
-        }
-        randomSeed() {
-            this._seed = Math.round(Math.random() * Number.MAX_SAFE_INTEGER);
-        }
-        resetGame() {
-            if (this._inputs != undefined) {
-                console.log(JSON.stringify(this._seed) + "; " + this._inputs.join());
-            }
-            this._field = new ASC.Field(this._width);
-            this._hold = undefined;
-            this.next();
-            this._state = ASC.State.ACTIVE;
-            this._time.start();
-            this._inputs = [];
-            this.update();
-        }
-        gameOver() {
-            this._state = ASC.State.LOSE;
-            this.update();
-        }
-        next() {
-            if (this._queue.hasNext()) {
-                this._currentPiece = this._queue.getNext();
-                if (!this.checkShift(0, 0)) {
-                    this.gameOver();
-                    this._state = ASC.State.LOSE;
-                }
-            }
-            else {
-                this.gameOver();
-                this._state = ASC.State.LOSE;
-            }
-        }
-        hold() {
-            if (this._currentPiece)
-                this._currentPiece.reset();
-            if (this._hold === undefined) {
-                this._hold = this._currentPiece;
-                this.next();
-                return;
-            }
-            let temp = this._hold;
-            this._hold = this._currentPiece;
-            this._currentPiece = temp;
-        }
-        hardDrop() {
-            this.sonicDrop();
-            this.lock();
-        }
-        sonicDrop() {
-            let i = 0;
-            while (this.checkShift(0, i)) {
-                ++i;
-            }
-            this._currentPiece.move(0, i - 1);
-        }
-        move(dir) {
-            switch (dir) {
-                case ASC.Directions.LEFT:
-                    if (this.checkShift(-1, 0)) {
-                        this._currentPiece.move(-1, 0);
-                    }
-                    break;
-                case ASC.Directions.RIGHT:
-                    if (this.checkShift(1, 0)) {
-                        this._currentPiece.move(1, 0);
-                    }
-                    break;
-                case ASC.Directions.DOWN:
-                    if (this.checkShift(0, 1)) {
-                        this._currentPiece.move(0, 1);
-                    }
-                    break;
-            }
-        }
-        checkShift(x, y) {
-            let coords = this._currentPiece.getCoords(this._width);
-            let yvals = this._currentPiece.getYVals();
-            for (let i = 0; i < coords.length; ++i) {
-                let block = this._field.getAt(coords[i] + x + y * this._width);
-                if (block == null ||
-                    yvals[i] != ~~((coords[i] + x) / this._width) ||
-                    block.solid) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        checkPC() {
-            for (let i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
-                if (this._field.getAt(i).clearable && this._field.getAt(i).solid) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        checkImmobile() {
-            return !(this.checkShift(0, 1) ||
-                this.checkShift(0, -1) ||
-                this.checkShift(1, 0) ||
-                this.checkShift(-1, 0));
-        }
-        rotate(dir) {
-            this._currentPiece.rotate(dir);
-            if (this.checkShift(0, 0)) {
-                return;
-            }
-            if (dir !== ASC.Rotations.CWCW) {
-                let sign = (dir - 2);
-                console.log("Trying to kick:");
-                let xkicks = [];
-                let ykicks = [];
-                let indexxx = [13, 17, 18, 22, 23, 19, 24, 14, 11, 7, 11, 8, 9, 2, 3];
-                for (let i of indexxx) {
-                    xkicks.push((i % 5) - 2);
-                    ykicks.push(~~(i / 5) - 2);
-                }
-                for (let i = 0; i < xkicks.length; ++i) {
-                    console.log(sign * xkicks[i] + ", " + ykicks[i]);
-                    if (this.checkShift(sign * xkicks[i], ykicks[i])) {
-                        this._currentPiece.move(sign * xkicks[i], ykicks[i]);
-                        return;
-                    }
-                }
-            }
-            console.log("Failed Kick.");
-            this._currentPiece.rotate(4 - dir);
-        }
-        lock() {
-            this._field.setBlocks(this._currentPiece.getCoords(this._width), new ASC.Block(this._currentPiece.color, true, true));
-            this.next();
-        }
-        update() {
-            this.updateField();
-            this._updateQueueCallback(this._queue.getQueue());
-            this._updateHoldCallback(this._hold);
-            this._updateCallback();
-        }
-        updateField() {
-            let temp = this._field.getColors();
-            let current = this._currentPiece.getCopy();
-            this.sonicDrop();
-            let ghost = this._currentPiece.getCopy();
-            this._currentPiece = current;
-            this._updateFieldCallback(temp, current.getCopy(), ghost);
-        }
-        appendRow(rows, yval) {
-            for (let r of rows) {
-                this._field.appendRow(r, yval);
-            }
-        }
-        clearLines(yvals) {
-            let lines = 0;
-            yvals.sort(function (a, b) { return a - b; });
-            for (let y of yvals) {
-                for (let i = 0; i < this._width; i++) {
-                    let block = this._field.getAt(y * this._width + i);
-                    if (!block.solid || !block.clearable) {
-                        break;
-                    }
-                    if (i == this._width - 1) {
-                        ++lines;
-                        this._field.clearLineAt(y);
-                    }
-                }
-            }
-            return lines;
-        }
-        setUpdate(u) {
-            this._updateCallback = u;
-        }
-        setUpdateHold(u) {
-            this._updateHoldCallback = u;
-        }
-        setUpdateQueue(u) {
-            this._updateQueueCallback = u;
-        }
-        setUpdateField(u) {
-            this._updateFieldCallback = u;
-        }
-        get time() {
-            return this._time.getTime();
-        }
-        get state() {
-            return this._state;
-        }
-        readinput(input) {
-            if (this._state == ASC.State.ACTIVE) {
-                switch (input) {
-                    case ASC.Inputs.CW:
-                        this._inputs.push(input);
-                        this.rotate(ASC.Rotations.CW);
-                        break;
-                    case ASC.Inputs.RIGHT:
-                        this._inputs.push(input);
-                        this.move(ASC.Directions.RIGHT);
-                        break;
-                    case ASC.Inputs.SD:
-                        this._inputs.push(input);
-                        this.move(ASC.Directions.DOWN);
-                        break;
-                    case ASC.Inputs.LEFT:
-                        this._inputs.push(input);
-                        this.move(ASC.Directions.LEFT);
-                        break;
-                    case ASC.Inputs.CCW:
-                        this._inputs.push(input);
-                        this.rotate(ASC.Rotations.CCW);
-                        break;
-                    case ASC.Inputs.CWCW:
-                        this._inputs.push(input);
-                        this.rotate(ASC.Rotations.CWCW);
-                        break;
-                    case ASC.Inputs.HD:
-                        this._inputs.push(input);
-                        this.hardDrop();
-                        break;
-                    case ASC.Inputs.HOLD:
-                        this._inputs.push(input);
-                        this.hold();
-                        break;
-                    case ASC.Inputs.SONIC:
-                        this._inputs.push(input);
-                        this.sonicDrop();
-                        break;
-                    default:
-                        break;
-                }
-            }
-            this.update();
-        }
-    }
-    ASC.AGame = AGame;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class DigGame extends ASC.AGame {
-        constructor(width = 10, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
-            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
-            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay = 100, repeat = 10) {
-            super(width, bagSize, pieces, delay, repeat);
-            this._progress = 0;
-            this._attack = new ASC.AttackTable(this._width);
-            this._timer = new ASC.Timer(120000, 2000, this.tick.bind(this), this.win.bind(this));
-        }
-        resetGame() {
-            this._progress = 0;
-            this.randomSeed();
-            this._garbage = new ASC.Garbage(this._seed, this._width, 0.9);
-            this._queue = new ASC.Queue(this._seed, this._pieces, this._bagSize);
-            super.resetGame();
-            this._timer.start();
-        }
-        tick() {
-            this.addGarbage(~~(Math.random() * 4));
-            this.update();
-        }
-        gameOver() {
-            this._timer.stop();
-            super.gameOver();
-        }
-        win() {
-            super.gameOver();
-            this._timer.stop();
-            this._state = ASC.State.WIN;
-        }
-        lock() {
-            let spin = this.checkImmobile();
-            let yvals = this._currentPiece.getYVals();
-            super.lock();
-            let cleared = this.clearLines(yvals);
-            if (cleared > 0) {
-                if (spin) {
-                    this._progress += this._attack.spin(cleared);
-                }
-                else {
-                    this._progress += this._attack.clear(cleared);
-                }
-                if (this.checkPC()) {
-                    this._progress += this._attack.perfectClear(cleared);
-                }
-            }
-        }
-        addGarbage(attack = 1) {
-            let garbage = [];
-            let g = this._garbage.addGarbage(attack);
-            for (let row of g) {
-                garbage.push([]);
-                for (let b of row) {
-                    if (b == 1) {
-                        garbage[garbage.length - 1].push(new ASC.Block(0xDDDDDD, true, true));
-                    }
-                    else {
-                        garbage[garbage.length - 1].push(new ASC.Block(0x000000, false, false));
-                    }
-                }
-            }
-            super.appendRow(garbage, ASC.FIELD_HEIGHT);
-            this.checkGarbageShift();
-        }
-        checkGarbageShift() {
-            let y = 0;
-            let highest = this._currentPiece.getYVals().sort(function (a, b) { return a - b; })[0];
-            while (!this.checkShift(0, y)) {
-                --y;
-                if (highest + y == 0) {
-                    this.hardDrop();
-                    return;
-                }
-                else if (highest + y < 0) {
-                    this.gameOver();
-                    return;
-                }
-            }
-            this._currentPiece.move(0, y);
-        }
-    }
-    ASC.DigGame = DigGame;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    const TIMELIMIT = 60;
-    class Game extends ASC.AGame {
-        constructor(width = 12, bagSize = 7, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
-            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
-            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay = 100, repeat = 10) {
-            super(width, bagSize, pieces, delay, repeat);
-            this._progress = 0;
-            this._attack = new ASC.AttackTable(this._width);
-        }
-        resetGame() {
-            this._progress = 0;
-            this.randomSeed();
-            this._queue = new ASC.Queue(this._seed, this._pieces, this._bagSize);
-            super.resetGame();
-        }
-        lock() {
-            let spin = this.checkImmobile();
-            let yvals = this._currentPiece.getYVals();
-            super.lock();
-            let cleared = this.clearLines(yvals);
-            if (cleared > 0) {
-                if (spin) {
-                    this._progress += this._attack.spin(cleared);
-                }
-                else {
-                    this._progress += this._attack.clear(cleared);
-                }
-                if (this.checkPC()) {
-                    this._progress += this._attack.perfectClear(cleared);
-                }
-            }
-        }
-    }
-    ASC.Game = Game;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    const TIMELIMIT = 60;
-    class MapGame extends ASC.AGame {
-        constructor(width = 12, bagSize = 6, pieces = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
-            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
-            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], order = [], clearable = [], unclearable = [], delay = 100, repeat = 10) {
-            super(width, bagSize, pieces, delay, repeat);
-            this._progress = 0;
-            this._map = clearable;
-            this._solid = unclearable;
-            this._order = order;
-            this._attack = new ASC.AttackTable(this._width);
-        }
-        resetGame() {
-            this._queue = new ASC.StaticQueue(this._pieces, this._order);
-            this._progress = 0;
-            super.resetGame();
-            this._field.setBlocks(this._map, new ASC.Block(0xDDDDDD, true, true));
-            this.update();
-        }
-        lock() {
-            let spin = this.checkImmobile();
-            let yvals = this._currentPiece.getYVals();
-            super.lock();
-            let cleared = this.clearLines(yvals);
-            if (cleared > 0) {
-                if (spin) {
-                    this._progress += this._attack.spin(cleared);
-                }
-                else {
-                    this._progress += this._attack.clear(cleared);
-                }
-                if (this.checkPC()) {
-                    this._progress += this._attack.perfectClear(cleared);
-                    this.gameOver();
-                    this._state = ASC.State.WIN;
-                }
-            }
-        }
-    }
-    ASC.MapGame = MapGame;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class Field {
-        constructor(width) {
-            this._array = [];
-            this._width = width;
-            this.initialize();
-        }
-        initialize() {
-            for (let i = 0; i < this._width * ASC.FIELD_HEIGHT; ++i) {
-                this._array.push(new ASC.Block());
-            }
-        }
-        shift(lines) {
-            this._array.splice(0, lines * this._width);
-            for (let i = 0; i < lines * this._width; ++i) {
-                this._array.push(new ASC.Block());
-            }
-        }
-        appendRow(row, yval) {
-            let end = this._array.splice(yval * this._width);
-            let temp = this._array.concat(row).concat(end);
-            temp.splice(0, row.length);
-            this._array = temp;
-        }
-        getAt(index) {
-            return this._array[index];
-        }
-        getColors() {
-            let c = [];
-            for (let i of this._array) {
-                c.push(i.color);
-            }
-            return c;
-        }
-        setBlocks(indices, block) {
-            for (let i of indices) {
-                this._array[i] = block;
-            }
-        }
-        clearLineAt(yval) {
-            this._array.splice(yval * this._width, this._width);
-            for (let i = 0; i < this._width; ++i) {
-                this._array.unshift(new ASC.Block());
-            }
-        }
-    }
-    ASC.Field = Field;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    ASC.NUM_PREVIEWS = 6;
-    class AQueue {
-    }
-    ASC.AQueue = AQueue;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class Queue extends ASC.AQueue {
-        constructor(seed, pieces, size = pieces.length) {
-            super();
-            this._queue = [];
-            this._rng = new ASC.PRNG(seed);
-            this._bag = pieces;
-            this._bagSize = size;
-            this.generateQueue();
-        }
-        generateQueue() {
-            while (this._queue.length < ASC.NUM_PREVIEWS) {
-                let tempBag = [];
-                while (tempBag.length < this._bagSize) {
-                    this._bag.forEach((i) => tempBag.push(i.getCopy()));
-                }
-                this._rng.shuffleArray(tempBag);
-                for (let i of tempBag.slice(0, this._bagSize + 1)) {
-                    this._queue.push(i);
-                }
-            }
-        }
-        getQueue() {
-            return this._queue.slice(0, ASC.NUM_PREVIEWS);
-        }
-        getNext() {
-            let temp = this._queue.splice(0, 1)[0];
-            this.generateQueue();
-            return temp;
-        }
-        hasNext() {
-            return true;
-        }
-    }
-    ASC.Queue = Queue;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class StaticQueue extends ASC.AQueue {
-        constructor(pieces, order) {
-            super();
-            this._queue = [];
-            this._bag = pieces;
-            for (let i of order) {
-                this._queue.push(this._bag[i].getCopy());
-            }
-        }
-        getQueue() {
-            return this._queue.slice(0, ASC.NUM_PREVIEWS);
-        }
-        getNext() {
-            let temp = this._queue.splice(0, 1)[0];
-            return temp;
-        }
-        hasNext() {
-            return this._queue.length > 0;
-        }
-        blocksLeft() {
-            return this._queue.length;
-        }
-    }
-    ASC.StaticQueue = StaticQueue;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class AGarbage {
-    }
-    ASC.AGarbage = AGarbage;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class Garbage extends ASC.AGarbage {
-        constructor(seed, width, percentage) {
-            super();
-            this._prng = new ASC.PRNG(seed);
-            this._width = width;
-            if (percentage >= 0 && percentage < 100) {
-                this._percentage = percentage;
-            }
-            else {
-                throw new Error("Invalid Percentage: " + percentage);
-            }
-        }
-        addGarbage(attack) {
-            let g = [];
-            let a = [];
-            for (let i = 0; i < this._width; ++i) {
-                if (i < this._percentage * this._width) {
-                    a.push(1);
-                }
-                else {
-                    a.push(0);
-                }
-            }
-            this._prng.shuffleArray(a);
-            for (let i = 0; i < attack * this._percentage + 0.1; ++i) {
-                g.push(a);
-            }
-            return g;
-        }
-    }
-    ASC.Garbage = Garbage;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class Stopwatch {
-        constructor() {
-        }
-        start() {
-            this._start = performance.now();
-        }
-        getTime() {
-            return performance.now() - this._start;
-        }
-    }
-    ASC.Stopwatch = Stopwatch;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class Timer {
-        constructor(length, interval, tick, end) {
-            this._running = false;
-            this._length = length;
-            this._interval = interval;
-            this._tick = tick;
-            this._end = end;
-        }
-        start() {
-            this.stop();
-            this._running = true;
-            this._expected = performance.now() + this._length;
-            this._expectedTick = performance.now() + this._interval;
-            this._request = window.requestAnimationFrame(this.step.bind(this));
-        }
-        stop() {
-            this._running = false;
-            window.cancelAnimationFrame(this._request);
-        }
-        step() {
-            if (this._running) {
-                if (performance.now() >= this._expectedTick) {
-                    this._expectedTick = performance.now() + this._interval;
-                    this._tick();
-                }
-                else if (performance.now() >= this._expected) {
-                    this.stop();
-                    this._end();
-                    return;
-                }
-                window.requestAnimationFrame(this.step.bind(this));
-            }
-        }
-    }
-    ASC.Timer = Timer;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class Config {
-        constructor(w = 10, p = [new ASC.Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new ASC.Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
-            new ASC.Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new ASC.Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new ASC.Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
-            new ASC.Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new ASC.Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], c = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], d = 100, r = 10, b = 7) {
-            this._controls = [];
-            this._width = w;
-            this._bagSize = b;
-            this._pieces = p;
-            this._controls = c;
-            this._delay = d;
-            this._repeat = r;
-        }
-        static fromText(input) {
-            let cfg = JSON.parse(input);
-            let ps = [];
-            for (let i of cfg.pieces) {
-                ps.push(new ASC.Piece(i[0], i[1], i[2], Number("0x" + i[3]), 0));
-            }
-            let config = new Config(cfg.width, ps, cfg.controls, cfg.delay, cfg.repeat, cfg.bagSize);
-            return config;
-        }
-        static pieceFromText(input) {
-            console.log(input);
-            let p = JSON.parse(input);
-            let ps = [];
-            for (let i of p) {
-                ps.push(new ASC.Piece(i._name, i._shape, i._offset, i._color));
-            }
-            return ps;
-        }
-        get width() {
-            return this._width;
-        }
-        set width(value) {
-            if (value != undefined && value >= ASC.MIN_FIELD_WIDTH && value <= ASC.MAX_FIELD_WIDTH) {
-                this._width = value;
-            }
-            else {
-                throw new Error("Invalid width in config: " + value);
-            }
-        }
-        get pieces() {
-            return [...this._pieces].map(x => x.getCopy());
-        }
-        set pieces(value) {
-            if (value != undefined && value.length > 0) {
-                this._pieces = [...value].map(x => x.getCopy());
-            }
-            else {
-                throw new Error("Invalid pieces in config: " + value);
-            }
-        }
-        get controls() {
-            return [...this._controls];
-        }
-        set controls(value) {
-            if (value != undefined && value.length > 0) {
-                this._controls = [...value];
-            }
-            else {
-                throw new Error("Invalid controls in config: " + value);
-            }
-        }
-        get delay() {
-            return this._delay;
-        }
-        set delay(value) {
-            if (value != undefined && value > 0) {
-                this._delay = value;
-            }
-            else {
-                throw new Error("Invalid delay in config: " + value);
-            }
-        }
-        get repeat() {
-            return this._repeat;
-        }
-        set repeat(value) {
-            if (value != undefined && value > 0) {
-                this._repeat = value;
-            }
-            else {
-                throw new Error("Invalid repeat in config: " + value);
-            }
-        }
-        get bagSize() {
-            return this._bagSize;
-        }
-        set bagSize(value) {
-            if (value != undefined && value > 0) {
-                this._bagSize = value;
-            }
-            else {
-                throw new Error("Invalid bag size in config: " + value);
-            }
-        }
-    }
-    ASC.Config = Config;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class MapConfig extends ASC.Config {
-        constructor(w, p, c, d, r, b, map) {
-            super(w, p, c, d, r, b);
-            this._map = map;
-        }
-    }
-    ASC.MapConfig = MapConfig;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class MapData {
-        constructor(w, p, q, c, u) {
-            this._clearable = [];
-            this._width = 10;
-            this._unclearable = [];
-            this._queue = [];
-            this._pieces = [];
-            this._width = w;
-            this._pieces = p;
-            this._queue = q;
-            this._clearable = c;
-            this._unclearable;
-        }
-        get width() {
-            return this._width;
-        }
-        get clearable() {
-            return [...this._clearable];
-        }
-        get unclearable() {
-            return [...this._unclearable];
-        }
-        get queue() {
-            return [...this._queue];
-        }
-        get pieces() {
-            return [...this._pieces].map(p => p.getCopy());
-        }
-    }
-    ASC.MapData = MapData;
-})(ASC || (ASC = {}));
-var C;
-(function (C) {
-    class Checkbox {
-        constructor(size = 16) {
-            this._checked = false;
-            this._disabled = false;
-            this._td = document.createElement("td");
-            this._td.height = size.toString();
-            this._td.width = size.toString();
-            this._td.onmousemove = this.move.bind(this);
-            this._td.ondragover = (ev) => (ev.preventDefault());
-            this._td.onmousedown = (ev) => { this.click(); ev.preventDefault(); };
-            this._td.textContent = "";
-            this._td.draggable = false;
-            this.update();
-        }
-        getTD() {
-            return this._td;
-        }
-        update() {
-            this._td.style.backgroundColor = this._disabled ? "#000000" : this._checked ? "#DDDDDD" : "#333333";
-        }
-        click() {
-            if (!this._disabled) {
-                Checkbox._lastState = !this._checked;
-                this._checked = Checkbox._lastState;
-                this.update();
-            }
-        }
-        move(ev) {
-            var style = getComputedStyle(this._td);
-            if (!this._disabled && D.Drag.mouseDown) {
-                this._checked = Checkbox._lastState;
-                this.update();
-            }
-        }
-        get checked() {
-            return this._checked;
-        }
-        set checked(value) {
-            this._checked = value;
-            this.update();
-        }
-        get disabled() {
-            return this._disabled;
-        }
-        set disabled(value) {
-            this._disabled = value;
-            this.update();
-        }
-    }
-    Checkbox._lastState = false;
-    C.Checkbox = Checkbox;
-})(C || (C = {}));
-var H;
-(function (H) {
-    class Title {
-    }
-    H.Title = Title;
-})(H || (H = {}));
 //# sourceMappingURL=main.js.map
