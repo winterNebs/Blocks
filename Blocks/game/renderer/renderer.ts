@@ -35,7 +35,7 @@
             for (let i = 0; i < q.length; ++i) {
                 this._queue[i].updateGrid(q[i]);
             }
-        }
+        } 
         public updateHold(p: number[]): void {
             this._hold.updateGrid(p);
         }

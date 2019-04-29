@@ -14,18 +14,17 @@ namespace ASC {
             width: number = 10, bagSize: number = 6,
             pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
-            new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)],
-            controls: number[] = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115],
-            delay: number = 100, repeat: number = 10) {
+            new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay: number = 100, repeat: number = 10) {
 
-            super(width, bagSize, pieces, controls, delay, repeat);
+            super(width, bagSize, pieces, delay, repeat);
             this._attack = new AttackTable(this._width);
-            this._garbage = new Garbage(Math.random() * Number.MAX_VALUE, this._width, 0.9);
             this._timer = new Timer(120000, 2000, this.tick.bind(this), this.win.bind(this));
         }
         public resetGame(): void {
             this._progress = 0;
-            this._queue = new Queue(Math.random() * Number.MAX_VALUE, this._pieces, this._bagSize);
+            this.randomSeed();
+            this._garbage = new Garbage(this._seed, this._width, 0.9);
+            this._queue = new Queue(this._seed, this._pieces, this._bagSize);
             super.resetGame();
             this._timer.start();
         }
@@ -40,7 +39,7 @@ namespace ASC {
         private win(): void {
             super.gameOver();
             this._timer.stop();
-            this._renderer.updateTime("You dug for 2 mins!");
+            this._state = State.WIN;
         }
         protected lock() {
             let spin = this.checkImmobile();
@@ -60,19 +59,7 @@ namespace ASC {
                 }
             }
         }
-
-        protected update(): void {
-            super.update();
-            this.updateProgress();
-        }
-
-        protected updateProgress(): void {
-            this._renderer.updateProgress(this._progress.toString());
-        }
-        protected updateTime(): void {
-            this._renderer.updateTime("Timer off for now :)");
-            //this._renderer.updateTime((this._timer.elapsed / 1000).toString());
-        }
+                
         private addGarbage(attack: number = 1): void {
             let garbage: Block[][] = [];
             let g: number[][] = this._garbage.addGarbage(attack);
