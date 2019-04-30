@@ -11,6 +11,7 @@ var ASC;
                     break;
                 case ASC.Mode.MAP:
                     this._game = new ASC.MapGame(this._mapdata.width, this._config.bagSize, mapdata.pieces, this._mapdata.queue, this._mapdata.clearable, this._mapdata.unclearable, this._config.delay, this._config.repeat);
+                    this._config.width = this._mapdata.width;
                     break;
                 case ASC.Mode.DIG:
                     this._game = new ASC.DigGame(this._config.width, this._config.bagSize, this._config.pieces, this._config.delay, this._config.repeat);
@@ -284,16 +285,6 @@ var ASC;
         }
     }
     ASC.Config = Config;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class MapConfig extends ASC.Config {
-        constructor(w, p, c, d, r, b, map) {
-            super(w, p, c, d, r, b);
-            this._map = map;
-        }
-    }
-    ASC.MapConfig = MapConfig;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -2001,10 +1992,12 @@ var SETTINGS;
             if (mode == 1) {
                 Settings.loadMap();
             }
-            RUN.afterLoad = () => {
-                Settings.restartGame();
-            };
-            RUN.init();
+            else {
+                RUN.afterLoad = () => {
+                    Settings.restartGame();
+                };
+                RUN.init();
+            }
         }
         static restartGame() {
             RUN.startGame(Settings._config, Settings._mode, Settings._mapData);
@@ -2102,6 +2095,10 @@ var SETTINGS;
                 i++;
             }
             Settings._mapData = new ASC.MapData(B.toNumber(cfg[0]), pc, queue, map, []);
+            RUN.afterLoad = () => {
+                Settings.restartGame();
+            };
+            RUN.init();
         }
     }
     Settings._staticQueue = [];

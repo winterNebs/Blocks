@@ -189,11 +189,12 @@ namespace SETTINGS {
             if (mode == 1) {
                 Settings.loadMap();
             }
-
+            else {
             RUN.afterLoad = () => {
                 Settings.restartGame();
             };
             RUN.init();
+            }
         }
 
         private static restartGame() {
@@ -302,6 +303,10 @@ namespace SETTINGS {
             }
 
             Settings._mapData = new ASC.MapData(B.toNumber(cfg[0]), pc, queue, map, []);
+            RUN.afterLoad = () => {
+                Settings.restartGame();
+            };
+            RUN.init();
         }
     }
 }
