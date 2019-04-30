@@ -18,6 +18,7 @@
                 case Mode.MAP:
                     this._game = new ASC.MapGame(this._mapdata.width, this._config.bagSize, mapdata.pieces,
                         this._mapdata.queue, this._mapdata.clearable, this._mapdata.unclearable, this._config.delay, this._config.repeat);
+                    this._config.width = this._mapdata.width;
                     break;
                 case Mode.DIG:
                     this._game = new ASC.DigGame(this._config.width, this._config.bagSize, this._config.pieces,

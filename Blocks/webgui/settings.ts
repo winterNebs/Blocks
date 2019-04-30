@@ -189,7 +189,6 @@ namespace SETTINGS {
             if (mode == 1) {
                 Settings.loadMap();
             }
-
             RUN.afterLoad = () => {
                 Settings.restartGame();
             };
@@ -271,6 +270,7 @@ namespace SETTINGS {
             Settings._pieceEditor.disable(true);
             let m = window.location.search.substring(1);
             let cfg: string[] = m.split("&");
+            let w = B.toNumber(cfg[0]);
             let pc: ASC.Piece[] = [];
             let rawp: string[] = cfg[1].match(/.{1,11}/g);
             for (let r of rawp) {
@@ -292,7 +292,7 @@ namespace SETTINGS {
             }
             let map: number[] = [];
             let rawmap: string = B.binaryFrom64(cfg[3]);
-            rawmap = rawmap.substring(rawmap.length - Settings._config.width * ASC.FIELD_HEIGHT);
+            rawmap = rawmap.substring(rawmap.length - w * ASC.FIELD_HEIGHT);
             let i = 0;
             for (let r of rawmap.split('')) {
                 if (Number(r) == 1) {
@@ -301,7 +301,7 @@ namespace SETTINGS {
                 i++;
             }
 
-            Settings._mapData = new ASC.MapData(B.toNumber(cfg[0]), pc, queue, map, []);
+            Settings._mapData = new ASC.MapData(w, pc, queue, map, []);
         }
     }
 }

@@ -11,6 +11,7 @@ var ASC;
                     break;
                 case ASC.Mode.MAP:
                     this._game = new ASC.MapGame(this._mapdata.width, this._config.bagSize, mapdata.pieces, this._mapdata.queue, this._mapdata.clearable, this._mapdata.unclearable, this._config.delay, this._config.repeat);
+                    this._config.width = this._mapdata.width;
                     break;
                 case ASC.Mode.DIG:
                     this._game = new ASC.DigGame(this._config.width, this._config.bagSize, this._config.pieces, this._config.delay, this._config.repeat);
@@ -284,16 +285,6 @@ var ASC;
         }
     }
     ASC.Config = Config;
-})(ASC || (ASC = {}));
-var ASC;
-(function (ASC) {
-    class MapConfig extends ASC.Config {
-        constructor(w, p, c, d, r, b, map) {
-            super(w, p, c, d, r, b);
-            this._map = map;
-        }
-    }
-    ASC.MapConfig = MapConfig;
 })(ASC || (ASC = {}));
 var ASC;
 (function (ASC) {
@@ -2073,6 +2064,7 @@ var SETTINGS;
             Settings._pieceEditor.disable(true);
             let m = window.location.search.substring(1);
             let cfg = m.split("&");
+            let w = B.toNumber(cfg[0]);
             let pc = [];
             let rawp = cfg[1].match(/.{1,11}/g);
             for (let r of rawp) {
@@ -2093,7 +2085,7 @@ var SETTINGS;
             }
             let map = [];
             let rawmap = B.binaryFrom64(cfg[3]);
-            rawmap = rawmap.substring(rawmap.length - Settings._config.width * ASC.FIELD_HEIGHT);
+            rawmap = rawmap.substring(rawmap.length - w * ASC.FIELD_HEIGHT);
             let i = 0;
             for (let r of rawmap.split('')) {
                 if (Number(r) == 1) {
@@ -2101,7 +2093,7 @@ var SETTINGS;
                 }
                 i++;
             }
-            Settings._mapData = new ASC.MapData(B.toNumber(cfg[0]), pc, queue, map, []);
+            Settings._mapData = new ASC.MapData(w, pc, queue, map, []);
         }
     }
     Settings._staticQueue = [];
