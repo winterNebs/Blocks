@@ -26,19 +26,13 @@ namespace ASC {
             this._garbage = new Garbage(this._seed, this._width, 0.9);
             this._queue = new Queue(this._seed, this._pieces, this._bagSize);
             super.resetGame();
-            this._timer.start();
         }
         protected tick(): void {
             this.addGarbage(~~(Math.random() * 4));
             this.update();
         }
-        protected gameOver(): void {
-            this._timer.stop();
-            super.gameOver();
-        }
         private win(): void {
             super.gameOver();
-            this._timer.stop();
             this._state = State.WIN;
         }
         protected lock() {

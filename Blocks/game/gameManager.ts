@@ -46,7 +46,15 @@
             this._game.resetGame();
         }
         private updateGame(): void {
-            this._renderer.updateTime((this._game.time / 1000).toString());
+            if (this._game.state == State.ACTIVE) {
+                this._renderer.updateTime((this._game.time / 1000).toString());
+            }
+            else if (this._game.state == State.WIN) {
+                this._renderer.updateTime("You won in: " + (this._game.time / 1000).toString());
+            }
+            else if (this._game.state == State.LOSE) {
+                this._renderer.updateTime("You lost in: " + (this._game.time / 1000).toString());
+            }
         }
 
         private updateHold(hold: Piece): void {

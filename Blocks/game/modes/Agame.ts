@@ -62,8 +62,9 @@
             this.update();
 
         }
-        protected gameOver(): void {
+        protected gameOver(): void { // renmame to end game
             this._state = State.LOSE;
+            this._time.stop();
             this.update();
         }
 
@@ -72,12 +73,10 @@
                 this._currentPiece = this._queue.getNext();
                 if (!this.checkShift(0, 0)) {
                     this.gameOver();
-                    this._state = State.LOSE;
                 }
             }
             else {
                 this.gameOver();
-                this._state = State.LOSE;
             }
         }
         protected hold(): void {

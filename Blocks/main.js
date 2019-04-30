@@ -36,7 +36,15 @@ var ASC;
             this._game.resetGame();
         }
         updateGame() {
-            this._renderer.updateTime((this._game.time / 1000).toString());
+            if (this._game.state == ASC.State.ACTIVE) {
+                this._renderer.updateTime((this._game.time / 1000).toString());
+            }
+            else if (this._game.state == ASC.State.WIN) {
+                this._renderer.updateTime("You won in: " + (this._game.time / 1000).toString());
+            }
+            else if (this._game.state == ASC.State.LOSE) {
+                this._renderer.updateTime("You lost in: " + (this._game.time / 1000).toString());
+            }
         }
         updateHold(hold) {
             if (hold === undefined) {
@@ -858,10 +866,25 @@ var ASC;
         constructor() {
         }
         start() {
+            this._active = true;
             this._start = performance.now();
+            this._elapsed = 0;
+        }
+        stop() {
+            this._elapsed = this.getTime();
+            this._active = false;
+        }
+        resume() {
+            this._start = performance.now();
+            this._active = true;
         }
         getTime() {
-            return performance.now() - this._start;
+            if (this._active) {
+                return performance.now() - this._start + this._elapsed;
+            }
+            else {
+                return this._elapsed;
+            }
         }
     }
     ASC.Stopwatch = Stopwatch;
@@ -948,6 +971,7 @@ var ASC;
         }
         gameOver() {
             this._state = ASC.State.LOSE;
+            this._time.stop();
             this.update();
         }
         next() {
@@ -955,12 +979,10 @@ var ASC;
                 this._currentPiece = this._queue.getNext();
                 if (!this.checkShift(0, 0)) {
                     this.gameOver();
-                    this._state = ASC.State.LOSE;
                 }
             }
             else {
                 this.gameOver();
-                this._state = ASC.State.LOSE;
             }
         }
         hold() {
@@ -1181,19 +1203,13 @@ var ASC;
             this._garbage = new ASC.Garbage(this._seed, this._width, 0.9);
             this._queue = new ASC.Queue(this._seed, this._pieces, this._bagSize);
             super.resetGame();
-            this._timer.start();
         }
         tick() {
             this.addGarbage(~~(Math.random() * 4));
             this.update();
         }
-        gameOver() {
-            this._timer.stop();
-            super.gameOver();
-        }
         win() {
             super.gameOver();
-            this._timer.stop();
             this._state = ASC.State.WIN;
         }
         lock() {
