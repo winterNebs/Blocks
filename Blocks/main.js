@@ -1992,12 +1992,10 @@ var SETTINGS;
             if (mode == 1) {
                 Settings.loadMap();
             }
-            else {
-                RUN.afterLoad = () => {
-                    Settings.restartGame();
-                };
-                RUN.init();
-            }
+            RUN.afterLoad = () => {
+                Settings.restartGame();
+            };
+            RUN.init();
         }
         static restartGame() {
             RUN.startGame(Settings._config, Settings._mode, Settings._mapData);
@@ -2066,6 +2064,7 @@ var SETTINGS;
             Settings._pieceEditor.disable(true);
             let m = window.location.search.substring(1);
             let cfg = m.split("&");
+            let w = B.toNumber(cfg[0]);
             let pc = [];
             let rawp = cfg[1].match(/.{1,11}/g);
             for (let r of rawp) {
@@ -2086,7 +2085,7 @@ var SETTINGS;
             }
             let map = [];
             let rawmap = B.binaryFrom64(cfg[3]);
-            rawmap = rawmap.substring(rawmap.length - Settings._config.width * ASC.FIELD_HEIGHT);
+            rawmap = rawmap.substring(rawmap.length - w * ASC.FIELD_HEIGHT);
             let i = 0;
             for (let r of rawmap.split('')) {
                 if (Number(r) == 1) {
@@ -2094,11 +2093,7 @@ var SETTINGS;
                 }
                 i++;
             }
-            Settings._mapData = new ASC.MapData(B.toNumber(cfg[0]), pc, queue, map, []);
-            RUN.afterLoad = () => {
-                Settings.restartGame();
-            };
-            RUN.init();
+            Settings._mapData = new ASC.MapData(w, pc, queue, map, []);
         }
     }
     Settings._staticQueue = [];
