@@ -91,7 +91,7 @@
         private updateField(temp: number[], current: Piece, ghost: Piece) {
             if (current != undefined) {
                 for (let point of ghost.getCoords(this._config.width)) {
-                    temp[point] = (ghost.color & 0xfefefe) >> 1;; /// for now
+                    temp[point] = GameManager.minGray((ghost.color & 0xfefefe) >> 1); /// for now
                 }
                 for (let point of current.getCoords(this._config.width)) {
                     temp[point] = GameManager.minGray(current.color); /// for now
@@ -137,9 +137,9 @@
             let r = (hex >> 16) & 255;
             let g = (hex >> 8) & 255;
             let b = hex & 255;
-            r = Math.max(r, 10);
-            g = Math.max(g, 10);
-            b = Math.max(b, 10);
+            r = Math.max(r, 20);
+            g = Math.max(g, 20);
+            b = Math.max(b, 20);
             return r * 65536 + g * 256 + b;
 
         }
