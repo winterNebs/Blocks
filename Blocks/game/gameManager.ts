@@ -94,7 +94,7 @@
                     temp[point] = (ghost.color & 0xfefefe) >> 1;; /// for now
                 }
                 for (let point of current.getCoords(this._config.width)) {
-                    temp[point] = current.color; /// for now
+                    temp[point] = GameManager.minGray(current.color); /// for now
                 }
                 for (let i = 0; i < 5; ++i) {
                     for (let j = 0; j < 5; ++j) {
@@ -133,7 +133,16 @@
             b = Math.max(b - 50, 0);
             return r * 65536 + g * 256 + b;
         }
+        private static minGray(hex: number): number {
+            let r = (hex >> 16) & 255;
+            let g = (hex >> 8) & 255;
+            let b = hex & 255;
+            r = Math.max(r, 10);
+            g = Math.max(g, 10);
+            b = Math.max(b, 10);
+            return r * 65536 + g * 256 + b;
 
+        }
         public touchControl(code: number): void {
             const touchMap = [Inputs.LEFT, Inputs.SD, Inputs.RIGHT, Inputs.CW, Inputs.CWCW, Inputs.CCW, Inputs.HD, Inputs.HOLD, Inputs.SONIC];
             if (this._game.state == State.ACTIVE) {

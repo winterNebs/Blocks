@@ -80,7 +80,7 @@ var ASC;
                     ;
                 }
                 for (let point of current.getCoords(this._config.width)) {
-                    temp[point] = current.color;
+                    temp[point] = GameManager.minGray(current.color);
                 }
                 for (let i = 0; i < 5; ++i) {
                     for (let j = 0; j < 5; ++j) {
@@ -115,6 +115,15 @@ var ASC;
             r = Math.max(r - 50, 0);
             g = Math.max(g - 50, 0);
             b = Math.max(b - 50, 0);
+            return r * 65536 + g * 256 + b;
+        }
+        static minGray(hex) {
+            let r = (hex >> 16) & 255;
+            let g = (hex >> 8) & 255;
+            let b = hex & 255;
+            r = Math.max(r, 10);
+            g = Math.max(g, 10);
+            b = Math.max(b, 10);
             return r * 65536 + g * 256 + b;
         }
         touchControl(code) {
