@@ -1,21 +1,28 @@
 ﻿{
   "compileOnSave": true,
   "compilerOptions": {
+    "outDir": "dist",
     "moduleResolution": "node",
-	"sourceMap": false,
-
-        "outFile": "main.js",
+    "sourceMap": false,
+    "composite": true,
     "typeRoots": [
       "node_modules/@types"
+
     ],
-      "types": [],
-	  
+    "types": ["node"],
+
     // leave imports as they are
-    "module": "esnext",
+    "module": "commonjs",
     // do not transpile stuff like classes, async/await, ...
-    "target": "esnext"
+    "target": "es6",
+    "lib": [ "dom", "es2015", "es2016","esnext" ]
   },
-  exclude": [
+  "references": [ { "path": "../../ASCSERVER/ASCSERVER" } ], // * Any project that is referenced must itself have a `references` array (which may be empty).
+
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
     "node_modules",
     "obj",
     "bin"

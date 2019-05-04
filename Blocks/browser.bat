@@ -1,0 +1,1 @@
+browserify dist\bundle.js > dist\bundled.js

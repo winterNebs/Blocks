@@ -2,14 +2,16 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <script src="pixi/pixi.min.js"></script>
-    <script type="text/javascript" src="main.js"></script>
     <title>ASC Map Editor</title>
+    <script type="text/javascript" src="pixi/pixi.min.js"></script>
+    <script type="text/javascript" src="dist/bundled.js"></script>
 </head>
 <body>
-    <script type="text/javascript">STYLE.init();</script>
-    <script type="text/javascript">NAV.init();</script>
-    <script type="text/javascript">M.init();</script>
+    <script type="text/javascript"> 
+        asc.S.Style.init();
+        asc.N.Nav.init();
+        asc.M.init();
+    </script>
 
 </body>
 </html>

@@ -16,15 +16,15 @@
         browserify: {
             dist: {
                 files: {
-                    './dist/bundled.js': ['./dist/src/**/*.js']
+                    './dist/bundled.js': ['./dist/src/entry.js']
                 },
                 options: {
                     plugin: [
                         [
                             'remapify', [{
                                 src: './dist/src/**/*.js',  // glob for the files to remap
-                                expose: 'asc', // this will expose `__dirname + /client/views/home.js` as `views/home.js`
-                                cwd: __dirname  // defaults to process.cwd()
+                                //expose: 'asc', // this will expose `__dirname + /client/views/home.js` as `views/home.js`
+                                cwd: './dist/src'  // defaults to process.cwd()
                             }
                             ]
                         ]

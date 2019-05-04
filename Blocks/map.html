@@ -3,13 +3,16 @@
 <head>
     <meta charset="utf-8">
     <title>ASC</title>
-    <script src="pixi/pixi.min.js"></script>
-    <script type="text/javascript" src="main.js"></script>
+    <script src="system.js"></script>
+    <script type="text/javascript" src="pixi/pixi.min.js"></script>
+    <script type="text/javascript" src="dist/bundled.js"></script>
 </head>
 <body>
-    <script type="text/javascript">STYLE.init();</script>
-    <script type="text/javascript">NAV.init();</script>
-    <script type="text/javascript">SETTINGS.Settings.init(1);</script>
+    <script type="text/javascript">
+        asc.S.Style.init();
+        asc.N.Nav.init();
+        asc.G.Settings.init(1);
+    </script>
 
 </body>
 </html>
