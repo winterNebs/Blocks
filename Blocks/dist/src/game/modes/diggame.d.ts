@@ -11,6 +11,7 @@ export declare class DigGame extends AGame {
      */
     constructor(width?: number, bagSize?: number, pieces?: Piece[], delay?: number, repeat?: number);
     resetGame(seed?: number): void;
+    protected gameOver(): void;
     protected tick(): void;
     private win;
     protected lock(): void;

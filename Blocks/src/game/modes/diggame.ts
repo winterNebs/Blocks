@@ -38,7 +38,12 @@ import { FIELD_HEIGHT,State } from "../logic/enums";
             }
             this._garbage = new Garbage(this._seed, this._width, 0.9);
             this._queue = new Queue(this._seed, this._pieces, this._bagSize);
+            this._timer.start();
             super.resetGame(this._seed);
+        }
+        protected gameOver() :void{
+            this._timer.stop();
+            super.gameOver();
         }
         protected tick(): void {
             this.addGarbage(~~(Math.random() * 4));
