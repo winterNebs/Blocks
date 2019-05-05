@@ -8,7 +8,7 @@ export declare class DigGame extends AGame {
      * Creates a new game
      * @param width Width of the game feild, (5 < width < 20, Default: 12).
      */
-    constructor(width?: number, bagSize?: number, pieces?: Piece[], delay?: number, repeat?: number);
+    constructor(width?: number, bagSize?: number, pieces?: Piece[]);
     resetGame(seed?: number): void;
     protected gameOver(): void;
     protected tick(): void;

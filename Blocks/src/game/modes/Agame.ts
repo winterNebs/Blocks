@@ -34,13 +34,7 @@ export abstract class AGame {
         width: number = 12, bagSize: number = 7,
         pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
         new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new Piece("S", [7, 8, 11, 12], 2, 0x00FF00),
-        new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay: number = 100, repeat: number = 10) {
-        if (delay < 1) {
-            throw new Error("Invalid Delay");
-        }
-        if (repeat < 1) {
-            throw new Error("Invalid Repeat");
-        }
+        new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]) {
         if (width > MAX_FIELD_WIDTH || width < MIN_FIELD_WIDTH) {
             throw new Error("Invalid width: " + width.toString());
         }
@@ -112,12 +106,21 @@ export abstract class AGame {
         this.sonicDrop();
         this.lock();
     }
-    protected sonicDrop(): void {
+    private sonicDrop(): void {
         let i = 0;
         while (this.checkShift(0, i)) {
             ++i;
         }
         this._currentPiece.move(0, i - 1);
+    }
+
+    private instantDAS(right: boolean): void {
+        let dir: number = Number(right) * 2 - 1;
+        let i = 0;
+        while (this.checkShift((dir * i), 0)) {
+            ++i;
+        }
+        this._currentPiece.move(dir * (i - 1), 0);
     }
 
     protected move(dir: Directions): void {
@@ -275,43 +278,40 @@ export abstract class AGame {
 
     public readinput(input: Inputs) {
         if (this._state == State.ACTIVE) {
+            this._inputs.push(input);
             switch (input) {
                 case Inputs.CW:
-                    this._inputs.push(input);
                     this.rotate(Rotations.CW);
                     break;
                 case Inputs.RIGHT:
-                    this._inputs.push(input);
                     this.move(Directions.RIGHT);
-
                     break;
                 case Inputs.SD:
-                    this._inputs.push(input);
                     this.move(Directions.DOWN);
                     break;
                 case Inputs.LEFT:
-                    this._inputs.push(input);
                     this.move(Directions.LEFT);
                     break;
                 case Inputs.CCW:
-                    this._inputs.push(input);
                     this.rotate(Rotations.CCW);
                     break;
                 case Inputs.CWCW:
-                    this._inputs.push(input);
                     this.rotate(Rotations.CWCW);
                     break;
                 case Inputs.HD:
-                    this._inputs.push(input);
                     this.hardDrop();
                     break;
                 case Inputs.HOLD:
-                    this._inputs.push(input);
                     this.hold();
                     break;
                 case Inputs.SONIC:
-                    this._inputs.push(input);
                     this.sonicDrop();
+                    break;
+                case Inputs.LL:
+                    this.instantDAS(false);
+                    break;
+                case Inputs.RR:
+                    this.instantDAS(true);
                     break;
                 default:
                     break;

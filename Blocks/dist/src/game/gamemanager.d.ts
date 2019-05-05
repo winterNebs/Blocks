@@ -12,6 +12,7 @@ export declare class GameManager implements ITriggerObserver {
     private _controls;
     private _replay;
     private _timer;
+    private _instant;
     constructor(c: Config, mode: Mode, mapdata?: MapData);
     resetGame(): void;
     private updateGame;
@@ -22,7 +23,7 @@ export declare class GameManager implements ITriggerObserver {
     private static darken;
     private static minGray;
     touchControl(code: number): void;
-    Triggered(keyCode: number): void;
+    Triggered(keyCode: number, repeat: boolean): void;
     setReplay(seed: number, replay: string): void;
     private replay;
     readonly renderer: Renderer;

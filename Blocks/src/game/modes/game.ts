@@ -19,9 +19,9 @@ import { Queue } from "../logic/queue/queue";
             width: number = 12, bagSize: number = 7,
             pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
-            new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], delay: number = 100, repeat: number = 10) {
+                new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)]) {
 
-            super(width, bagSize, pieces, delay, repeat);
+            super(width, bagSize, pieces);
             this._attack = new AttackTable(this._width);
             //this._timer = new Timer(this.tick.bind(this), this.gameOver.bind(this), 500, 60000);
         }

@@ -131,7 +131,7 @@ export class Settings {
 
         let repeat: HTMLInputElement = <HTMLInputElement>document.createElement("input");
         repeat.setAttribute("type", "number");
-        repeat.setAttribute("min", "1");
+        repeat.setAttribute("min", "0");
         repeat.setAttribute("value", Settings._config.repeat.toString());
 
 

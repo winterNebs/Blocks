@@ -89,7 +89,7 @@ export class Config {
         return this._repeat;
     }
     public set repeat(value: number) {
-        if (value != undefined && value > 0) {
+        if (value != undefined && value >= 0) {
             this._repeat = value;
         }
         else {

@@ -23,7 +23,9 @@ export declare enum Inputs {
     HOLD = 6,
     HD = 7,
     SONIC = 8,
-    RESTART = 9
+    RESTART = 9,
+    LL = 10,
+    RR = 11
 }
 export declare enum State {
     ACTIVE = 0,

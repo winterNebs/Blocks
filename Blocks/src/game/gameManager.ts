@@ -21,23 +21,22 @@ export class GameManager implements ITriggerObserver {
     private _controls: number[];
     private _replay: number[] = [];
     private _timer: Timer;
+    private _instant: boolean;
     public constructor(c: Config, mode: Mode, mapdata?: MapData) {
         this._config = c;
         this._mapdata = mapdata;
-
+        this._instant = this._config.repeat == 0;
         switch (mode) {
             case Mode.PRACTICE:
-                this._game = new Game(this._config.width, this._config.bagSize, this._config.pieces,
-                    this._config.delay, this._config.repeat);
+                this._game = new Game(this._config.width, this._config.bagSize, this._config.pieces);
                 break;
             case Mode.MAP:
                 this._game = new MapGame(this._mapdata.width, this._config.bagSize, mapdata.pieces,
-                    this._mapdata.queue, this._mapdata.clearable, this._mapdata.unclearable, this._config.delay, this._config.repeat);
+                    this._mapdata.queue, this._mapdata.clearable, this._mapdata.unclearable);
                 this._config.width = this._mapdata.width;
                 break;
             case Mode.DIG:
-                this._game = new DigGame(this._config.width, this._config.bagSize, this._config.pieces,
-                    this._config.delay, this._config.repeat);
+                this._game = new DigGame(this._config.width, this._config.bagSize, this._config.pieces);
                 break;
             case Mode.VS:
                 break;
@@ -164,8 +163,22 @@ export class GameManager implements ITriggerObserver {
             this.resetGame();
         }
     }
-    Triggered(keyCode: number): void {
-        this._game.readinput(this._controls.indexOf(keyCode));
+    Triggered(keyCode: number, repeat: boolean): void {
+        if (this._instant && repeat) {
+            switch (keyCode) {
+                case this._controls[Inputs.RIGHT]:
+                    this._game.readinput(Inputs.RR);
+                    break;
+                case this._controls[Inputs.LEFT]:
+                    this._game.readinput(Inputs.LL);
+                    break;
+                default:
+                    break;
+            }
+        }
+        else {
+            this._game.readinput(this._controls.indexOf(keyCode));
+        }
         switch (keyCode) {
             case this._controls[Inputs.RIGHT]:
                 InputManager.cancelRepeat(this._controls[Inputs.LEFT]);

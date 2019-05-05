@@ -21,14 +21,15 @@ export declare abstract class AGame {
     private _updateHoldCallback;
     private _updateQueueCallback;
     private _updateFieldCallback;
-    constructor(width?: number, bagSize?: number, pieces?: Piece[], delay?: number, repeat?: number);
+    constructor(width?: number, bagSize?: number, pieces?: Piece[]);
     protected randomSeed(): void;
     resetGame(seed?: number): void;
     protected gameOver(): void;
     protected next(): void;
     protected hold(): void;
     protected hardDrop(): void;
-    protected sonicDrop(): void;
+    private sonicDrop;
+    private instantDAS;
     protected move(dir: Directions): void;
     protected checkShift(x: number, y: number): boolean;
     protected checkPC(): boolean;

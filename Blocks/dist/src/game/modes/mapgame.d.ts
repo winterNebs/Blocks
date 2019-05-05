@@ -10,7 +10,7 @@ export declare class MapGame extends AGame {
      * Creates a new game
      * @param width Width of the game feild, (5 < width < 20, Default: 12).
      */
-    constructor(width?: number, bagSize?: number, pieces?: Piece[], order?: number[], clearable?: number[], unclearable?: number[], delay?: number, repeat?: number);
+    constructor(width?: number, bagSize?: number, pieces?: Piece[], order?: number[], clearable?: number[], unclearable?: number[]);
     resetGame(seed?: number): void;
     protected lock(): void;
 }

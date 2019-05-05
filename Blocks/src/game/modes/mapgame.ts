@@ -24,9 +24,9 @@ import { State } from "../logic/enums";
             pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
             new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
             new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)], order: number[] = [],
-            clearable: number[] = [], unclearable: number[] = [], delay: number = 100, repeat: number = 10) {
+            clearable: number[] = [], unclearable: number[] = []) {
 
-            super(width, bagSize, pieces, delay, repeat);
+            super(width, bagSize, pieces);
             this._map = clearable;
             this._solid = unclearable;
             this._order = order;

@@ -1,3 +1,3 @@
 export interface ITriggerObserver {
-    Triggered(keyCode: number): void;
+    Triggered(keyCode: number, repeat: boolean): void;
 }
