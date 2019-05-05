@@ -2,7 +2,7 @@ import { Piece } from "../logic/piece";
 export declare class Config {
     private _width;
     private _pieces;
-    private _controls;
+    controls: number[];
     private _delay;
     private _repeat;
     private _bagSize;
@@ -11,7 +11,6 @@ export declare class Config {
     static pieceFromText(input: string): Piece[];
     width: number;
     pieces: Piece[];
-    controls: number[];
     delay: number;
     repeat: number;
     bagSize: number;

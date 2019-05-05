@@ -5,7 +5,7 @@ export class Config {
     private _width: number;
     private _pieces: Piece[]; //o boi
     //RIGHT, SD, LEFT, CW, CCW, CWCW, HOLD, HD
-    private _controls: number[] = [];
+    public controls: number[] = [];
     private _delay: number;
     private _repeat: number;
     private _bagSize: number;
@@ -16,7 +16,7 @@ export class Config {
         this._width = w;
         this._bagSize = b;
         this._pieces = p;
-        this._controls = c;
+        this.controls = c;
         this._delay = d;
         this._repeat = r;
     }
@@ -61,17 +61,17 @@ export class Config {
             throw new Error("Invalid pieces in config: " + value);
         }
     }
-    public get controls(): number[] {
-        return [...this._controls];
-    }
-    public set controls(value: number[]) {
-        if (value != undefined && value.length > 0) {// Check if == to controls i g; don't really matter since they will hinder themselves
-            this._controls = [...value];
-        }
-        else {
-            throw new Error("Invalid controls in config: " + value);
-        }
-    }
+    //public get controls(): number[] {
+    //    return [...this._controls];
+    //}
+    //public set controls(value: number[]) {
+    //    if (value != undefined && value.length > 0) {// Check if == to controls i g; don't really matter since they will hinder themselves
+    //        this._controls = [...value];
+    //    }
+    //    else {
+    //        throw new Error("Invalid controls in config: " + value);
+    //    }
+    //}
 
 
     public get delay(): number {

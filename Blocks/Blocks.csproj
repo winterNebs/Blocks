@@ -47,12 +47,17 @@
     <TypeScriptSourceMap>True</TypeScriptSourceMap>
     <TypeScriptMapRoot />
     <TypeScriptSourceRoot />
+    <FilesToIncludeForPublish>OnlyFilesToRunTheApp</FilesToIncludeForPublish>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\</OutputPath>
+	
+	<ExcludeFoldersFromDeployment>dist\src;node_modules;src;</ExcludeFoldersFromDeployment> 
+	<ExcludeFilesFromDeployment>**\*.ts;Web.*.config;*.csproj*</ExcludeFilesFromDeployment>
+
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -69,6 +74,7 @@
     <TypeScriptSourceMap>True</TypeScriptSourceMap>
     <TypeScriptMapRoot />
     <TypeScriptSourceRoot />
+    <FilesToIncludeForPublish>AllFilesInTheProject</FilesToIncludeForPublish>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
@@ -118,12 +124,14 @@
     <None Include="Properties\PublishProfiles\ASCENSION - Web Deploy.pubxml" />
     <None Include="Properties\PublishProfiles\ascension1 - Web Deploy.pubxml" />
     <Content Include="tsconfig.json" />
+    <None Include="Properties\PublishProfiles\ASCgameTestServer - Web Deploy.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
     <None Include="Web.Release.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
+	<Content Include="dist\bundled.js" />
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="src\app.ts" />
