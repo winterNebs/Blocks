@@ -14,6 +14,7 @@ export declare abstract class AGame {
     protected _controls: number[];
     protected _state: State;
     protected _seed: number;
+    protected _progress: number;
     private _time;
     private _inputs;
     private _updateCallback;
@@ -45,4 +46,5 @@ export declare abstract class AGame {
     readonly time: number;
     readonly state: State;
     readinput(input: Inputs): void;
+    readonly progress: number;
 }

@@ -10,7 +10,6 @@ import { Queue } from "../logic/queue/queue";
     export class Game extends AGame {
         //Separte gamemodes
         private _timer: Timer;
-        private _progress: number = 0;
         private _attack: AttackTable;
         /**
          * Creates a new game

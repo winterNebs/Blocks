@@ -2,7 +2,6 @@ import { AGame } from "./Agame";
 import { Piece } from "../logic/piece";
 export declare class Game extends AGame {
     private _timer;
-    private _progress;
     private _attack;
     /**
      * Creates a new game

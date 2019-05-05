@@ -57,6 +57,7 @@ export class GameManager implements ITriggerObserver {
         this._game.resetGame();
     }
     private updateGame(): void {
+        this._renderer.updateProgress(this._game.progress.toString());
         if (this._game.state == State.ACTIVE) {
             this._renderer.updateTime((this._game.time / 1000).toString());
         }

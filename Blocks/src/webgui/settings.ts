@@ -182,13 +182,19 @@ export class Settings {
         ////////////////////////
 
         if (document.cookie !== "") {
-            Settings.readCookie();
-
-            for (let i = 0; i < controlsBox.length; ++i) {
-                controlsBox[i].setAttribute("value", Settings._config.controls[i].toString());
+            try {
+                Settings.readCookie();
+                for (let i = 0; i < controlsBox.length; ++i) {
+                    controlsBox[i].setAttribute("value", Settings._config.controls[i].toString());
+                }
+                delay.setAttribute("value", Settings._config.delay.toString());
+                repeat.setAttribute("value", Settings._config.repeat.toString());
             }
-            delay.setAttribute("value", Settings._config.delay.toString());
-            repeat.setAttribute("value", Settings._config.repeat.toString());
+            catch (err) {
+                alert("Corrupted cookies: " + err.message);
+                this.saveCookie();
+            }
+
         }
         else {
             Settings.saveCookie();
@@ -212,47 +218,40 @@ export class Settings {
 
         vals = vals.filter(function (el) { return el; });
         //Check verison
-        try {
-            for (let v of vals) {
-                if (v != null && v.length > 2) {
-                    switch (v.charAt(0)) {
-                        case 'v':
-                            if (parseFloat(v.substring(2)) < VERSION) {
-                                if (confirm("Outdated Config version: " + v.substring(2) + " Latest: " + VERSION + "\n Press OK to reset to new config, cancel to keep old config (may have unexpected results)")) {
-                                    this.saveCookie();
-                                }
+        for (let v of vals) {
+            if (v != null && v.length > 2) {
+                switch (v.charAt(0)) {
+                    case 'v':
+                        if (parseFloat(v.substring(2)) < VERSION) {
+                            if (confirm("Outdated Config version: " + v.substring(2) + " Latest: " + VERSION + "\n Press OK to reset to new config, cancel to keep old config (may have unexpected results)")) {
+                                this.saveCookie();
                             }
-                            break;
-                        case 'p':
-                            if (Settings._mode == 1) {
-                                let p = Config.pieceFromText(v.substring(2));
-                                Settings._config.pieces = p;
-                                Settings._pieceEditor.setPieces(p);
-                            }
-                            break;
-                        case 'b':
-                            if (Settings._mode == 1) {
-                                Settings._config.bagSize = JSON.parse(v.substring(2));
-                            }
-                            break;
-                        case 'c':
-                            Settings._config.controls = JSON.parse(v.substring(2));
-                            break;
-                        case 'r':
-                            Settings._config.repeat = JSON.parse(v.substring(2));
-                            break;
-                        case 'd':
-                            Settings._config.delay = JSON.parse(v.substring(2));
-                            break;
-                    }
+                        }
+                        break;
+                    case 'p':
+                        if (Settings._mode == 1) {
+                            let p = Config.pieceFromText(v.substring(2));
+                            Settings._config.pieces = p;
+                            Settings._pieceEditor.setPieces(p);
+                        }
+                        break;
+                    case 'b':
+                        if (Settings._mode == 1) {
+                            Settings._config.bagSize = JSON.parse(v.substring(2));
+                        }
+                        break;
+                    case 'c':
+                        Settings._config.controls = JSON.parse(v.substring(2));
+                        break;
+                    case 'r':
+                        Settings._config.repeat = JSON.parse(v.substring(2));
+                        break;
+                    case 'd':
+                        Settings._config.delay = JSON.parse(v.substring(2));
+                        break;
                 }
             }
         }
-        catch (err) {
-            alert("Corrupted cookies: " + err.message);
-            this.saveCookie();
-        }
-
     }
     private static saveCookie() { //If no cookie
         let c = "";

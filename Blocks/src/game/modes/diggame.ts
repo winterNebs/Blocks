@@ -11,7 +11,6 @@ import { FIELD_HEIGHT,State } from "../logic/enums";
     export class DigGame extends AGame {
         //Separte gamemodes
         private _timer: Timer;
-        private _progress: number = 0;
         private _attack: AttackTable;
         private _garbage: AGarbage;
         /**

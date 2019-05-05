@@ -3,7 +3,6 @@ import { Piece } from "../logic/piece";
 export declare class MapGame extends AGame {
     private _map;
     private _solid;
-    private _progress;
     private _attack;
     private _order;
     private _timer;

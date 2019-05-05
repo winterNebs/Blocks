@@ -2,7 +2,6 @@ import { AGame } from "./Agame";
 import { Piece } from "../logic/piece";
 export declare class DigGame extends AGame {
     private _timer;
-    private _progress;
     private _attack;
     private _garbage;
     /**

@@ -12,7 +12,6 @@ import { State } from "../logic/enums";
     export class MapGame extends AGame {
         private _map: number[];
         private _solid: number[];
-        private _progress: number = 0;
         private _attack: AttackTable;
         private _order: number[];
         private _timer: Timer;
