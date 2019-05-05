@@ -54,12 +54,9 @@ export class Run {
         for (let i = 0; i < lables.length; ++i) {
             let be: HTMLButtonElement = document.createElement("button");
             be.innerText = lables[i];
-            be.onclick = buttonclick.bind(this, i);
+            be.onclick = (ev) => { this._game.touchControl(i); ev.preventDefault(); };
             be.style.fontSize = "2em";
             document.body.appendChild(be);
-        }
-        function buttonclick(ev: MouseEvent, i: number) {
-            this._game.touchControl(i); ev.preventDefault()
         }
     }
 }
