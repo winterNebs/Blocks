@@ -54,10 +54,8 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\</OutputPath>
-	
-	<ExcludeFoldersFromDeployment>dist\src;node_modules;src;</ExcludeFoldersFromDeployment> 
-	<ExcludeFilesFromDeployment>**\*.ts;Web.*.config;*.csproj*</ExcludeFilesFromDeployment>
-
+    <ExcludeFoldersFromDeployment>dist\src;node_modules;src;</ExcludeFoldersFromDeployment>
+    <ExcludeFilesFromDeployment>**\*.ts;Web.*.config;*.csproj*</ExcludeFilesFromDeployment>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -131,7 +129,7 @@
     <None Include="Web.Release.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
-	<Content Include="dist\bundled.js" />
+    <Content Include="dist\bundled.js" />
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="src\app.ts" />
@@ -207,7 +205,7 @@
     <Error Condition="!Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.0\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.0\build\net46\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props'))" />
   </Target>
   <PropertyGroup>
-    <PostBuildEvent>call grunt</PostBuildEvent>
+    <PostBuildEvent>call $(ProjectDir)grunt.bat</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

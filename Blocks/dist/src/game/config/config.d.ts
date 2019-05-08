@@ -14,4 +14,5 @@ export declare class Config {
     delay: number;
     repeat: number;
     bagSize: number;
+    getCopy(): Config;
 }

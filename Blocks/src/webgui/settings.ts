@@ -167,11 +167,7 @@ export class Settings {
 
         let apply: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
         apply.innerText = "Apply Settings"
-        apply.onclick = function () {
-            Settings._config.pieces = Settings._pieceEditor.getPieces();
-            Settings.restartGame();
-            Settings.saveCookie();
-        }
+        apply.onclick = Settings.apply;
 
         settings.appendChild(apply);
 
@@ -252,6 +248,11 @@ export class Settings {
                 }
             }
         }
+    }
+    private static apply() {
+        Settings._config.pieces = Settings._pieceEditor.getPieces();
+        Settings.restartGame();
+        Settings.saveCookie();
     }
     private static saveCookie() { //If no cookie
         let c = "";

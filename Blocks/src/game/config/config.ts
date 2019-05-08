@@ -13,12 +13,12 @@ export class Config {
     new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
     new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)],
         c: number[] = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], d: number = 100, r: number = 10, b: number = 7) {
-        this._width = w;
-        this._bagSize = b;
-        this._pieces = p;
+        this.width = w;
+        this.bagSize = b;
+        this.pieces = p;
         this.controls = c;
-        this._delay = d;
-        this._repeat = r;
+        this.delay = d;
+        this.repeat = r;
     }
     public static fromText(input: string): Config {
         let cfg = JSON.parse(input);
@@ -106,5 +106,8 @@ export class Config {
         else {
             throw new Error("Invalid bag size in config: " + value);
         }
+    }
+    public getCopy(): Config {
+        return new Config(this._width, this._pieces, this.controls, this._delay, this._repeat, this._bagSize);
     }
 }

@@ -23,9 +23,9 @@ export class GameManager implements ITriggerObserver {
     private _timer: Timer;
     private _instant: boolean;
     public constructor(c: Config, mode: Mode, mapdata?: MapData) {
-        this._config = c;
+        this._config = c.getCopy();
         this._mapdata = mapdata;
-        this._instant = this._config.repeat == 0;
+       this._instant = this._config.repeat == 0;
         switch (mode) {
             case Mode.PRACTICE:
                 this._game = new Game(this._config.width, this._config.bagSize, this._config.pieces);

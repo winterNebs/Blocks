@@ -28,10 +28,11 @@ class Key {
     }
     public onPress(): void {
         this._pressed = true;
-        this._timeout = window.setTimeout(this.activate.bind(this), this._delay);
+        console.log(this._delay)
+        this._timeout = window.setTimeout(()=>(this.activate()), this._delay);
     }
     private activate(): void {
-        this._interval = window.setInterval(this.repeat.bind(this), this._rate);
+        this._interval = window.setInterval(()=>(this.repeat()), this._rate);
     }
     private repeat(): void {
         for (let l of this._listeners) {
@@ -83,11 +84,8 @@ export class InputManager {
                     }
                 }
             }
-
             event.preventDefault();
             event.stopPropagation();
-
-
         }
         return false;
     }
