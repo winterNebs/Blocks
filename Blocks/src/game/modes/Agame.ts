@@ -313,6 +313,9 @@ export abstract class AGame {
                 case Inputs.RR:
                     this.instantDAS(true);
                     break;
+                case Inputs.RP:
+                    this._currentPiece.reset();
+                    break;
                 default:
                     break;
             }

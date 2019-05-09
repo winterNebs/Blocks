@@ -12,7 +12,7 @@ export class Config {
     public constructor(w: number = 10, p: Piece[] = [new Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new Piece("L", [8, 11, 12, 13], 2, 0xFF9900),
     new Piece("J", [6, 11, 12, 13], 2, 0x0000FF), new Piece("Z", [11, 12, 17, 18], 2, 0xFF0000), new Piece("S", [12, 13, 16, 17], 2, 0x00FF00),
     new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)],
-        c: number[] = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], d: number = 100, r: number = 10, b: number = 7) {
+        c: number[] = [39, 40, 37, 38, 83, 68, 16, 32, 191, 115, 82], d: number = 100, r: number = 10, b: number = 7) {
         this.width = w;
         this.bagSize = b;
         this.pieces = p;

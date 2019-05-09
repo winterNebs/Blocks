@@ -50,7 +50,7 @@ export class Run {
         newGameButton.innerText = "New Game";
         newGameButton.onclick = () => (this._game.resetGame());
         document.body.appendChild(newGameButton);
-        const lables = ["Left", "Softdrop", "Right", "Clockwise", "180", "Counter Clockwise", "Hard Drop", "Hold", "Instant Drop", "Restart"];
+        const lables = ["Left", "Softdrop", "Right", "Clockwise", "180", "Counter Clockwise", "Hard Drop", "Hold", "Instant Drop", "Restart", "Reset Piece", "DAS Left", "Das Right",];
         for (let i = 0; i < lables.length; ++i) {
             let be: HTMLButtonElement = document.createElement("button");
             be.innerText = lables[i];

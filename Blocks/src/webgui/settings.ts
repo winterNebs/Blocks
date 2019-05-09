@@ -25,7 +25,7 @@ export class Settings {
         let pieces: Piece[] = [new Piece("T", [7, 11, 12, 13], 2, 0xFF00FF), new Piece("L", [8, 11, 12, 13], 2, 0xFF9900), new Piece("J", [6, 11, 12, 13], 2, 0x0000FF),
         new Piece("Z", [6, 7, 12, 13], 2, 0xFF0000), new Piece("S", [7, 8, 11, 12], 2, 0x00FF00), new Piece("I", [11, 12, 13, 14], 2, 0x00FFFF), new Piece("O", [12, 13, 17, 18], 2, 0xFFFF00)];
 
-        Settings._config = new Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32, 191, 115], 100, 10, 7);
+        Settings._config = new Config(12, pieces, [39, 40, 37, 38, 83, 68, 16, 32, 191, 115,84], 100, 10, 7);
         Settings._pieceEditor = new PieceEditor(Settings._config.width, pieces);
 
         Drag.init();
@@ -74,7 +74,7 @@ export class Settings {
         settings.appendChild(controlsTitle);
 
         let controlTable: HTMLElement = document.createElement("table")
-        const labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop", "Instant Drop", "Restart"];
+        const labels = ["Right", "Soft Drop", "Left", "CW", "CCW", "180", "Hold", "Hard Drop", "Instant Drop", "Restart","Reset Piece"];
         let controlsBox: HTMLElement[] = [];
         let row: HTMLElement;
         for (let i = 0; i < labels.length; ++i) {

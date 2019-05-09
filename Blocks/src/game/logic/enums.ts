@@ -9,7 +9,7 @@ export enum Directions {
     UP, RIGHT, DOWN, LEFT
 }
 export enum Inputs {
-    RIGHT, SD, LEFT, CW, CCW, CWCW, HOLD, HD, SONIC, RESTART, LL, RR
+    RIGHT, SD, LEFT, CW, CCW, CWCW, HOLD, HD, SONIC, RESTART, RP, LL, RR //Reset peiece
 }
 export enum State {
     ACTIVE, PAUSED, WIN, LOSE

@@ -25,7 +25,7 @@ export class GameManager implements ITriggerObserver {
     public constructor(c: Config, mode: Mode, mapdata?: MapData) {
         this._config = c.getCopy();
         this._mapdata = mapdata;
-       this._instant = this._config.repeat == 0;
+        this._instant = this._config.repeat == 0;
         switch (mode) {
             case Mode.PRACTICE:
                 this._game = new Game(this._config.width, this._config.bagSize, this._config.pieces);
@@ -155,12 +155,13 @@ export class GameManager implements ITriggerObserver {
 
     }
     public touchControl(code: number): void {
-        const touchMap = [Inputs.LEFT, Inputs.SD, Inputs.RIGHT, Inputs.CW, Inputs.CWCW, Inputs.CCW, Inputs.HD, Inputs.HOLD, Inputs.SONIC];
-        if (this._game.state == State.ACTIVE) {
-            this._game.readinput(touchMap.indexOf(code));
-        }
-        if (code == 9) { //f4
+        const touchMap = [Inputs.LEFT, Inputs.SD, Inputs.RIGHT, Inputs.CW, Inputs.CWCW, Inputs.CCW, Inputs.HD, Inputs.HOLD, Inputs.SONIC, Inputs.RESTART, Inputs.RP,Inputs.LL, Inputs.RR, ];
+        
+        if (Inputs.RESTART == touchMap.indexOf(code)) { //f4
             this.resetGame();
+        }
+        else if (this._game.state == State.ACTIVE) {
+            this._game.readinput(touchMap.indexOf(code));
         }
     }
     Triggered(keyCode: number, repeat: boolean): void {
